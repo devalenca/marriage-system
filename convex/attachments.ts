@@ -1,15 +1,8 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import {
-	type MutationCtx,
-	mutation,
-	type QueryCtx,
-	query,
-} from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
+import { authedMutation as mutation, authedQuery as query } from "./lib/auth";
 import { attachmentKindValidator } from "./lib/validators";
-
-// Single-user local app: no auth layer by design (see AGENTS.md). Auth must be
-// added (Clerk) before deploying to Vercel.
 
 export const generateUploadUrl = mutation({
 	args: {},

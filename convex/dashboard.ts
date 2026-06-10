@@ -8,7 +8,7 @@ import {
 	type VendorWithPayments,
 } from "../lib/domain/finance";
 import type { Doc } from "./_generated/dataModel";
-import { query } from "./_generated/server";
+import { authedQuery as query } from "./lib/auth";
 import { groupPaymentsByVendor } from "./lib/db";
 
 /** Same wire shape as payments.listPending rows. */

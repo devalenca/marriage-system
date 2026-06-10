@@ -10,6 +10,15 @@ export const modules = import.meta.glob([
 	"!../../convex/**/*.d.ts",
 ]);
 
-export function setupTest() {
+/** Raw backend accessor with NO identity — for testing auth rejection. */
+export function setupUnauthenticatedTest() {
 	return convexTest(schema, modules);
+}
+
+/** Backend accessor signed in as the couple — the normal test entry point. */
+export function setupTest() {
+	return convexTest(schema, modules).withIdentity({
+		subject: "test-user",
+		email: "casal@example.com",
+	});
 }

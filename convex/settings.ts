@@ -1,9 +1,6 @@
 import { v } from "convex/values";
 import { isValidISODate } from "../lib/domain/dates";
-import { mutation, query } from "./_generated/server";
-
-// Single-user local app: no auth layer by design (see AGENTS.md).
-// Clerk + requireAccess must be added before any deployment.
+import { authedMutation as mutation, authedQuery as query } from "./lib/auth";
 
 export const get = query({
 	args: {},
