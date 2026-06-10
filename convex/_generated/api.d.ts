@@ -9,8 +9,12 @@
  */
 
 import type * as attachments from "../attachments.js";
+import type * as auth from "../auth.js";
 import type * as dashboard from "../dashboard.js";
 import type * as finance from "../finance.js";
+import type * as http from "../http.js";
+import type * as lib_allowlist from "../lib/allowlist.js";
+import type * as lib_auth from "../lib/auth.js";
 import type * as lib_db from "../lib/db.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as payments from "../payments.js";
@@ -26,8 +30,12 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   attachments: typeof attachments;
+  auth: typeof auth;
   dashboard: typeof dashboard;
   finance: typeof finance;
+  http: typeof http;
+  "lib/allowlist": typeof lib_allowlist;
+  "lib/auth": typeof lib_auth;
   "lib/db": typeof lib_db;
   "lib/validators": typeof lib_validators;
   payments: typeof payments;
