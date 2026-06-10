@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
 import { PageHeader } from "@/components/page-header";
+import { SignOutButton } from "@/components/sign-out-button";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -52,6 +53,18 @@ export function SettingsContent() {
 					initial={settings ?? undefined}
 				/>
 				<ChecklistCard hasSettings={settings !== null} />
+				<Card>
+					<CardHeader>
+						<CardTitle className="font-display text-lg">Sessão</CardTitle>
+						<CardDescription>
+							Encerra o acesso neste dispositivo. Para voltar, basta entrar com
+							e-mail e senha.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<SignOutButton />
+					</CardContent>
+				</Card>
 				<Card>
 					<CardHeader>
 						<CardTitle className="font-display text-lg">Sobre o app</CardTitle>
