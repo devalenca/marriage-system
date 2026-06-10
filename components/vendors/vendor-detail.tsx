@@ -1,0 +1,503 @@
+"use client";
+
+import { useMutation, useQuery } from "convex/react";
+import {
+	ArrowLeft,
+	AtSign,
+	CalendarPlus,
+	Check,
+	ExternalLink,
+	MoreVertical,
+	Pencil,
+	Phone,
+	Plus,
+	Trash2,
+	Undo2,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import { FileUpload } from "@/components/file-upload";
+import { StatusBadge } from "@/components/status-badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ValueItem } from "@/components/value-item";
+import { PaymentDialog } from "@/components/vendors/payment-dialog";
+import { ScheduleDialog } from "@/components/vendors/schedule-dialog";
+import { VendorFormDialog } from "@/components/vendors/vendor-form-dialog";
+import { api } from "@/convex/_generated/api";
+import type { Doc, Id } from "@/convex/_generated/dataModel";
+import { CATEGORY_LABELS } from "@/lib/domain/categories";
+import { formatDateBR, todayInSaoPaulo } from "@/lib/domain/dates";
+import { paymentIsOverdue } from "@/lib/domain/finance";
+import { formatBRL } from "@/lib/domain/money";
+import { notifyError } from "@/lib/notify";
+import { cn } from "@/lib/utils";
+
+export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
+	const router = useRouter();
+	const vendor = useQuery(api.vendors.get, { id: vendorId });
+	const payments = useQuery(api.payments.listByVendor, { vendorId });
+	const removeVendor = useMutation(api.vendors.remove);
+
+	const [editOpen, setEditOpen] = useState(false);
+	const [scheduleOpen, setScheduleOpen] = useState(false);
+	const [paymentOpen, setPaymentOpen] = useState(false);
+	const [editingPayment, setEditingPayment] = useState<
+		Doc<"payments"> | undefined
+	>(undefined);
+	const [deleteOpen, setDeleteOpen] = useState(false);
+
+	if (vendor === undefined) {
+		return (
+			<div className="flex flex-col gap-4" aria-busy>
+				<Skeleton className="h-24 rounded-2xl" />
+				<Skeleton className="h-40 rounded-2xl" />
+				<Skeleton className="h-56 rounded-2xl" />
+			</div>
+		);
+	}
+
+	if (vendor === null) {
+		return (
+			<div className="flex flex-col items-center gap-4 py-16 text-center">
+				<p className="text-sm text-muted-foreground">
+					Fornecedor não encontrado.
+				</p>
+				<Button variant="outline" render={<Link href="/fornecedores" />}>
+					<ArrowLeft data-icon="inline-start" aria-hidden />
+					Voltar
+				</Button>
+			</div>
+		);
+	}
+
+	async function handleDelete() {
+		try {
+			await removeVendor({ id: vendorId });
+			toast.success("Fornecedor excluído");
+			router.push("/fornecedores");
+		} catch (error) {
+			notifyError(error, "Não foi possível excluir");
+		}
+	}
+
+	const { financials } = vendor;
+	const progress = Math.round(financials.progress * 100);
+
+	return (
+		<div className="flex flex-col gap-4">
+			<header>
+				<Link
+					href="/fornecedores"
+					className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+				>
+					<ArrowLeft className="size-4" aria-hidden />
+					Fornecedores
+				</Link>
+				<div className="flex items-start justify-between gap-3">
+					<div className="min-w-0">
+						<h1 className="font-display text-2xl font-semibold tracking-tight">
+							{vendor.name}
+						</h1>
+						<div className="mt-1 flex flex-wrap items-center gap-2">
+							<span className="text-sm text-muted-foreground">
+								{CATEGORY_LABELS[vendor.category]}
+							</span>
+							<StatusBadge status={vendor.status} />
+						</div>
+					</div>
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button variant="outline" size="icon" aria-label="Mais ações" />
+							}
+						>
+							<MoreVertical aria-hidden />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={() => setEditOpen(true)}>
+								<Pencil aria-hidden /> Editar
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								variant="destructive"
+								onClick={() => setDeleteOpen(true)}
+							>
+								<Trash2 aria-hidden /> Excluir
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			</header>
+
+			<Card>
+				<CardHeader>
+					<CardTitle className="font-display text-lg">Valores</CardTitle>
+				</CardHeader>
+				<CardContent className="flex flex-col gap-4">
+					<dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+						<ValueItem label="Orçamento inicial" value={vendor.estimateCents} />
+						<ValueItem label="Valor fechado" value={vendor.contractedCents} />
+						<ValueItem
+							label="Pago"
+							value={financials.paidCents}
+							tone="text-success"
+						/>
+						<ValueItem
+							label="Pendente"
+							value={financials.pendingCents}
+							tone={financials.pendingCents > 0 ? "text-warning" : undefined}
+						/>
+					</dl>
+					{vendor.contractedCents ? (
+						<div className="flex items-center gap-2">
+							<Progress
+								value={progress}
+								className="h-1.5"
+								aria-label={`${progress}% pago`}
+							/>
+							<span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+								{progress}% pago
+							</span>
+						</div>
+					) : null}
+					{vendor.closedDate || vendor.paymentMethod ? (
+						<p className="text-xs text-muted-foreground">
+							{vendor.closedDate
+								? `Fechado em ${formatDateBR(vendor.closedDate)}`
+								: null}
+							{vendor.closedDate && vendor.paymentMethod ? " · " : null}
+							{vendor.paymentMethod}
+						</p>
+					) : null}
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader className="flex-row items-center justify-between">
+					<CardTitle className="font-display text-lg">Pagamentos</CardTitle>
+					<div className="flex gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setScheduleOpen(true)}
+						>
+							<CalendarPlus data-icon="inline-start" aria-hidden />
+							Gerar parcelas
+						</Button>
+						<Button
+							size="sm"
+							onClick={() => {
+								setEditingPayment(undefined);
+								setPaymentOpen(true);
+							}}
+						>
+							<Plus data-icon="inline-start" aria-hidden />
+							Adicionar
+						</Button>
+					</div>
+				</CardHeader>
+				<CardContent>
+					{payments === undefined ? (
+						<Skeleton className="h-24 rounded-xl" aria-busy />
+					) : payments.length === 0 ? (
+						<p className="py-2 text-sm text-muted-foreground">
+							Nenhum pagamento cadastrado. Gere as parcelas do contrato ou
+							adicione um pagamento avulso.
+						</p>
+					) : (
+						<PaymentList
+							payments={payments}
+							onEdit={(payment) => {
+								setEditingPayment(payment);
+								setPaymentOpen(true);
+							}}
+						/>
+					)}
+					{payments && financials.remainingInstallments > 0 ? (
+						<p className="mt-3 text-xs text-muted-foreground">
+							{financials.remainingInstallments} parcela
+							{financials.remainingInstallments === 1 ? "" : "s"} restante
+							{financials.remainingInstallments === 1 ? "" : "s"}
+						</p>
+					) : null}
+				</CardContent>
+			</Card>
+
+			{vendor.contactName ||
+			vendor.phone ||
+			vendor.instagram ||
+			vendor.website ||
+			vendor.notes ? (
+				<Card>
+					<CardHeader>
+						<CardTitle className="font-display text-lg">
+							Contato e observações
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="flex flex-col gap-2 text-sm">
+						{vendor.contactName ? <p>{vendor.contactName}</p> : null}
+						{vendor.phone ? (
+							<a
+								href={`tel:${vendor.phone.replace(/\D/g, "")}`}
+								className="flex items-center gap-2 text-primary"
+							>
+								<Phone className="size-4" aria-hidden />
+								{vendor.phone}
+							</a>
+						) : null}
+						{vendor.instagram ? (
+							<a
+								href={`https://instagram.com/${vendor.instagram.replace(/^@/, "")}`}
+								target="_blank"
+								rel="noreferrer"
+								className="flex items-center gap-2 text-primary"
+							>
+								<AtSign className="size-4" aria-hidden />
+								{vendor.instagram}
+							</a>
+						) : null}
+						{vendor.website ? (
+							<a
+								href={vendor.website}
+								target="_blank"
+								rel="noreferrer"
+								className="flex items-center gap-2 text-primary"
+							>
+								<ExternalLink className="size-4" aria-hidden />
+								{vendor.website}
+							</a>
+						) : null}
+						{vendor.notes ? (
+							<p className="whitespace-pre-wrap text-muted-foreground">
+								{vendor.notes}
+							</p>
+						) : null}
+					</CardContent>
+				</Card>
+			) : null}
+
+			<Card>
+				<CardHeader>
+					<CardTitle className="font-display text-lg">
+						Contrato e anexos
+					</CardTitle>
+				</CardHeader>
+				<CardContent className="flex flex-col gap-3">
+					{vendor.links?.map((link) => (
+						<a
+							key={link.url}
+							href={link.url}
+							target="_blank"
+							rel="noreferrer"
+							className="flex items-center gap-2 text-sm text-primary"
+						>
+							<ExternalLink className="size-4" aria-hidden />
+							{link.label}
+						</a>
+					))}
+					<FileUpload
+						vendorId={vendorId}
+						kind="contrato"
+						label="Anexar contrato ou arquivo"
+					/>
+				</CardContent>
+			</Card>
+
+			<VendorFormDialog
+				open={editOpen}
+				onOpenChange={setEditOpen}
+				vendor={vendor}
+			/>
+			<ScheduleDialog
+				open={scheduleOpen}
+				onOpenChange={setScheduleOpen}
+				vendorId={vendorId}
+				defaultTotalCents={vendor.contractedCents ?? null}
+			/>
+			<PaymentDialog
+				open={paymentOpen}
+				onOpenChange={setPaymentOpen}
+				vendorId={vendorId}
+				payment={editingPayment}
+			/>
+
+			<Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle className="font-display">
+							Excluir fornecedor?
+						</DialogTitle>
+						<DialogDescription>
+							{vendor.name} e todos os seus pagamentos serão removidos. Essa
+							ação não pode ser desfeita.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setDeleteOpen(false)}>
+							Cancelar
+						</Button>
+						<Button variant="destructive" onClick={handleDelete}>
+							Excluir
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</div>
+	);
+}
+
+function PaymentList({
+	payments,
+	onEdit,
+}: {
+	payments: Doc<"payments">[];
+	onEdit: (payment: Doc<"payments">) => void;
+}) {
+	const markPaid = useMutation(api.payments.markPaid);
+	const markPending = useMutation(api.payments.markPending);
+	const removePayment = useMutation(api.payments.remove);
+	const today = todayInSaoPaulo();
+
+	async function run(action: () => Promise<unknown>, success: string) {
+		try {
+			await action();
+			toast.success(success);
+		} catch (error) {
+			notifyError(error, "Algo deu errado");
+		}
+	}
+
+	return (
+		<ul className="flex flex-col divide-y">
+			{payments.map((payment) => {
+				const isPaid = payment.status === "pago";
+				const isOverdue = paymentIsOverdue(payment, today);
+				return (
+					<li
+						key={payment._id}
+						className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+					>
+						<button
+							type="button"
+							aria-label={
+								isPaid
+									? `Marcar ${payment.description} como pendente`
+									: `Marcar ${payment.description} como pago`
+							}
+							onClick={() =>
+								isPaid
+									? run(
+											() => markPending({ id: payment._id }),
+											"Pagamento reaberto",
+										)
+									: run(
+											() => markPaid({ id: payment._id }),
+											"Pagamento registrado 🎉",
+										)
+							}
+							className={cn(
+								"flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors",
+								isPaid
+									? "border-success bg-success text-success-foreground text-white"
+									: "border-border text-transparent hover:border-success hover:text-success",
+							)}
+						>
+							<Check className="size-3.5" aria-hidden />
+						</button>
+						<div className="min-w-0 flex-1">
+							<p
+								className={cn(
+									"truncate text-sm font-medium",
+									isPaid && "text-muted-foreground line-through",
+								)}
+							>
+								{payment.description}
+							</p>
+							<p
+								className={cn(
+									"text-xs",
+									isOverdue
+										? "font-medium text-destructive"
+										: "text-muted-foreground",
+								)}
+							>
+								{isPaid && payment.paidDate
+									? `pago em ${formatDateBR(payment.paidDate)}`
+									: `vence em ${formatDateBR(payment.dueDate)}`}
+								{isOverdue ? " · atrasado" : ""}
+								{payment.paymentMethod ? ` · ${payment.paymentMethod}` : ""}
+							</p>
+						</div>
+						<span
+							className={cn(
+								"text-sm font-semibold tabular-nums",
+								isPaid && "text-success",
+							)}
+						>
+							{formatBRL(payment.amountCents)}
+						</span>
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={
+									<Button
+										variant="ghost"
+										size="icon-xs"
+										aria-label={`Ações de ${payment.description}`}
+									/>
+								}
+							>
+								<MoreVertical aria-hidden />
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem onClick={() => onEdit(payment)}>
+									<Pencil aria-hidden /> Editar
+								</DropdownMenuItem>
+								{isPaid ? (
+									<DropdownMenuItem
+										onClick={() =>
+											run(
+												() => markPending({ id: payment._id }),
+												"Pagamento reaberto",
+											)
+										}
+									>
+										<Undo2 aria-hidden /> Reabrir
+									</DropdownMenuItem>
+								) : null}
+								<DropdownMenuItem
+									variant="destructive"
+									onClick={() =>
+										run(
+											() => removePayment({ id: payment._id }),
+											"Pagamento removido",
+										)
+									}
+								>
+									<Trash2 aria-hidden /> Remover
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</li>
+				);
+			})}
+		</ul>
+	);
+}
