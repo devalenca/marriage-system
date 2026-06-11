@@ -20,9 +20,9 @@ Next.js (App Router) + TypeScript (strict) + Convex (anonymous local backend) + 
 ## Auth
 
 - **Convex Auth (password)**: every Convex function rejects anonymous callers via `authedQuery`/`authedMutation` from `convex/lib/auth.ts` — the only module allowed to touch `ctx.auth`. `proxy.ts` gates all pages to `/login`.
-- **No self sign-up**: the admin (`AUTH_ADMIN_EMAIL` env var on the deployment) creates/removes accounts and resets passwords in Ajustes → Acessos. The single exception is first-run bootstrap: with zero users, the login page creates the admin account (admin e-mail only). `users.bootstrapStatus` is the one deliberately public query.
+- **No self sign-up**: the admin (`AUTH_ADMIN_EMAIL` env var on the deployment) creates/removes accounts and resets passwords in Ajustes → Acessos. The admin account itself is seeded automatically from `AUTH_ADMIN_EMAIL` + `AUTH_ADMIN_PASSWORD` the first time the login page loads with zero users. `users.bootstrapStatus` and `users.ensureAdminSeeded` are the two deliberately public functions.
 - **Persistent sessions**: cookie and session last up to 365 days (90-day inactivity window), refreshed automatically.
-- **Deployment env vars**: `JWT_PRIVATE_KEY` + `JWKS` (generate with `node scripts/generate-auth-keys.mjs <outDir>`, then `npx convex env set -- NAME "$(cat file)"` — never let a shell eat the JSON quotes), `SITE_URL`, `AUTH_ADMIN_EMAIL`.
+- **Deployment env vars**: `JWT_PRIVATE_KEY` + `JWKS` (generate with `node scripts/generate-auth-keys.mjs <outDir>`, then `npx convex env set -- NAME "$(cat file)"` — never let a shell eat the JSON quotes), `SITE_URL`, `AUTH_ADMIN_EMAIL`, `AUTH_ADMIN_PASSWORD` (8+ chars; seeds the admin account).
 
 ## Constraints
 

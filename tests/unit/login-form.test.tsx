@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const signInMock = vi.fn();
 const pushMock = vi.fn();
 const useQueryMock = vi.fn();
+const seedMock = vi.fn();
 
 vi.mock("@convex-dev/auth/react", () => ({
 	useAuthActions: () => ({ signIn: signInMock, signOut: vi.fn() }),
@@ -16,15 +17,16 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("convex/react", () => ({
 	useQuery: (...args: unknown[]) => useQueryMock(...args),
+	useAction: () => seedMock,
 }));
 
 import { LoginForm } from "@/components/login-form";
 
-async function fillAndSubmit(email: string, password: string, button: RegExp) {
+async function fillAndSubmit(email: string, password: string) {
 	const user = userEvent.setup();
 	await user.type(screen.getByLabelText(/e-mail/i), email);
 	await user.type(screen.getByLabelText(/senha/i), password);
-	await user.click(screen.getByRole("button", { name: button }));
+	await user.click(screen.getByRole("button", { name: /entrar/i }));
 	return user;
 }
 
@@ -33,6 +35,8 @@ describe("LoginForm", () => {
 		signInMock.mockReset();
 		pushMock.mockReset();
 		useQueryMock.mockReset();
+		seedMock.mockReset();
+		seedMock.mockResolvedValue(null);
 		useQueryMock.mockReturnValue({ needsBootstrap: false });
 	});
 
@@ -51,11 +55,24 @@ describe("LoginForm", () => {
 		expect(screen.queryByText(/primeiro acesso/i)).not.toBeInTheDocument();
 	});
 
+	it("seeds the env-configured admin while no account exists", async () => {
+		useQueryMock.mockReturnValue({ needsBootstrap: true });
+		render(<LoginForm />);
+
+		await waitFor(() => expect(seedMock).toHaveBeenCalledOnce());
+		expect(screen.getByRole("button", { name: /preparando/i })).toBeDisabled();
+	});
+
+	it("does not seed when accounts already exist", () => {
+		render(<LoginForm />);
+		expect(seedMock).not.toHaveBeenCalled();
+	});
+
 	it("submits credentials with the sign-in flow and redirects", async () => {
 		signInMock.mockResolvedValue({ signingIn: true });
 		render(<LoginForm />);
 
-		await fillAndSubmit("ana@example.com", "segredo123", /entrar/i);
+		await fillAndSubmit("ana@example.com", "segredo123");
 
 		await waitFor(() => expect(signInMock).toHaveBeenCalledOnce());
 		const [provider, formData] = signInMock.mock.calls[0] as [string, FormData];
@@ -66,47 +83,11 @@ describe("LoginForm", () => {
 		await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/dashboard"));
 	});
 
-	it("becomes the admin bootstrap form when no account exists yet", async () => {
-		useQueryMock.mockReturnValue({ needsBootstrap: true });
-		signInMock.mockResolvedValue({ signingIn: true });
-		render(<LoginForm />);
-
-		expect(
-			screen.getByText(/crie a conta do administrador/i),
-		).toBeInTheDocument();
-
-		await fillAndSubmit(
-			"admin@example.com",
-			"segredo123",
-			/criar conta do administrador/i,
-		);
-
-		await waitFor(() => expect(signInMock).toHaveBeenCalledOnce());
-		const [, formData] = signInMock.mock.calls[0] as [string, FormData];
-		expect(formData.get("flow")).toBe("signUp");
-	});
-
-	it("rejects a short password locally in bootstrap mode", async () => {
-		useQueryMock.mockReturnValue({ needsBootstrap: true });
-		render(<LoginForm />);
-
-		await fillAndSubmit(
-			"admin@example.com",
-			"curta",
-			/criar conta do administrador/i,
-		);
-
-		expect(
-			await screen.findByText(/pelo menos 8 caracteres/i),
-		).toBeInTheDocument();
-		expect(signInMock).not.toHaveBeenCalled();
-	});
-
 	it("shows a pt-BR error message when sign-in fails", async () => {
 		signInMock.mockRejectedValue(new Error("InvalidSecret"));
 		render(<LoginForm />);
 
-		await fillAndSubmit("ana@example.com", "errada", /entrar/i);
+		await fillAndSubmit("ana@example.com", "errada");
 
 		expect(
 			await screen.findByText(/e-mail ou senha incorretos/i),
