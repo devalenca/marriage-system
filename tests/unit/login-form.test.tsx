@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const signInMock = vi.fn();
 const pushMock = vi.fn();
+const replaceMock = vi.fn();
 const useQueryMock = vi.fn();
 const seedMock = vi.fn();
 
@@ -12,12 +13,15 @@ vi.mock("@convex-dev/auth/react", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-	useRouter: () => ({ push: pushMock }),
+	useRouter: () => ({ push: pushMock, replace: replaceMock }),
 }));
+
+const useConvexAuthMock = vi.fn();
 
 vi.mock("convex/react", () => ({
 	useQuery: (...args: unknown[]) => useQueryMock(...args),
 	useAction: () => seedMock,
+	useConvexAuth: () => useConvexAuthMock(),
 }));
 
 import { LoginForm } from "@/components/login-form";
@@ -34,10 +38,29 @@ describe("LoginForm", () => {
 	beforeEach(() => {
 		signInMock.mockReset();
 		pushMock.mockReset();
+		replaceMock.mockReset();
 		useQueryMock.mockReset();
 		seedMock.mockReset();
 		seedMock.mockResolvedValue(null);
+		useConvexAuthMock.mockReset();
+		useConvexAuthMock.mockReturnValue({
+			isLoading: false,
+			isAuthenticated: false,
+		});
 		useQueryMock.mockReturnValue({ needsBootstrap: false });
+	});
+
+	it("redirects to the dashboard when already authenticated", async () => {
+		useConvexAuthMock.mockReturnValue({
+			isLoading: false,
+			isAuthenticated: true,
+		});
+		render(<LoginForm />);
+		await waitFor(() =>
+			expect(pushMock.mock.calls.concat(replaceMock.mock.calls)).toContainEqual(
+				["/dashboard"],
+			),
+		);
 	});
 
 	it("disables submission while the backend connection is pending", () => {
