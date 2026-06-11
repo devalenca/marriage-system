@@ -19,7 +19,7 @@ Next.js (App Router) + TypeScript (strict) + Convex (anonymous local backend) + 
 
 ## Auth
 
-- **Convex Auth (password)**: every Convex function rejects anonymous callers via `authedQuery`/`authedMutation` from `convex/lib/auth.ts` — the only module allowed to touch `ctx.auth`. `proxy.ts` gates all pages to `/login`.
+- **Convex Auth (password)**: every Convex function rejects anonymous callers via `authedQuery`/`authedMutation` from `convex/lib/auth.ts` — the only module allowed to touch `ctx.auth`. Auth is **client-side** (`ConvexAuthProvider`, tokens in the browser — no SSR cookies/middleware, which fought Next 16 in prod). Route gating is `components/auth-gate.tsx` wrapping the `(app)` layout; it is UX only, the real protection is server-side.
 - **No self sign-up**: the admin (`AUTH_ADMIN_EMAIL` env var on the deployment) creates/removes accounts and resets passwords in Ajustes → Acessos. The admin account itself is seeded automatically from `AUTH_ADMIN_EMAIL` + `AUTH_ADMIN_PASSWORD` the first time the login page loads with zero users. `users.bootstrapStatus` and `users.ensureAdminSeeded` are the two deliberately public functions.
 - **Persistent sessions**: cookie and session last up to 365 days (90-day inactivity window), refreshed automatically.
 - **Deployment env vars**: `JWT_PRIVATE_KEY` + `JWKS` (generate with `node scripts/generate-auth-keys.mjs <outDir>`, then `npx convex env set -- NAME "$(cat file)"` — never let a shell eat the JSON quotes), `SITE_URL`, `AUTH_ADMIN_EMAIL`, `AUTH_ADMIN_PASSWORD` (8+ chars; seeds the admin account).

@@ -1,6 +1,6 @@
 "use client";
 
-import { ConvexAuthNextjsProvider } from "@convex-dev/auth/nextjs";
+import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
 import { type ReactNode, useMemo } from "react";
 
@@ -15,9 +15,8 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
 		return new ConvexReactClient(url);
 	}, []);
 
-	return (
-		<ConvexAuthNextjsProvider client={client}>
-			{children}
-		</ConvexAuthNextjsProvider>
-	);
+	// Client-side auth: tokens live in the browser and travel to Convex over
+	// the reactive connection. Route gating happens in <AuthGate>; the real
+	// protection is server-side (every function rejects anonymous callers).
+	return <ConvexAuthProvider client={client}>{children}</ConvexAuthProvider>;
 }

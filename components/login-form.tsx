@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useConvexAuth, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { api } from "@/convex/_generated/api";
 
 export function LoginForm() {
 	const { signIn } = useAuthActions();
+	const { isAuthenticated } = useConvexAuth();
 	const router = useRouter();
 	// Undefined = the backend hasn't answered yet (or is unreachable, e.g. a
 	// deployment without a Convex URL configured) — don't pretend the form
@@ -33,6 +34,13 @@ export function LoginForm() {
 			});
 		}
 	}, [seeding, ensureAdminSeeded]);
+
+	// Already signed in (e.g. returning visitor) — go straight to the app.
+	useEffect(() => {
+		if (isAuthenticated) {
+			router.replace("/dashboard");
+		}
+	}, [isAuthenticated, router]);
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
