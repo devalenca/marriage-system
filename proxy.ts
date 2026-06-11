@@ -20,7 +20,9 @@ export default convexAuthNextjsMiddleware(
 			? undefined
 			: nextjsMiddlewareRedirect(request, "/login");
 	},
-	{ cookieConfig: { maxAge: 60 * 60 * 24 * 30 } },
+	// Persistent login: the cookie survives a year; the session itself is
+	// renewed automatically while the app is used (see convex/auth.ts).
+	{ cookieConfig: { maxAge: 60 * 60 * 24 * 365 } },
 );
 
 export const config = {

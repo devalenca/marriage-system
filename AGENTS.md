@@ -17,10 +17,16 @@ A private wedding-planning cockpit for the couple: vendors, budget, payments/ins
 
 Next.js (App Router) + TypeScript (strict) + Convex (anonymous local backend) + Tailwind v4 + shadcn/ui + Biome + Vitest.
 
+## Auth
+
+- **Convex Auth (password)**: every Convex function rejects anonymous callers via `authedQuery`/`authedMutation` from `convex/lib/auth.ts` — the only module allowed to touch `ctx.auth`. `proxy.ts` gates all pages to `/login`.
+- **No self sign-up**: the admin (`AUTH_ADMIN_EMAIL` env var on the deployment) creates/removes accounts and resets passwords in Ajustes → Acessos. The single exception is first-run bootstrap: with zero users, the login page creates the admin account (admin e-mail only). `users.bootstrapStatus` is the one deliberately public query.
+- **Persistent sessions**: cookie and session last up to 365 days (90-day inactivity window), refreshed automatically.
+- **Deployment env vars**: `JWT_PRIVATE_KEY` + `JWKS` (generate with `node scripts/generate-auth-keys.mjs <outDir>`, then `npx convex env set -- NAME "$(cat file)"` — never let a shell eat the JSON quotes), `SITE_URL`, `AUTH_ADMIN_EMAIL`.
+
 ## Constraints
 
-- **No auth layer yet**: the app is single-user on a local anonymous Convex backend. Authentication and authorization MUST be added before this app is deployed or exposed beyond localhost.
-- **Before deploying (e.g. Vercel)**: provision a Convex cloud deployment and add authentication; file uploads already use Convex storage, which works in production.
+- **Before deploying (e.g. Vercel)**: provision a Convex cloud deployment, set the auth env vars above on it, migrate local data (`npx convex export` / `import`), and configure the Vercel build as `npx convex deploy --cmd 'npm run build'` with `CONVEX_DEPLOY_KEY` so `NEXT_PUBLIC_CONVEX_URL` is injected. File uploads already use Convex storage, which works in production.
 
 ## Commands
 
