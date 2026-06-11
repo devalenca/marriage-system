@@ -27,8 +27,12 @@ export function LoginForm() {
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		setError(null);
-		setSubmitting(true);
 		const formData = new FormData(event.currentTarget);
+		if (needsBootstrap && String(formData.get("password") ?? "").length < 8) {
+			setError("A senha deve ter pelo menos 8 caracteres.");
+			return;
+		}
+		setSubmitting(true);
 		formData.set("flow", needsBootstrap ? "signUp" : "signIn");
 		try {
 			await signIn("password", formData);

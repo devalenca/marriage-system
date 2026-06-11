@@ -86,6 +86,22 @@ describe("LoginForm", () => {
 		expect(formData.get("flow")).toBe("signUp");
 	});
 
+	it("rejects a short password locally in bootstrap mode", async () => {
+		useQueryMock.mockReturnValue({ needsBootstrap: true });
+		render(<LoginForm />);
+
+		await fillAndSubmit(
+			"admin@example.com",
+			"curta",
+			/criar conta do administrador/i,
+		);
+
+		expect(
+			await screen.findByText(/pelo menos 8 caracteres/i),
+		).toBeInTheDocument();
+		expect(signInMock).not.toHaveBeenCalled();
+	});
+
 	it("shows a pt-BR error message when sign-in fails", async () => {
 		signInMock.mockRejectedValue(new Error("InvalidSecret"));
 		render(<LoginForm />);
