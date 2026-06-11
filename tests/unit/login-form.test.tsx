@@ -36,6 +36,13 @@ describe("LoginForm", () => {
 		useQueryMock.mockReturnValue({ needsBootstrap: false });
 	});
 
+	it("disables submission while the backend connection is pending", () => {
+		useQueryMock.mockReturnValue(undefined);
+		render(<LoginForm />);
+		const button = screen.getByRole("button", { name: /conectando/i });
+		expect(button).toBeDisabled();
+	});
+
 	it("offers no self sign-up", () => {
 		render(<LoginForm />);
 		expect(
