@@ -1,3 +1,4 @@
+import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import {
@@ -9,6 +10,9 @@ import {
 } from "./lib/validators";
 
 export default defineSchema({
+	// Convex Auth: users, sessions, accounts (password provider).
+	...authTables,
+
 	// Singleton: the couple's wedding configuration.
 	settings: defineTable({
 		coupleNames: v.string(),

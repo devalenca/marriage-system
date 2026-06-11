@@ -6,8 +6,9 @@ import {
 	sumPaidCents,
 } from "../lib/domain/finance";
 import type { Id } from "./_generated/dataModel";
-import { type MutationCtx, mutation, query } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
 import { deleteAttachmentsFor } from "./attachments";
+import { authedMutation as mutation, authedQuery as query } from "./lib/auth";
 import { paymentsOf } from "./lib/db";
 
 function validatePayment(args: { amountCents?: number; dueDate?: string }) {

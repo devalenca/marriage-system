@@ -6,8 +6,8 @@ import {
 import { isValidISODate } from "../lib/domain/dates";
 import { vendorFinancials } from "../lib/domain/finance";
 import type { Doc } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
 import { deleteAttachmentsFor } from "./attachments";
+import { authedMutation as mutation, authedQuery as query } from "./lib/auth";
 import { groupPaymentsByVendor, paymentsOf } from "./lib/db";
 import {
 	vendorCategoryValidator,

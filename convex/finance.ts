@@ -8,7 +8,7 @@ import {
 	vendorFinancials,
 } from "../lib/domain/finance";
 import type { Doc, Id } from "./_generated/dataModel";
-import { query } from "./_generated/server";
+import { authedQuery as query } from "./lib/auth";
 import { groupPaymentsByVendor } from "./lib/db";
 
 function isActive(vendor: Doc<"vendors">) {

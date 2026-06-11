@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { generateChecklist } from "../lib/domain/checklist";
 import { isValidISODate } from "../lib/domain/dates";
-import { mutation, query } from "./_generated/server";
+import { authedMutation as mutation, authedQuery as query } from "./lib/auth";
 import {
 	vendorCategoryValidator as categoryValidator,
 	taskPriorityValidator as priorityValidator,
