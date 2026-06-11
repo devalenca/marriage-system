@@ -3,14 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const signOutMock = vi.fn();
-const pushMock = vi.fn();
+const assignMock = vi.fn();
 
 vi.mock("@convex-dev/auth/react", () => ({
 	useAuthActions: () => ({ signIn: vi.fn(), signOut: signOutMock }),
-}));
-
-vi.mock("next/navigation", () => ({
-	useRouter: () => ({ push: pushMock }),
 }));
 
 import { SignOutButton } from "@/components/sign-out-button";
@@ -18,7 +14,13 @@ import { SignOutButton } from "@/components/sign-out-button";
 describe("SignOutButton", () => {
 	beforeEach(() => {
 		signOutMock.mockReset();
-		pushMock.mockReset();
+		assignMock.mockReset();
+		// jsdom's location.assign is not implemented; a full-page navigation
+		// is intentional here (crossing the auth boundary resets all state).
+		Object.defineProperty(window, "location", {
+			value: { ...window.location, assign: assignMock },
+			writable: true,
+		});
 	});
 
 	it("signs out and redirects to the login page", async () => {
@@ -30,6 +32,6 @@ describe("SignOutButton", () => {
 			.click(screen.getByRole("button", { name: /sair/i }));
 
 		await waitFor(() => expect(signOutMock).toHaveBeenCalledOnce());
-		await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/login"));
+		await waitFor(() => expect(assignMock).toHaveBeenCalledWith("/login"));
 	});
 });
