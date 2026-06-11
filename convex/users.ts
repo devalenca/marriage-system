@@ -4,7 +4,7 @@ import {
 	modifyAccountCredentials,
 } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import {
 	action,
@@ -43,6 +43,39 @@ export const bootstrapStatus = query({
 	handler: async (ctx) => ({
 		needsBootstrap: (await ctx.db.query("users").first()) === null,
 	}),
+});
+
+/**
+ * The second deliberately public function: creates the admin account from
+ * the deployment env vars (AUTH_ADMIN_EMAIL + AUTH_ADMIN_PASSWORD) when the
+ * users table is still empty. The login page calls it before the first
+ * sign-in; it takes no caller input and is idempotent, so exposing it is
+ * harmless — it can only ever materialize the env-configured admin.
+ */
+export const ensureAdminSeeded = action({
+	args: {},
+	handler: async (ctx) => {
+		const email = normalizeEmail(process.env.AUTH_ADMIN_EMAIL ?? "");
+		const password = process.env.AUTH_ADMIN_PASSWORD ?? "";
+		if (email.length === 0 || password.length < 8) return null;
+
+		const { needsBootstrap } = await ctx.runQuery(
+			api.users.bootstrapStatus,
+			{},
+		);
+		if (!needsBootstrap) return null;
+
+		try {
+			await createAccount(ctx, {
+				provider: PASSWORD_PROVIDER,
+				account: { id: email, secret: password },
+				profile: { email },
+			});
+		} catch {
+			// A concurrent call seeded first — nothing left to do.
+		}
+		return null;
+	},
 });
 
 /** Who am I — drives admin-only UI like the Acessos card. */

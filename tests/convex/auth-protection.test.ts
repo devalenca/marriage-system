@@ -176,8 +176,9 @@ const cases: Case[] = [
 		(t) => t.query(api.finance.overview, { today: "2026-06-10" }),
 	],
 	["finance.exportRows", (t) => t.query(api.finance.exportRows, {})],
-	// users.bootstrapStatus is intentionally absent: it is the one public
-	// query (the login page reads it before any session exists).
+	// users.bootstrapStatus and users.ensureAdminSeeded are intentionally
+	// absent: they are the two public functions the login page needs before
+	// any session exists (a boolean, and the idempotent env-driven seeding).
 	["users.viewer", (t) => t.query(api.users.viewer, {})],
 	["users.list", (t) => t.query(api.users.list, {})],
 	[

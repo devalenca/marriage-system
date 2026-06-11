@@ -169,6 +169,40 @@ describe("users.create", () => {
 	});
 });
 
+describe("users.ensureAdminSeeded", () => {
+	test("creates the admin account from env vars when no user exists", async () => {
+		vi.stubEnv("AUTH_ADMIN_PASSWORD", "senha-admin-123");
+		const t = setupUnauthenticatedTest();
+		await t.action(api.users.ensureAdminSeeded, {});
+
+		const rows = await t.run(async (ctx) => ({
+			users: await ctx.db.query("users").collect(),
+			accounts: await ctx.db.query("authAccounts").collect(),
+		}));
+		expect(rows.users).toHaveLength(1);
+		expect(rows.users[0]?.email).toBe(ADMIN_EMAIL);
+		expect(rows.accounts).toHaveLength(1);
+		expect(rows.accounts[0]?.providerAccountId).toBe(ADMIN_EMAIL);
+	});
+
+	test("is idempotent — does nothing once any user exists", async () => {
+		vi.stubEnv("AUTH_ADMIN_PASSWORD", "senha-admin-123");
+		const { t } = await setupUsersTest();
+		await t.action(api.users.ensureAdminSeeded, {});
+
+		const users = await t.run((ctx) => ctx.db.query("users").collect());
+		expect(users).toHaveLength(2);
+	});
+
+	test("does nothing while AUTH_ADMIN_PASSWORD is not configured", async () => {
+		const t = setupUnauthenticatedTest();
+		await t.action(api.users.ensureAdminSeeded, {});
+
+		const users = await t.run((ctx) => ctx.db.query("users").collect());
+		expect(users).toHaveLength(0);
+	});
+});
+
 describe("users.resetPassword", () => {
 	test("non-admin is rejected", async () => {
 		const { asMember, memberId } = await setupUsersTest();
