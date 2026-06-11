@@ -36,12 +36,15 @@ async function seed(t: TestCtx) {
 			status: "pendente",
 			isGenerated: false,
 		});
+		const userId = await ctx.db.insert("users", {
+			email: "alguem@example.com",
+		});
 		await ctx.db.insert("settings", {
 			coupleNames: "A & B",
 			weddingDate: "2026-11-21",
 			budgetGoalCents: 0,
 		});
-		return { storageId, vendorId, paymentId, attachmentId, taskId };
+		return { storageId, vendorId, paymentId, attachmentId, taskId, userId };
 	});
 }
 
@@ -173,6 +176,30 @@ const cases: Case[] = [
 		(t) => t.query(api.finance.overview, { today: "2026-06-10" }),
 	],
 	["finance.exportRows", (t) => t.query(api.finance.exportRows, {})],
+	// users.bootstrapStatus is intentionally absent: it is the one public
+	// query (the login page reads it before any session exists).
+	["users.viewer", (t) => t.query(api.users.viewer, {})],
+	["users.list", (t) => t.query(api.users.list, {})],
+	[
+		"users.remove",
+		(t, ids) => t.mutation(api.users.remove, { id: ids.userId }),
+	],
+	[
+		"users.create",
+		(t) =>
+			t.action(api.users.create, {
+				email: "x@example.com",
+				password: "senha-forte-123",
+			}),
+	],
+	[
+		"users.resetPassword",
+		(t, ids) =>
+			t.action(api.users.resetPassword, {
+				id: ids.userId,
+				password: "senha-forte-123",
+			}),
+	],
 ];
 
 test.each(cases)("%s rejects unauthenticated callers", async (_name, call) => {

@@ -13,13 +13,14 @@ import type * as auth from "../auth.js";
 import type * as dashboard from "../dashboard.js";
 import type * as finance from "../finance.js";
 import type * as http from "../http.js";
-import type * as lib_allowlist from "../lib/allowlist.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_db from "../lib/db.js";
+import type * as lib_userCreation from "../lib/userCreation.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as payments from "../payments.js";
 import type * as settings from "../settings.js";
 import type * as tasks from "../tasks.js";
+import type * as users from "../users.js";
 import type * as vendors from "../vendors.js";
 
 import type {
@@ -34,13 +35,14 @@ declare const fullApi: ApiFromModules<{
   dashboard: typeof dashboard;
   finance: typeof finance;
   http: typeof http;
-  "lib/allowlist": typeof lib_allowlist;
   "lib/auth": typeof lib_auth;
   "lib/db": typeof lib_db;
+  "lib/userCreation": typeof lib_userCreation;
   "lib/validators": typeof lib_validators;
   payments: typeof payments;
   settings: typeof settings;
   tasks: typeof tasks;
+  users: typeof users;
   vendors: typeof vendors;
 }>;
 
