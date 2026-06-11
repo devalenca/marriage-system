@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
 import { PageHeader } from "@/components/page-header";
+import { AccessCard } from "@/components/settings/access-card";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +54,7 @@ export function SettingsContent() {
 					initial={settings ?? undefined}
 				/>
 				<ChecklistCard hasSettings={settings !== null} />
+				<AccessCard />
 				<Card>
 					<CardHeader>
 						<CardTitle className="font-display text-lg">Sessão</CardTitle>

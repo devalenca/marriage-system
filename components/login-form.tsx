@@ -1,24 +1,22 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-type Flow = "signIn" | "signUp";
-
-const ERROR_MESSAGES: Record<Flow, string> = {
-	signIn: "E-mail ou senha incorretos. Tente novamente.",
-	signUp:
-		"Não foi possível criar a conta. Confira se o e-mail está autorizado e se a senha tem pelo menos 8 caracteres.",
-};
+import { api } from "@/convex/_generated/api";
 
 export function LoginForm() {
 	const { signIn } = useAuthActions();
 	const router = useRouter();
-	const [flow, setFlow] = useState<Flow>("signIn");
+	// First run only: with zero accounts the form creates the admin account.
+	// The backend enforces that this works once, and only for the admin
+	// e-mail — there is no self sign-up.
+	const bootstrap = useQuery(api.users.bootstrapStatus, {});
+	const needsBootstrap = bootstrap?.needsBootstrap === true;
 	const [error, setError] = useState<string | null>(null);
 	const [submitting, setSubmitting] = useState(false);
 
@@ -27,23 +25,28 @@ export function LoginForm() {
 		setError(null);
 		setSubmitting(true);
 		const formData = new FormData(event.currentTarget);
-		formData.set("flow", flow);
+		formData.set("flow", needsBootstrap ? "signUp" : "signIn");
 		try {
 			await signIn("password", formData);
 			router.push("/dashboard");
 		} catch {
-			setError(ERROR_MESSAGES[flow]);
+			setError(
+				needsBootstrap
+					? "Não foi possível criar a conta. Use o e-mail do administrador e uma senha com pelo menos 8 caracteres."
+					: "E-mail ou senha incorretos. Tente novamente.",
+			);
 			setSubmitting(false);
 		}
 	}
 
-	function toggleFlow() {
-		setFlow((current) => (current === "signIn" ? "signUp" : "signIn"));
-		setError(null);
-	}
-
 	return (
 		<form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+			{needsBootstrap && (
+				<p className="rounded-2xl bg-accent/40 px-4 py-3 text-sm text-foreground">
+					Bem-vindos! Para começar, crie a conta do administrador com o seu
+					e-mail.
+				</p>
+			)}
 			<div className="flex flex-col gap-2">
 				<Label htmlFor="login-email">E-mail</Label>
 				<Input
@@ -62,7 +65,7 @@ export function LoginForm() {
 					id="login-password"
 					name="password"
 					type="password"
-					autoComplete={flow === "signIn" ? "current-password" : "new-password"}
+					autoComplete={needsBootstrap ? "new-password" : "current-password"}
 					required
 					minLength={8}
 					placeholder="••••••••"
@@ -77,24 +80,13 @@ export function LoginForm() {
 			)}
 
 			<Button type="submit" size="lg" className="h-11" disabled={submitting}>
-				{flow === "signIn"
+				{needsBootstrap
 					? submitting
-						? "Entrando…"
-						: "Entrar"
+						? "Criando…"
+						: "Criar conta do administrador"
 					: submitting
-						? "Criando conta…"
-						: "Criar conta"}
-			</Button>
-
-			<Button
-				type="button"
-				variant="link"
-				onClick={toggleFlow}
-				className="self-center text-muted-foreground"
-			>
-				{flow === "signIn"
-					? "Primeiro acesso? Criar conta"
-					: "Já tem conta? Entrar"}
+						? "Entrando…"
+						: "Entrar"}
 			</Button>
 		</form>
 	);

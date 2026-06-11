@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const signInMock = vi.fn();
 const pushMock = vi.fn();
+const useQueryMock = vi.fn();
 
 vi.mock("@convex-dev/auth/react", () => ({
 	useAuthActions: () => ({ signIn: signInMock, signOut: vi.fn() }),
@@ -13,13 +14,17 @@ vi.mock("next/navigation", () => ({
 	useRouter: () => ({ push: pushMock }),
 }));
 
+vi.mock("convex/react", () => ({
+	useQuery: (...args: unknown[]) => useQueryMock(...args),
+}));
+
 import { LoginForm } from "@/components/login-form";
 
-async function fillAndSubmit(email: string, password: string) {
+async function fillAndSubmit(email: string, password: string, button: RegExp) {
 	const user = userEvent.setup();
 	await user.type(screen.getByLabelText(/e-mail/i), email);
 	await user.type(screen.getByLabelText(/senha/i), password);
-	await user.click(screen.getByRole("button", { name: /entrar/i }));
+	await user.click(screen.getByRole("button", { name: button }));
 	return user;
 }
 
@@ -27,13 +32,23 @@ describe("LoginForm", () => {
 	beforeEach(() => {
 		signInMock.mockReset();
 		pushMock.mockReset();
+		useQueryMock.mockReset();
+		useQueryMock.mockReturnValue({ needsBootstrap: false });
+	});
+
+	it("offers no self sign-up", () => {
+		render(<LoginForm />);
+		expect(
+			screen.queryByRole("button", { name: /criar conta/i }),
+		).not.toBeInTheDocument();
+		expect(screen.queryByText(/primeiro acesso/i)).not.toBeInTheDocument();
 	});
 
 	it("submits credentials with the sign-in flow and redirects", async () => {
 		signInMock.mockResolvedValue({ signingIn: true });
 		render(<LoginForm />);
 
-		await fillAndSubmit("ana@example.com", "segredo123");
+		await fillAndSubmit("ana@example.com", "segredo123", /entrar/i);
 
 		await waitFor(() => expect(signInMock).toHaveBeenCalledOnce());
 		const [provider, formData] = signInMock.mock.calls[0] as [string, FormData];
@@ -44,15 +59,20 @@ describe("LoginForm", () => {
 		await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/dashboard"));
 	});
 
-	it("switches to the first-access flow to create the account", async () => {
+	it("becomes the admin bootstrap form when no account exists yet", async () => {
+		useQueryMock.mockReturnValue({ needsBootstrap: true });
 		signInMock.mockResolvedValue({ signingIn: true });
 		render(<LoginForm />);
 
-		const user = userEvent.setup();
-		await user.click(screen.getByRole("button", { name: /primeiro acesso/i }));
-		await user.type(screen.getByLabelText(/e-mail/i), "ana@example.com");
-		await user.type(screen.getByLabelText(/senha/i), "segredo123");
-		await user.click(screen.getByRole("button", { name: /criar conta/i }));
+		expect(
+			screen.getByText(/crie a conta do administrador/i),
+		).toBeInTheDocument();
+
+		await fillAndSubmit(
+			"admin@example.com",
+			"segredo123",
+			/criar conta do administrador/i,
+		);
 
 		await waitFor(() => expect(signInMock).toHaveBeenCalledOnce());
 		const [, formData] = signInMock.mock.calls[0] as [string, FormData];
@@ -63,7 +83,7 @@ describe("LoginForm", () => {
 		signInMock.mockRejectedValue(new Error("InvalidSecret"));
 		render(<LoginForm />);
 
-		await fillAndSubmit("ana@example.com", "errada");
+		await fillAndSubmit("ana@example.com", "errada", /entrar/i);
 
 		expect(
 			await screen.findByText(/e-mail ou senha incorretos/i),
