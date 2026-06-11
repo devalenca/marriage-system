@@ -16,6 +16,10 @@ export function LoginForm() {
 	// The backend enforces that this works once, and only for the admin
 	// e-mail — there is no self sign-up.
 	const bootstrap = useQuery(api.users.bootstrapStatus, {});
+	// Undefined = the backend hasn't answered yet (or is unreachable, e.g. a
+	// deployment without a Convex URL configured) — don't pretend the form
+	// works until the connection is alive.
+	const connecting = bootstrap === undefined;
 	const needsBootstrap = bootstrap?.needsBootstrap === true;
 	const [error, setError] = useState<string | null>(null);
 	const [submitting, setSubmitting] = useState(false);
@@ -79,14 +83,21 @@ export function LoginForm() {
 				</p>
 			)}
 
-			<Button type="submit" size="lg" className="h-11" disabled={submitting}>
-				{needsBootstrap
-					? submitting
-						? "Criando…"
-						: "Criar conta do administrador"
-					: submitting
-						? "Entrando…"
-						: "Entrar"}
+			<Button
+				type="submit"
+				size="lg"
+				className="h-11"
+				disabled={submitting || connecting}
+			>
+				{connecting
+					? "Conectando…"
+					: needsBootstrap
+						? submitting
+							? "Criando…"
+							: "Criar conta do administrador"
+						: submitting
+							? "Entrando…"
+							: "Entrar"}
 			</Button>
 		</form>
 	);
