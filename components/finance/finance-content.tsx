@@ -68,40 +68,34 @@ export function FinanceContent() {
 					/>
 				</div>
 
-				<div className="grid items-start gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
-					<PaymentMethodCard rows={overview.byMethod} />
-					<InstallmentsCard rows={overview.installments} />
-				</div>
+				<PaymentMethodCard rows={overview.byMethod} />
+				<InstallmentsCard rows={overview.installments} />
 
 				<CategoryTable categories={overview.categories} />
 
-				{overview.pending.length > 0 ? (
-					<div className="grid items-start gap-4 xl:grid-cols-3">
-						{overdue.length > 0 ? (
-							<PaymentListCard
-								title="Atrasados"
-								tone="overdue"
-								payments={overdue}
-								showTotal
-							/>
-						) : null}
-						{dueSoon.length > 0 ? (
-							<PaymentListCard
-								title={`Próximos ${DUE_SOON_WINDOW_DAYS} dias`}
-								tone="dueSoon"
-								payments={dueSoon}
-								showTotal
-							/>
-						) : null}
-						{later.length > 0 ? (
-							<PaymentListCard
-								title="Mais adiante"
-								tone="later"
-								payments={later}
-								showTotal
-							/>
-						) : null}
-					</div>
+				{overdue.length > 0 ? (
+					<PaymentListCard
+						title="Atrasados"
+						tone="overdue"
+						payments={overdue}
+						showTotal
+					/>
+				) : null}
+				{dueSoon.length > 0 ? (
+					<PaymentListCard
+						title={`Próximos ${DUE_SOON_WINDOW_DAYS} dias`}
+						tone="dueSoon"
+						payments={dueSoon}
+						showTotal
+					/>
+				) : null}
+				{later.length > 0 ? (
+					<PaymentListCard
+						title="Mais adiante"
+						tone="later"
+						payments={later}
+						showTotal
+					/>
 				) : null}
 
 				<PaidHistoryCard paid={overview.paid} />

@@ -32,35 +32,39 @@ export function DashboardContent() {
 	if (!summary.settings) return <OnboardingCard />;
 
 	return (
-		<div className="grid animate-screen-enter gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
-			<div className="flex flex-col gap-4">
-				<CountdownCard summary={summary} />
-				<BudgetOverviewCard
-					finance={summary.finance}
-					pending={pending}
-					today={today}
-				/>
-			</div>
-			<div className="flex flex-col gap-4">
-				{summary.overdue.length > 0 && (
-					<PaymentListCard
-						title="Pagamentos atrasados"
-						tone="overdue"
-						payments={summary.overdue}
-					/>
-				)}
-				{summary.dueSoon.length > 0 && (
-					<PaymentListCard
-						title="Próximos vencimentos"
-						tone="dueSoon"
-						payments={summary.dueSoon}
-					/>
-				)}
-				<MonthTasksCard tasks={summary.monthTasks} />
-			</div>
-			<div className="lg:col-span-2">
-				<CategorySummaryCard categories={summary.categories} />
-			</div>
+		<div className="animate-screen-enter flex flex-col gap-4">
+			<CountdownCard summary={summary} />
+			<BudgetOverviewCard
+				finance={summary.finance}
+				pending={pending}
+				today={today}
+			/>
+			{(summary.overdue.length > 0 || summary.dueSoon.length > 0) && (
+				<div
+					className={`grid items-start gap-4 ${
+						summary.overdue.length > 0 && summary.dueSoon.length > 0
+							? "lg:grid-cols-2"
+							: ""
+					}`}
+				>
+					{summary.overdue.length > 0 && (
+						<PaymentListCard
+							title="Pagamentos atrasados"
+							tone="overdue"
+							payments={summary.overdue}
+						/>
+					)}
+					{summary.dueSoon.length > 0 && (
+						<PaymentListCard
+							title="Próximos vencimentos"
+							tone="dueSoon"
+							payments={summary.dueSoon}
+						/>
+					)}
+				</div>
+			)}
+			<MonthTasksCard tasks={summary.monthTasks} />
+			<CategorySummaryCard categories={summary.categories} />
 		</div>
 	);
 }
