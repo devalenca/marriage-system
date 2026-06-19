@@ -113,64 +113,48 @@ export function ScheduleDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[90dvh] gap-5 overflow-y-auto rounded-3xl p-6">
+			<DialogContent>
 				<DialogHeader>
-					<DialogTitle className="font-display text-2xl leading-none font-semibold">
-						Gerar parcelas
-					</DialogTitle>
-					<DialogDescription className="text-[13px]">
+					<DialogTitle className="font-display">Gerar parcelas</DialogTitle>
+					<DialogDescription>
 						Entrada + parcelas mensais. Pagamentos pendentes anteriores serão
 						substituídos; os já pagos ficam.
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
 					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="schedule-total" className="text-xs font-semibold">
-							Valor total <span className="text-destructive">*</span>
-						</Label>
+						<Label htmlFor="schedule-total">Valor total *</Label>
 						<CurrencyInput
 							id="schedule-total"
 							value={totalCents}
 							onValueChange={setTotalCents}
 							placeholder="0,00"
-							className="h-11 rounded-xl"
 						/>
 					</div>
 					<div className="grid grid-cols-2 gap-3">
 						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="schedule-down" className="text-xs font-semibold">
-								Entrada
-							</Label>
+							<Label htmlFor="schedule-down">Entrada</Label>
 							<CurrencyInput
 								id="schedule-down"
 								value={downCents}
 								onValueChange={setDownCents}
 								placeholder="0,00"
-								className="h-11 rounded-xl"
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
-							<Label
-								htmlFor="schedule-down-date"
-								className="text-xs font-semibold"
-							>
-								Data da entrada
-							</Label>
+							<Label htmlFor="schedule-down-date">Data da entrada</Label>
 							<Input
 								id="schedule-down-date"
 								type="date"
 								value={downDate}
 								onChange={(e) => setDownDate(e.target.value)}
 								disabled={(downCents ?? 0) <= 0}
-								className="h-11 rounded-xl"
 							/>
 						</div>
 					</div>
 					<div className="grid grid-cols-2 gap-3">
 						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="schedule-count" className="text-xs font-semibold">
-								Nº de parcelas
-							</Label>
+							<Label htmlFor="schedule-count">Nº de parcelas</Label>
 							<Input
 								id="schedule-count"
 								type="number"
@@ -179,22 +163,15 @@ export function ScheduleDialog({
 								inputMode="numeric"
 								value={count}
 								onChange={(e) => setCount(e.target.value)}
-								className="h-11 rounded-xl"
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
-							<Label
-								htmlFor="schedule-first-date"
-								className="text-xs font-semibold"
-							>
-								1ª parcela em
-							</Label>
+							<Label htmlFor="schedule-first-date">1ª parcela em</Label>
 							<Input
 								id="schedule-first-date"
 								type="date"
 								value={firstDate}
 								onChange={(e) => setFirstDate(e.target.value)}
-								className="h-11 rounded-xl"
 							/>
 						</div>
 					</div>
@@ -204,29 +181,22 @@ export function ScheduleDialog({
 						onChange={setMethod}
 					/>
 					{installmentPreview !== null ? (
-						<div className="rounded-2xl bg-[#f3f6f1] px-4 py-4 text-center">
-							<div className="text-[11px] font-bold tracking-[0.05em] text-muted-foreground uppercase">
-								{installments}x de aproximadamente
-							</div>
-							<div className="mt-1 font-display text-3xl font-semibold text-foreground tabular-nums">
+						<p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+							{installments}x de aproximadamente{" "}
+							<span className="font-medium text-foreground tabular-nums">
 								{formatBRL(installmentPreview)}
-							</div>
-						</div>
+							</span>
+						</p>
 					) : null}
-					<DialogFooter className="-mx-6 -mb-6 mt-1 border-0 bg-transparent px-6 pt-0 pb-6">
+					<DialogFooter>
 						<Button
 							type="button"
 							variant="outline"
 							onClick={() => onOpenChange(false)}
-							className="h-11 rounded-full px-6"
 						>
 							Cancelar
 						</Button>
-						<Button
-							type="submit"
-							disabled={saving}
-							className="h-11 rounded-full px-7 font-semibold"
-						>
+						<Button type="submit" disabled={saving}>
 							{saving ? "Gerando..." : "Gerar parcelas"}
 						</Button>
 					</DialogFooter>

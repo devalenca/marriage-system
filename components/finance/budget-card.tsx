@@ -34,7 +34,7 @@ export function BudgetCard({ finance }: { finance: FinanceSummary }) {
 				<CardTitle className="font-display text-xl">Orçamento</CardTitle>
 				<span
 					className={cn(
-						"rounded-full bg-muted px-2.5 py-1 text-sm font-semibold tabular-nums",
+						"rounded-full bg-card/55 px-2.5 py-1 text-sm font-semibold tabular-nums ring-1 ring-border/60",
 						overBudget ? "text-destructive" : "text-muted-foreground",
 					)}
 				>
@@ -51,7 +51,7 @@ export function BudgetCard({ finance }: { finance: FinanceSummary }) {
 					{kpis.map(({ label, value, tone }) => (
 						<div
 							key={label}
-							className="rounded-2xl border border-border bg-muted p-3"
+							className="rounded-2xl bg-card/45 p-3 ring-1 ring-border/60"
 						>
 							<dt className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
 								{label}

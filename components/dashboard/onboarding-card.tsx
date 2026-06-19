@@ -55,22 +55,15 @@ export function OnboardingCard() {
 
 	return (
 		<Card className="mx-auto mt-8 grid max-w-4xl animate-screen-enter overflow-hidden p-0 md:grid-cols-[1.05fr_0.95fr]">
-			<div className="relative flex min-h-[24rem] flex-col items-center justify-center gap-4 overflow-hidden px-6 py-10 text-center">
-				{/* eslint-disable-next-line @next/next/no-img-element */}
-				<img
-					src="/wedding-field-hero.png"
-					alt="Campo ao entardecer com arco de casamento"
-					className="absolute inset-0 size-full object-cover [object-position:center_42%]"
-				/>
-				<div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(38,48,38,.3)_0%,rgba(38,48,38,.1)_40%,rgba(38,48,38,.5)_100%)]" />
-				<span className="hero-float relative z-10 flex size-14 items-center justify-center rounded-full border border-white/30 bg-[rgba(250,248,242,.18)] backdrop-blur-md">
-					<Heart className="size-7 text-[#f4e8cf]" aria-hidden />
+			<div className="hero-wash relative flex min-h-[24rem] flex-col items-center justify-center gap-4 overflow-hidden px-6 py-10 text-center text-white">
+				<span className="hero-subject relative z-10 flex size-14 items-center justify-center rounded-full bg-black/28 shadow-sm ring-1 ring-white/20 backdrop-blur-md">
+					<Heart className="size-7 text-gold" aria-hidden />
 				</span>
-				<div className="relative z-10 rounded-[26px] border border-white/40 bg-[rgba(250,248,242,.17)] px-6 py-4 backdrop-blur-[16px]">
-					<span className="block font-display text-3xl font-semibold text-white [text-shadow:0_1px_8px_rgba(30,40,30,.5)]">
+				<div className="hero-subject relative z-10 rounded-[2rem] bg-black/28 px-6 py-4 shadow-sm ring-1 ring-white/20 backdrop-blur-md">
+					<span className="block font-display text-3xl font-semibold">
 						Vamos nos casar!
 					</span>
-					<CardDescription className="mt-2 max-w-sm text-white/90">
+					<CardDescription className="mt-2 max-w-sm text-white/76">
 						Um cockpit leve para organizar fornecedores, orçamento e checklist
 						até o grande dia.
 					</CardDescription>

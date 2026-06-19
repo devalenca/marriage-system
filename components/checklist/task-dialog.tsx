@@ -122,12 +122,12 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[90dvh] gap-5 overflow-y-auto rounded-3xl p-6">
+			<DialogContent>
 				<DialogHeader>
-					<DialogTitle className="font-display text-2xl leading-none font-semibold">
+					<DialogTitle className="font-display">
 						{task ? "Editar tarefa" : "Nova tarefa"}
 					</DialogTitle>
-					<DialogDescription className="text-[13px]">
+					<DialogDescription>
 						{task
 							? "Ajuste prazo, prioridade, responsável ou status."
 							: "Um passo a mais rumo ao grande dia."}
@@ -135,42 +135,31 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
 					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="task-title" className="text-xs font-semibold">
-							Título <span className="text-destructive">*</span>
-						</Label>
+						<Label htmlFor="task-title">Título *</Label>
 						<Input
 							id="task-title"
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
 							placeholder='Ex.: "Fechar fotógrafo"'
-							className="h-11 rounded-xl"
 						/>
 					</div>
 					<div className="grid grid-cols-2 gap-3">
 						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="task-due-date" className="text-xs font-semibold">
-								Prazo
-							</Label>
+							<Label htmlFor="task-due-date">Prazo</Label>
 							<Input
 								id="task-due-date"
 								type="date"
 								value={dueDate}
 								onChange={(e) => setDueDate(e.target.value)}
-								className="h-11 rounded-xl"
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="task-priority" className="text-xs font-semibold">
-								Prioridade
-							</Label>
+							<Label htmlFor="task-priority">Prioridade</Label>
 							<Select
 								value={priority}
 								onValueChange={(value) => setPriority(value as TaskPriority)}
 							>
-								<SelectTrigger
-									id="task-priority"
-									className="h-11 w-full rounded-xl"
-								>
+								<SelectTrigger id="task-priority" className="w-full">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
@@ -185,30 +174,22 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
 					</div>
 					<div className="grid grid-cols-2 gap-3">
 						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="task-assignee" className="text-xs font-semibold">
-								Responsável
-							</Label>
+							<Label htmlFor="task-assignee">Responsável</Label>
 							<Input
 								id="task-assignee"
 								value={assignee}
 								onChange={(e) => setAssignee(e.target.value)}
 								placeholder="Gabriel, Alice, Casal..."
-								className="h-11 rounded-xl"
 							/>
 						</div>
 						{task ? (
 							<div className="flex flex-col gap-1.5">
-								<Label htmlFor="task-status" className="text-xs font-semibold">
-									Status
-								</Label>
+								<Label htmlFor="task-status">Status</Label>
 								<Select
 									value={status}
 									onValueChange={(value) => setStatus(value as TaskStatus)}
 								>
-									<SelectTrigger
-										id="task-status"
-										className="h-11 w-full rounded-xl"
-									>
+									<SelectTrigger id="task-status" className="w-full">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -223,24 +204,21 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
 						) : null}
 					</div>
 					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="task-notes" className="text-xs font-semibold">
-							Anotações
-						</Label>
+						<Label htmlFor="task-notes">Anotações</Label>
 						<Textarea
 							id="task-notes"
 							value={notes}
 							onChange={(e) => setNotes(e.target.value)}
 							rows={3}
-							className="rounded-xl"
 						/>
 					</div>
-					<DialogFooter className="-mx-6 -mb-6 mt-1 gap-2 border-0 bg-transparent px-6 pt-0 pb-6">
+					<DialogFooter className="gap-2">
 						{task ? (
 							<Button
 								type="button"
 								variant="destructive"
 								onClick={handleRemove}
-								className="h-11 rounded-full px-5 sm:mr-auto"
+								className="sm:mr-auto"
 							>
 								<Trash2 data-icon="inline-start" aria-hidden />
 								Remover
@@ -250,15 +228,10 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
 							type="button"
 							variant="outline"
 							onClick={() => onOpenChange(false)}
-							className="h-11 rounded-full px-6"
 						>
 							Cancelar
 						</Button>
-						<Button
-							type="submit"
-							disabled={saving}
-							className="h-11 rounded-full px-7 font-semibold"
-						>
+						<Button type="submit" disabled={saving}>
 							{saving ? "Salvando..." : "Salvar"}
 						</Button>
 					</DialogFooter>

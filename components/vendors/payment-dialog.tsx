@@ -101,65 +101,50 @@ export function PaymentDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[90dvh] gap-5 overflow-y-auto rounded-3xl p-6">
+			<DialogContent className="max-h-[90dvh] overflow-y-auto">
 				<DialogHeader>
-					<DialogTitle className="font-display text-2xl leading-none font-semibold">
+					<DialogTitle className="font-display">
 						{payment ? "Editar pagamento" : "Adicionar pagamento"}
 					</DialogTitle>
-					<DialogDescription className="text-[13px]">
+					<DialogDescription>
 						Uma entrada, parcela ou pagamento avulso deste fornecedor.
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
 					<div className="flex flex-col gap-1.5">
-						<Label
-							htmlFor="payment-description"
-							className="text-xs font-semibold"
-						>
-							Descrição <span className="text-destructive">*</span>
-						</Label>
+						<Label htmlFor="payment-description">Descrição *</Label>
 						<Input
 							id="payment-description"
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
 							placeholder='Ex.: "Entrada", "Parcela 2/6"'
-							className="h-11 rounded-xl"
 						/>
 					</div>
 					<div className="grid grid-cols-2 gap-3">
 						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="payment-amount" className="text-xs font-semibold">
-								Valor <span className="text-destructive">*</span>
-							</Label>
+							<Label htmlFor="payment-amount">Valor *</Label>
 							<CurrencyInput
 								id="payment-amount"
 								value={amountCents}
 								onValueChange={setAmountCents}
 								placeholder="0,00"
-								className="h-11 rounded-xl"
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
-							<Label
-								htmlFor="payment-due-date"
-								className="text-xs font-semibold"
-							>
-								Vencimento <span className="text-destructive">*</span>
-							</Label>
+							<Label htmlFor="payment-due-date">Vencimento *</Label>
 							<Input
 								id="payment-due-date"
 								type="date"
 								value={dueDate}
 								onChange={(e) => setDueDate(e.target.value)}
-								className="h-11 rounded-xl"
 							/>
 						</div>
 					</div>
 					<PaymentMethodField value={method} onChange={setMethod} />
 
 					{payment ? (
-						<div className="flex flex-col gap-2 rounded-2xl border border-[#f0e8d9] bg-[#faf7f0] p-4">
-							<Label className="text-xs font-semibold">Comprovante</Label>
+						<div className="flex flex-col gap-2 rounded-xl border bg-muted/40 p-3">
+							<Label>Comprovante</Label>
 							<FileUpload
 								paymentId={payment._id}
 								kind="comprovante"
@@ -168,20 +153,15 @@ export function PaymentDialog({
 						</div>
 					) : null}
 
-					<DialogFooter className="-mx-6 -mb-6 mt-1 border-0 bg-transparent px-6 pt-0 pb-6">
+					<DialogFooter>
 						<Button
 							type="button"
 							variant="outline"
 							onClick={() => onOpenChange(false)}
-							className="h-11 rounded-full px-6"
 						>
 							Cancelar
 						</Button>
-						<Button
-							type="submit"
-							disabled={saving}
-							className="h-11 rounded-full px-7 font-semibold"
-						>
+						<Button type="submit" disabled={saving}>
 							{saving ? "Salvando..." : "Salvar"}
 						</Button>
 					</DialogFooter>
