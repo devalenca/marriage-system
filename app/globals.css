@@ -394,6 +394,42 @@
 		}
 	}
 
+	/* Budget overview card: bar fill + forecast columns rise on mount. */
+	.grow-x {
+		transform-origin: left;
+		animation: grow 0.9s ease both;
+	}
+
+	.grow-y {
+		transform-origin: bottom;
+		animation: grow-y 0.7s ease both;
+	}
+
+	@keyframes grow {
+		from {
+			transform: scaleX(0);
+		}
+		to {
+			transform: scaleX(1);
+		}
+	}
+
+	@keyframes grow-y {
+		from {
+			transform: scaleY(0);
+		}
+		to {
+			transform: scaleY(1);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.grow-x,
+		.grow-y {
+			animation: none;
+		}
+	}
+
 	.pergola-scene {
 		position: absolute;
 		inset: 0;

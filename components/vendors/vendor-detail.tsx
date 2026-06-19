@@ -6,6 +6,7 @@ import {
 	AtSign,
 	CalendarPlus,
 	Check,
+	ChevronDown,
 	ExternalLink,
 	MoreVertical,
 	Pencil,
@@ -231,13 +232,6 @@ export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
 							}}
 						/>
 					)}
-					{payments && financials.remainingInstallments > 0 ? (
-						<p className="mt-3 text-xs text-muted-foreground">
-							{financials.remainingInstallments} parcela
-							{financials.remainingInstallments === 1 ? "" : "s"} restante
-							{financials.remainingInstallments === 1 ? "" : "s"}
-						</p>
-					) : null}
 				</CardContent>
 			</Card>
 
@@ -364,6 +358,9 @@ export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
 	);
 }
 
+/** Lists above this many rows scroll inside the card instead of stretching it. */
+const PAYMENT_SCROLL_THRESHOLD = 6;
+
 function PaymentList({
 	payments,
 	onEdit,
@@ -375,6 +372,7 @@ function PaymentList({
 	const markPending = useMutation(api.payments.markPending);
 	const removePayment = useMutation(api.payments.remove);
 	const today = todayInSaoPaulo();
+	const [showPaid, setShowPaid] = useState(false);
 
 	async function run(action: () => Promise<unknown>, success: string) {
 		try {
@@ -385,119 +383,184 @@ function PaymentList({
 		}
 	}
 
-	return (
-		<ul className="flex flex-col divide-y">
-			{payments.map((payment) => {
-				const isPaid = payment.status === "pago";
-				const isOverdue = paymentIsOverdue(payment, today);
-				return (
-					<li
-						key={payment._id}
-						className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+	// Open installments first (earliest due — overdue float to the top); paid
+	// ones are tucked away so a long parcelamento doesn't dominate the page.
+	const open = payments
+		.filter((p) => p.status !== "pago")
+		.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+	const paid = payments
+		.filter((p) => p.status === "pago")
+		.sort((a, b) =>
+			(b.paidDate ?? b.dueDate).localeCompare(a.paidDate ?? a.dueDate),
+		);
+
+	function row(payment: Doc<"payments">) {
+		const isPaid = payment.status === "pago";
+		const isOverdue = paymentIsOverdue(payment, today);
+		return (
+			<li
+				key={payment._id}
+				className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+			>
+				<button
+					type="button"
+					aria-label={
+						isPaid
+							? `Marcar ${payment.description} como pendente`
+							: `Marcar ${payment.description} como pago`
+					}
+					onClick={() =>
+						isPaid
+							? run(
+									() => markPending({ id: payment._id }),
+									"Pagamento reaberto",
+								)
+							: run(
+									() => markPaid({ id: payment._id }),
+									"Pagamento registrado 🎉",
+								)
+					}
+					className={cn(
+						"flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors",
+						isPaid
+							? "border-success bg-success text-success-foreground text-white"
+							: isOverdue
+								? "border-destructive text-transparent hover:text-destructive"
+								: "border-border text-transparent hover:border-success hover:text-success",
+					)}
+				>
+					<Check className="size-3.5" aria-hidden />
+				</button>
+				<div className="min-w-0 flex-1">
+					<p
+						className={cn(
+							"truncate text-sm font-medium",
+							isPaid && "text-muted-foreground line-through",
+						)}
 					>
-						<button
-							type="button"
-							aria-label={
-								isPaid
-									? `Marcar ${payment.description} como pendente`
-									: `Marcar ${payment.description} como pago`
-							}
-							onClick={() =>
-								isPaid
-									? run(
-											() => markPending({ id: payment._id }),
-											"Pagamento reaberto",
-										)
-									: run(
-											() => markPaid({ id: payment._id }),
-											"Pagamento registrado 🎉",
-										)
-							}
-							className={cn(
-								"flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors",
-								isPaid
-									? "border-success bg-success text-success-foreground text-white"
-									: "border-border text-transparent hover:border-success hover:text-success",
-							)}
-						>
-							<Check className="size-3.5" aria-hidden />
-						</button>
-						<div className="min-w-0 flex-1">
-							<p
-								className={cn(
-									"truncate text-sm font-medium",
-									isPaid && "text-muted-foreground line-through",
-								)}
-							>
-								{payment.description}
-							</p>
-							<p
-								className={cn(
-									"text-xs",
-									isOverdue
-										? "font-medium text-destructive"
-										: "text-muted-foreground",
-								)}
-							>
-								{isPaid && payment.paidDate
-									? `pago em ${formatDateBR(payment.paidDate)}`
-									: `vence em ${formatDateBR(payment.dueDate)}`}
-								{isOverdue ? " · atrasado" : ""}
-								{payment.paymentMethod ? ` · ${payment.paymentMethod}` : ""}
-							</p>
-						</div>
-						<span
-							className={cn(
-								"text-sm font-semibold tabular-nums",
-								isPaid && "text-success",
-							)}
-						>
-							{formatBRL(payment.amountCents)}
-						</span>
-						<DropdownMenu>
-							<DropdownMenuTrigger
-								render={
-									<Button
-										variant="ghost"
-										size="icon-xs"
-										aria-label={`Ações de ${payment.description}`}
-									/>
+						{payment.description}
+					</p>
+					<p
+						className={cn(
+							"text-xs",
+							isOverdue
+								? "font-medium text-destructive"
+								: "text-muted-foreground",
+						)}
+					>
+						{isPaid && payment.paidDate
+							? `pago em ${formatDateBR(payment.paidDate)}`
+							: `vence em ${formatDateBR(payment.dueDate)}`}
+						{isOverdue ? " · atrasado" : ""}
+						{payment.paymentMethod ? ` · ${payment.paymentMethod}` : ""}
+					</p>
+				</div>
+				<span
+					className={cn(
+						"text-sm font-semibold tabular-nums",
+						isPaid && "text-success",
+					)}
+				>
+					{formatBRL(payment.amountCents)}
+				</span>
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button
+								variant="ghost"
+								size="icon-xs"
+								aria-label={`Ações de ${payment.description}`}
+							/>
+						}
+					>
+						<MoreVertical aria-hidden />
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end">
+						<DropdownMenuItem onClick={() => onEdit(payment)}>
+							<Pencil aria-hidden /> Editar
+						</DropdownMenuItem>
+						{isPaid ? (
+							<DropdownMenuItem
+								onClick={() =>
+									run(
+										() => markPending({ id: payment._id }),
+										"Pagamento reaberto",
+									)
 								}
 							>
-								<MoreVertical aria-hidden />
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem onClick={() => onEdit(payment)}>
-									<Pencil aria-hidden /> Editar
-								</DropdownMenuItem>
-								{isPaid ? (
-									<DropdownMenuItem
-										onClick={() =>
-											run(
-												() => markPending({ id: payment._id }),
-												"Pagamento reaberto",
-											)
-										}
-									>
-										<Undo2 aria-hidden /> Reabrir
-									</DropdownMenuItem>
-								) : null}
-								<DropdownMenuItem
-									variant="destructive"
-									onClick={() =>
-										run(
-											() => removePayment({ id: payment._id }),
-											"Pagamento removido",
-										)
-									}
-								>
-									<Trash2 aria-hidden /> Remover
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</li>
-				);
-			})}
-		</ul>
+								<Undo2 aria-hidden /> Reabrir
+							</DropdownMenuItem>
+						) : null}
+						<DropdownMenuItem
+							variant="destructive"
+							onClick={() =>
+								run(
+									() => removePayment({ id: payment._id }),
+									"Pagamento removido",
+								)
+							}
+						>
+							<Trash2 aria-hidden /> Remover
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</li>
+		);
+	}
+
+	return (
+		<div className="flex flex-col gap-4">
+			{open.length > 0 ? (
+				<div>
+					<p className="mb-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+						Em aberto · {open.length}
+					</p>
+					<ul
+						className={cn(
+							"flex flex-col divide-y",
+							open.length > PAYMENT_SCROLL_THRESHOLD &&
+								"max-h-[22rem] overflow-y-auto pr-1",
+						)}
+					>
+						{open.map(row)}
+					</ul>
+				</div>
+			) : (
+				<p className="py-1 text-sm text-success">
+					Tudo pago — nenhuma parcela em aberto. 🌿
+				</p>
+			)}
+
+			{paid.length > 0 ? (
+				<div className={cn(open.length > 0 && "border-t border-border pt-3")}>
+					<button
+						type="button"
+						onClick={() => setShowPaid((v) => !v)}
+						aria-expanded={showPaid}
+						className="flex w-full items-center justify-between rounded-lg text-[11px] font-semibold tracking-wide text-muted-foreground uppercase transition-colors hover:text-foreground"
+					>
+						<span>Pagas · {paid.length}</span>
+						<ChevronDown
+							className={cn(
+								"size-4 transition-transform",
+								showPaid && "rotate-180",
+							)}
+							aria-hidden
+						/>
+					</button>
+					{showPaid ? (
+						<ul
+							className={cn(
+								"mt-1 flex flex-col divide-y",
+								paid.length > PAYMENT_SCROLL_THRESHOLD &&
+									"max-h-[22rem] overflow-y-auto pr-1",
+							)}
+						>
+							{paid.map(row)}
+						</ul>
+					) : null}
+				</div>
+			) : null}
+		</div>
 	);
 }

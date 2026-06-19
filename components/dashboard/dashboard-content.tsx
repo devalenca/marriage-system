@@ -7,8 +7,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { OnboardingCard } from "@/components/dashboard/onboarding-card";
-import { BudgetCard } from "@/components/finance/budget-card";
-import { BudgetForecastCard } from "@/components/finance/budget-forecast-card";
+import { BudgetOverviewCard } from "@/components/finance/budget-overview-card";
 import { PaymentListCard } from "@/components/payment-list-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,10 +35,9 @@ export function DashboardContent() {
 		<div className="grid animate-screen-enter gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
 			<div className="flex flex-col gap-4">
 				<CountdownCard summary={summary} />
-				<BudgetCard finance={summary.finance} />
-				<BudgetForecastCard
+				<BudgetOverviewCard
 					finance={summary.finance}
-					pendingPayments={pending}
+					pending={pending}
 					today={today}
 				/>
 			</div>

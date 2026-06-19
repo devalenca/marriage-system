@@ -113,11 +113,12 @@ describe("DashboardContent", () => {
 		expect(screen.getByText("368")).toBeInTheDocument();
 		expect(screen.getByText("Gabriel & Alice")).toBeInTheDocument();
 
-		// budget KPIs
-		expect(screen.getByText("Meta")).toBeInTheDocument();
-		expect(screen.getAllByText(`R$${NBSP}55.000,00`).length).toBeGreaterThan(0);
-		expect(screen.getByText("Saldo restante")).toBeInTheDocument();
-		expect(screen.getByText(`R$${NBSP}37.000,00`)).toBeInTheDocument();
+		// budget overview card (paid / contracted bar + forecast)
+		expect(screen.getByText("Orçamento")).toBeInTheDocument();
+		expect(screen.getByText("33% comprometido")).toBeInTheDocument();
+		expect(screen.getByText(`Pago R$${NBSP}6.000,00`)).toBeInTheDocument();
+		expect(screen.getByText(`Fechado R$${NBSP}18.000,00`)).toBeInTheDocument();
+		expect(screen.getByText("Previsão dos próximos meses")).toBeInTheDocument();
 
 		// overdue alert with quick pay action
 		expect(screen.getByText("Pagamentos atrasados")).toBeInTheDocument();
