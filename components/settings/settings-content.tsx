@@ -38,46 +38,45 @@ export function SettingsContent() {
 	if (settings === undefined) {
 		return (
 			<div aria-busy>
-				<PageHeader title="Configurações" />
-				<Skeleton className="h-64 rounded-2xl" />
+				<PageHeader
+					title="Ajustes"
+					subtitle="dados do casal, meta de orçamento e acessos"
+				/>
+				<div className="flex flex-col gap-[18px]">
+					<Skeleton className="h-56 rounded-[22px]" />
+					<div className="grid gap-[18px] md:grid-cols-2">
+						<Skeleton className="h-40 rounded-[22px]" />
+						<Skeleton className="h-40 rounded-[22px]" />
+					</div>
+				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div>
-			<PageHeader title="Configurações" />
-			<div className="flex flex-col gap-4">
+		<div className="animate-screen-enter">
+			<PageHeader
+				title="Ajustes"
+				subtitle="dados do casal, meta de orçamento e acessos"
+			/>
+			<div className="flex flex-col gap-[18px]">
 				{/* Keyed so the form state re-seeds if the settings row changes. */}
 				<SettingsForm
 					key={settings?._id ?? "new"}
 					initial={settings ?? undefined}
 				/>
-				<ChecklistCard hasSettings={settings !== null} />
+
+				<div className="grid gap-[18px] md:grid-cols-2">
+					<ChecklistCard hasSettings={settings !== null} />
+					<SessionCard />
+				</div>
+
 				<AccessCard />
-				<Card>
-					<CardHeader>
-						<CardTitle className="font-display text-lg">Sessão</CardTitle>
-						<CardDescription>
-							Encerra o acesso neste dispositivo. Para voltar, basta entrar com
-							e-mail e senha.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<SignOutButton />
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle className="font-display text-lg">Sobre o app</CardTitle>
-					</CardHeader>
-					<CardContent className="text-sm text-muted-foreground">
-						<p>
-							Uso privado do casal. Os dados ficam no banco local (Convex) desta
-							máquina — nada é enviado para a internet.
-						</p>
-					</CardContent>
-				</Card>
+
+				<p className="px-2 text-center text-xs leading-relaxed text-muted-foreground">
+					Uso privado do casal · os dados ficam no banco local desta máquina —
+					nada é enviado para a internet.
+				</p>
 			</div>
 		</div>
 	);
@@ -123,24 +122,27 @@ function SettingsForm({ initial }: { initial?: Doc<"settings"> }) {
 	}
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle className="font-display text-lg">O casamento</CardTitle>
+		<Card className="animate-fadeup px-[26px] py-6">
+			<CardHeader className="px-0">
+				<CardTitle className="font-display text-[22px] font-semibold text-foreground">
+					O casamento
+				</CardTitle>
 				<CardDescription>
 					Esses dados alimentam o countdown, o orçamento e o checklist.
 				</CardDescription>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="px-0">
 				<form onSubmit={handleSave} className="flex flex-col gap-4">
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="settings-names">Nomes do casal</Label>
-						<Input
-							id="settings-names"
-							value={coupleNames}
-							onChange={(e) => setCoupleNames(e.target.value)}
-						/>
-					</div>
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr]">
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="settings-names">Nomes do casal</Label>
+							<Input
+								id="settings-names"
+								value={coupleNames}
+								onChange={(e) => setCoupleNames(e.target.value)}
+								placeholder="Alice & Gabriel"
+							/>
+						</div>
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor="settings-date">Data do casamento</Label>
 							<Input
@@ -159,7 +161,11 @@ function SettingsForm({ initial }: { initial?: Doc<"settings"> }) {
 							/>
 						</div>
 					</div>
-					<Button type="submit" disabled={saving} className="self-end">
+					<Button
+						type="submit"
+						disabled={saving}
+						className="self-end rounded-full px-6"
+					>
 						{saving ? "Salvando..." : "Salvar"}
 					</Button>
 				</form>
@@ -183,19 +189,22 @@ function ChecklistCard({ hasSettings }: { hasSettings: boolean }) {
 	}
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle className="font-display text-lg">Checklist</CardTitle>
-				<CardDescription>
-					Recria as tarefas do cronograma com base na data do casamento. Tarefas
-					concluídas e criadas por você são preservadas.
+		<Card className="animate-fadeup px-[26px] py-6 [animation-delay:.05s]">
+			<CardHeader className="px-0">
+				<CardTitle className="font-display text-xl font-semibold text-foreground">
+					Checklist
+				</CardTitle>
+				<CardDescription className="leading-relaxed">
+					Recria as tarefas do cronograma com base na data. Tarefas concluídas e
+					criadas por você são preservadas.
 				</CardDescription>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="px-0">
 				<Button
 					variant="outline"
 					onClick={() => setRegenOpen(true)}
 					disabled={!hasSettings}
+					className="rounded-full border-[#cdbfa8] text-[#3c5741]"
 				>
 					<ListChecks data-icon="inline-start" aria-hidden />
 					Regenerar checklist
@@ -221,6 +230,25 @@ function ChecklistCard({ hasSettings }: { hasSettings: boolean }) {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+		</Card>
+	);
+}
+
+function SessionCard() {
+	return (
+		<Card className="animate-fadeup px-[26px] py-6 [animation-delay:.1s]">
+			<CardHeader className="px-0">
+				<CardTitle className="font-display text-xl font-semibold text-foreground">
+					Sessão
+				</CardTitle>
+				<CardDescription className="leading-relaxed">
+					Encerra o acesso neste dispositivo. Para voltar, basta entrar com
+					e-mail e senha.
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="px-0">
+				<SignOutButton />
+			</CardContent>
 		</Card>
 	);
 }

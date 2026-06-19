@@ -58,21 +58,31 @@ export function LoginForm() {
 	}
 
 	return (
-		<form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
-			<div className="flex flex-col gap-2">
-				<Label htmlFor="login-email">E-mail</Label>
+		<form onSubmit={handleSubmit} className="flex flex-col gap-3.5" noValidate>
+			<div className="flex flex-col gap-1.5">
+				<Label
+					htmlFor="login-email"
+					className="text-xs font-semibold text-[#7a6e62]"
+				>
+					E-mail
+				</Label>
 				<Input
 					id="login-email"
 					name="email"
 					type="email"
 					autoComplete="email"
 					required
-					placeholder="voce@exemplo.com"
-					className="h-11"
+					placeholder="voce@email.com"
+					className="h-auto rounded-xl border-[#ddd3c4] bg-white px-4 py-3 text-sm"
 				/>
 			</div>
-			<div className="flex flex-col gap-2">
-				<Label htmlFor="login-password">Senha</Label>
+			<div className="flex flex-col gap-1.5">
+				<Label
+					htmlFor="login-password"
+					className="text-xs font-semibold text-[#7a6e62]"
+				>
+					Senha
+				</Label>
 				<Input
 					id="login-password"
 					name="password"
@@ -80,7 +90,7 @@ export function LoginForm() {
 					autoComplete="current-password"
 					required
 					placeholder="••••••••"
-					className="h-11"
+					className="h-auto rounded-xl border-[#ddd3c4] bg-white px-4 py-3 text-sm"
 				/>
 			</div>
 
@@ -93,7 +103,7 @@ export function LoginForm() {
 			<Button
 				type="submit"
 				size="lg"
-				className="h-11"
+				className="mt-1 h-auto rounded-xl py-3.5 text-[15px] font-bold"
 				disabled={submitting || connecting || seeding}
 			>
 				{connecting

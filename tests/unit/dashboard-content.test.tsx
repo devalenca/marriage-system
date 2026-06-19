@@ -82,9 +82,6 @@ function makeSummary(overrides: Record<string, unknown> = {}) {
 	};
 }
 
-// Intl pt-BR uses a non-breaking space between "R$" and the number.
-const NBSP = " ";
-
 describe("DashboardContent", () => {
 	beforeEach(() => {
 		useQueryMock.mockReset();
@@ -113,14 +110,17 @@ describe("DashboardContent", () => {
 		expect(screen.getByText("368")).toBeInTheDocument();
 		expect(screen.getByText("Gabriel & Alice")).toBeInTheDocument();
 
-		// budget KPIs
-		expect(screen.getByText("Meta")).toBeInTheDocument();
-		expect(screen.getAllByText(`R$${NBSP}55.000,00`).length).toBeGreaterThan(0);
-		expect(screen.getByText("Saldo restante")).toBeInTheDocument();
-		expect(screen.getByText(`R$${NBSP}37.000,00`)).toBeInTheDocument();
+		// budget KPIs — responsive strip renders both the compact (mobile) and
+		// the full (desktop) variant of each label/value, so match on >0 nodes.
+		expect(screen.getAllByText("META").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("R$ 55.000").length).toBeGreaterThan(0); // meta
+		expect(screen.getAllByText("R$ 26.000").length).toBeGreaterThan(0); // comprometido
+		expect(screen.getAllByText("PAGO").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("R$ 6.000").length).toBeGreaterThan(0); // pago
 
 		// overdue alert with quick pay action
-		expect(screen.getByText("Pagamentos atrasados")).toBeInTheDocument();
+		expect(screen.getByText("O que fazer agora")).toBeInTheDocument();
+		expect(screen.getByText("Atrasado")).toBeInTheDocument();
 		expect(screen.getByText("Espaço Jardim")).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: "Pagar" })).toBeInTheDocument();
 
