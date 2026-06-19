@@ -4,6 +4,7 @@ import type { FunctionReturnType } from "convex/server";
 import type { PayablePayment } from "@/components/payment-list-card";
 import type { api } from "@/convex/_generated/api";
 import { formatBRL } from "@/lib/domain/money";
+import { cn } from "@/lib/utils";
 
 type FinanceSummary = FunctionReturnType<
 	typeof api.dashboard.summary
@@ -32,10 +33,13 @@ export function BudgetOverviewCard({
 	finance,
 	pending,
 	today,
+	showBudget = true,
 }: {
 	finance: FinanceSummary;
 	pending: PayablePayment[];
 	today: string;
+	/** When false, renders only the monthly forecast (no budget bar/legend). */
+	showBudget?: boolean;
 }) {
 	const goal = Math.max(finance.goalCents, 1);
 	const paidPct = Math.min((finance.paidCents / goal) * 100, 100);
@@ -55,45 +59,51 @@ export function BudgetOverviewCard({
 
 	return (
 		<section className="animate-card-enter rounded-[22px] border border-[#ece2d2] bg-[#fffefb] px-6 py-6 shadow-[0_1px_2px_rgba(46,38,32,0.05),0_22px_50px_-26px_rgba(46,38,32,0.28)] sm:px-7">
-			<div className="flex items-baseline justify-between gap-3">
-				<h2 className="font-display text-[22px] font-semibold text-[#2e2620]">
-					Orçamento
-				</h2>
-				<span
-					className={`text-[13px] font-bold ${overBudget ? "text-destructive" : "text-[#9a7a3e]"}`}
-				>
-					{committedPercent}% comprometido
-				</span>
-			</div>
+			{showBudget ? (
+				<>
+					<div className="flex items-baseline justify-between gap-3">
+						<h2 className="font-display text-[22px] font-semibold text-[#2e2620]">
+							Orçamento
+						</h2>
+						<span
+							className={`text-[13px] font-bold ${overBudget ? "text-destructive" : "text-[#9a7a3e]"}`}
+						>
+							{committedPercent}% comprometido
+						</span>
+					</div>
 
-			<div className="mt-4 mb-2 flex h-3.5 overflow-hidden rounded-full bg-[#eee4d4]">
-				<div
-					className="grow-x bg-[#b8924f] [animation-delay:.2s]"
-					style={{ width: `${paidPct}%` }}
-				/>
-				<div
-					className="grow-x bg-[#7a9078] [animation-delay:.35s]"
-					style={{ width: `${contractedPct}%` }}
-				/>
-			</div>
+					<div className="mt-4 mb-2 flex h-3.5 overflow-hidden rounded-full bg-[#eee4d4]">
+						<div
+							className="grow-x bg-[#b8924f] [animation-delay:.2s]"
+							style={{ width: `${paidPct}%` }}
+						/>
+						<div
+							className="grow-x bg-[#7a9078] [animation-delay:.35s]"
+							style={{ width: `${contractedPct}%` }}
+						/>
+					</div>
 
-			<div className="flex flex-wrap items-center gap-x-[18px] gap-y-1 text-xs text-[#7a6e62]">
-				<LegendDot
-					color="#b8924f"
-					label={`Pago ${formatBRL(finance.paidCents)}`}
-				/>
-				<LegendDot
-					color="#7a9078"
-					label={`Fechado ${formatBRL(finance.contractedCents)}`}
-				/>
-				<span
-					className={`ml-auto font-bold ${overBudget ? "text-destructive" : "text-[#3c5741]"}`}
-				>
-					Saldo {formatBRL(finance.remainingCents)}
-				</span>
-			</div>
+					<div className="flex flex-wrap items-center gap-x-[18px] gap-y-1 text-xs text-[#7a6e62]">
+						<LegendDot
+							color="#b8924f"
+							label={`Pago ${formatBRL(finance.paidCents)}`}
+						/>
+						<LegendDot
+							color="#7a9078"
+							label={`Fechado ${formatBRL(finance.contractedCents)}`}
+						/>
+						<span
+							className={`ml-auto font-bold ${overBudget ? "text-destructive" : "text-[#3c5741]"}`}
+						>
+							Saldo {formatBRL(finance.remainingCents)}
+						</span>
+					</div>
+				</>
+			) : null}
 
-			<div className="mt-5 border-t border-[#eee4d4] pt-[18px]">
+			<div
+				className={cn(showBudget && "mt-5 border-t border-[#eee4d4] pt-[18px]")}
+			>
 				<div className="mb-3.5 text-xs font-bold tracking-[0.06em] text-[#7a6e62] uppercase">
 					Previsão dos próximos meses
 				</div>

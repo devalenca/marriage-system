@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { BudgetCard } from "@/components/finance/budget-card";
-import { BudgetForecastCard } from "@/components/finance/budget-forecast-card";
+import { BudgetOverviewCard } from "@/components/finance/budget-overview-card";
 import { PageHeader } from "@/components/page-header";
 import { PaymentListCard } from "@/components/payment-list-card";
 import { Button } from "@/components/ui/button";
@@ -59,10 +59,11 @@ export function FinanceContent() {
 			/>
 			<div className="grid gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
 				<BudgetCard finance={overview.finance} />
-				<BudgetForecastCard
+				<BudgetOverviewCard
 					finance={overview.finance}
-					pendingPayments={overview.pending}
+					pending={overview.pending}
 					today={today}
+					showBudget={false}
 				/>
 
 				<PaymentMethodCard rows={overview.byMethod} />
