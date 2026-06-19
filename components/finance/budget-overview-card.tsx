@@ -58,7 +58,7 @@ export function BudgetOverviewCard({
 	const maxMonth = Math.max(...forecast.map((m) => m.amountCents), 1);
 
 	return (
-		<section className="animate-card-enter rounded-[22px] border border-[#ece2d2] bg-[#fffefb] px-6 py-6 shadow-[0_1px_2px_rgba(46,38,32,0.05),0_22px_50px_-26px_rgba(46,38,32,0.28)] sm:px-7">
+		<section className="animate-card-enter flex flex-col rounded-[22px] border border-[#ece2d2] bg-[#fffefb] px-6 py-6 shadow-[0_1px_2px_rgba(46,38,32,0.05),0_22px_50px_-26px_rgba(46,38,32,0.28)] sm:px-7">
 			{showBudget ? (
 				<>
 					<div className="flex items-baseline justify-between gap-3">
@@ -102,13 +102,16 @@ export function BudgetOverviewCard({
 			) : null}
 
 			<div
-				className={cn(showBudget && "mt-5 border-t border-[#eee4d4] pt-[18px]")}
+				className={cn(
+					"flex flex-1 flex-col",
+					showBudget && "mt-5 border-t border-[#eee4d4] pt-[18px]",
+				)}
 			>
 				<div className="mb-3.5 text-xs font-bold tracking-[0.06em] text-[#7a6e62] uppercase">
 					Previsão dos próximos meses
 				</div>
 				<div
-					className="flex h-24 items-end gap-3.5"
+					className="flex min-h-24 flex-1 items-end gap-3.5"
 					role="img"
 					aria-label="Previsão de pagamentos por mês"
 				>
