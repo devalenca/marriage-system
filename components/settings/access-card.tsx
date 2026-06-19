@@ -4,7 +4,6 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import { KeyRound, Trash2, UserPlus } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -13,6 +12,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
 	Dialog,
 	DialogContent,
@@ -37,14 +37,16 @@ export function AccessCard() {
 	if (!viewer?.isAdmin) return null;
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle className="font-display text-lg">Acessos</CardTitle>
+		<Card className="animate-fadeup px-[26px] py-6 [animation-delay:.15s]">
+			<CardHeader className="px-0">
+				<CardTitle className="font-display text-[22px] font-semibold text-foreground">
+					Acessos
+				</CardTitle>
 				<CardDescription>
 					Somente você cria e remove acessos. Sem convite seu, ninguém entra.
 				</CardDescription>
 			</CardHeader>
-			<CardContent className="flex flex-col gap-5">
+			<CardContent className="flex flex-col gap-5 px-0">
 				<ul className="flex flex-col gap-2">
 					{(users ?? []).map((user) => (
 						<AccessRow key={user._id} user={user} />
@@ -54,6 +56,11 @@ export function AccessCard() {
 			</CardContent>
 		</Card>
 	);
+}
+
+/** Single uppercase initial for the round avatar; "?" when the email is empty. */
+function initialOf(email: string): string {
+	return email.trim().charAt(0).toUpperCase() || "?";
 }
 
 function AccessRow({ user }: { user: AccessUser }) {
@@ -93,13 +100,22 @@ function AccessRow({ user }: { user: AccessUser }) {
 	}
 
 	return (
-		<li className="flex min-h-11 flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/55 px-3.5 py-2">
-			<span className="min-w-0 flex-1 truncate text-sm font-medium">
-				{user.email}
+		<li className="flex min-h-11 flex-wrap items-center gap-3 rounded-[13px] bg-[#f7f3ec] px-4 py-2.5">
+			<span
+				aria-hidden
+				className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground"
+			>
+				{initialOf(user.email)}
 			</span>
-			{user.isAdmin ? (
-				<Badge variant="secondary">Administrador</Badge>
-			) : (
+			<div className="min-w-0 flex-1">
+				<div className="truncate text-sm font-semibold text-foreground">
+					{user.email}
+				</div>
+				{user.isAdmin && (
+					<div className="text-xs text-muted-foreground">Administrador</div>
+				)}
+			</div>
+			{!user.isAdmin && (
 				<span className="flex items-center gap-1.5">
 					<Button
 						variant="ghost"
@@ -122,29 +138,15 @@ function AccessRow({ user }: { user: AccessUser }) {
 				</span>
 			)}
 
-			<Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle className="font-display">Remover acesso?</DialogTitle>
-						<DialogDescription>
-							{user.email} perde o acesso imediatamente. Os dados do casamento
-							não são afetados.
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setConfirmOpen(false)}>
-							Cancelar
-						</Button>
-						<Button
-							variant="destructive"
-							onClick={handleRemove}
-							disabled={busy}
-						>
-							Sim, remover
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+			<ConfirmDialog
+				open={confirmOpen}
+				onOpenChange={setConfirmOpen}
+				title="Remover acesso?"
+				description={`${user.email} perde o acesso imediatamente. Os dados do casamento não são afetados.`}
+				confirmLabel="Sim, remover"
+				onConfirm={handleRemove}
+				busy={busy}
+			/>
 
 			<Dialog open={resetOpen} onOpenChange={setResetOpen}>
 				<DialogContent>
@@ -213,36 +215,37 @@ function CreateAccessForm() {
 	return (
 		<form
 			onSubmit={handleCreate}
-			className="flex flex-col gap-3 rounded-2xl border border-dashed border-border p-4"
+			className="flex flex-col gap-3 border-t border-[#eee4d4] pt-5 sm:flex-row sm:items-end sm:gap-3"
 		>
-			<p className="text-sm font-semibold">Novo acesso</p>
-			<div className="grid gap-3 sm:grid-cols-2">
-				<div className="flex flex-col gap-1.5">
-					<Label htmlFor="access-email">E-mail</Label>
-					<Input
-						id="access-email"
-						type="email"
-						required
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
-						placeholder="noiva@exemplo.com"
-					/>
-				</div>
-				<div className="flex flex-col gap-1.5">
-					<Label htmlFor="access-password">Senha</Label>
-					<Input
-						id="access-password"
-						type="password"
-						autoComplete="new-password"
-						minLength={8}
-						required
-						value={password}
-						onChange={(e) => setPassword(e.target.value)}
-						placeholder="mínimo 8 caracteres"
-					/>
-				</div>
+			<div className="flex flex-col gap-1.5 sm:flex-[1.4]">
+				<Label htmlFor="access-email">E-mail</Label>
+				<Input
+					id="access-email"
+					type="email"
+					required
+					value={email}
+					onChange={(e) => setEmail(e.target.value)}
+					placeholder="novo@email.com"
+				/>
 			</div>
-			<Button type="submit" disabled={creating} className="self-end">
+			<div className="flex flex-col gap-1.5 sm:flex-1">
+				<Label htmlFor="access-password">Senha</Label>
+				<Input
+					id="access-password"
+					type="password"
+					autoComplete="new-password"
+					minLength={8}
+					required
+					value={password}
+					onChange={(e) => setPassword(e.target.value)}
+					placeholder="mínimo 8 caracteres"
+				/>
+			</div>
+			<Button
+				type="submit"
+				disabled={creating}
+				className="rounded-full px-5 sm:shrink-0"
+			>
 				<UserPlus data-icon="inline-start" aria-hidden />
 				{creating ? "Criando..." : "Criar acesso"}
 			</Button>
