@@ -73,7 +73,7 @@ export function PaymentListCard({
 					</span>
 				) : null}
 			</CardHeader>
-			<CardContent className="flex flex-col divide-y">
+			<CardContent className="flex max-h-[20rem] flex-col divide-y overflow-y-auto pr-1">
 				{payments.map((payment) => (
 					<div
 						key={payment._id}

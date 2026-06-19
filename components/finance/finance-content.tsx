@@ -57,24 +57,26 @@ export function FinanceContent() {
 				}
 				action={<ExportButton />}
 			/>
-			<div className="grid gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
-				<BudgetCard finance={overview.finance} />
-				<BudgetOverviewCard
-					finance={overview.finance}
-					pending={overview.pending}
-					today={today}
-					showBudget={false}
-				/>
-
-				<PaymentMethodCard rows={overview.byMethod} />
-				<InstallmentsCard rows={overview.installments} />
-
-				<div className="xl:col-span-2">
-					<CategoryTable categories={overview.categories} />
+			<div className="flex flex-col gap-4">
+				<div className="grid gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+					<BudgetCard finance={overview.finance} />
+					<BudgetOverviewCard
+						finance={overview.finance}
+						pending={overview.pending}
+						today={today}
+						showBudget={false}
+					/>
 				</div>
 
+				<div className="grid items-start gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+					<PaymentMethodCard rows={overview.byMethod} />
+					<InstallmentsCard rows={overview.installments} />
+				</div>
+
+				<CategoryTable categories={overview.categories} />
+
 				{overview.pending.length > 0 ? (
-					<div className="grid gap-4 xl:col-span-2 xl:grid-cols-3">
+					<div className="grid items-start gap-4 xl:grid-cols-3">
 						{overdue.length > 0 ? (
 							<PaymentListCard
 								title="Atrasados"
@@ -102,9 +104,7 @@ export function FinanceContent() {
 					</div>
 				) : null}
 
-				<div className="xl:col-span-2">
-					<PaidHistoryCard paid={overview.paid} />
-				</div>
+				<PaidHistoryCard paid={overview.paid} />
 			</div>
 		</div>
 	);
@@ -200,7 +200,7 @@ function InstallmentsCard({ rows }: { rows: Overview["installments"] }) {
 					Parcelamentos por fornecedor
 				</CardTitle>
 			</CardHeader>
-			<CardContent className="flex flex-col gap-3">
+			<CardContent className="flex max-h-[22rem] flex-col gap-3 overflow-y-auto pr-1">
 				{rows.map((row) => {
 					const progress = Math.round(row.progress * 100);
 					return (
@@ -261,7 +261,7 @@ function PaidHistoryCard({ paid }: { paid: Overview["paid"] }) {
 						ela aparece aqui — anexe o comprovante para manter tudo guardado.
 					</p>
 				) : (
-					<ul className="flex flex-col divide-y">
+					<ul className="flex max-h-[22rem] flex-col divide-y overflow-y-auto pr-1">
 						{paid.map((payment) => (
 							<li
 								key={payment._id}
