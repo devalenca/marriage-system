@@ -3,6 +3,8 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import {
 	attachmentKindValidator,
+	inviteSideValidator,
+	rsvpStatusValidator,
 	taskPriorityValidator,
 	taskStatusValidator,
 	vendorCategoryValidator,
@@ -65,6 +67,26 @@ export default defineSchema({
 	})
 		.index("by_vendor", ["vendorId"])
 		.index("by_payment", ["paymentId"]),
+
+	// An invitation addressed to a household/party. Groups one or more guests.
+	invites: defineTable({
+		title: v.string(),
+		group: v.optional(v.string()), // free-text grouping (e.g. "Família da noiva")
+		side: v.optional(inviteSideValidator),
+		phone: v.optional(v.string()),
+		notes: v.optional(v.string()),
+	}),
+
+	// A single person under an invite. RSVP is confirmed manually by the couple.
+	guests: defineTable({
+		inviteId: v.id("invites"),
+		name: v.string(),
+		rsvpStatus: rsvpStatusValidator,
+		isChild: v.optional(v.boolean()),
+		mealNotes: v.optional(v.string()),
+	})
+		.index("by_invite", ["inviteId"])
+		.index("by_rsvpStatus", ["rsvpStatus"]),
 
 	tasks: defineTable({
 		title: v.string(),

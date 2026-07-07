@@ -9,6 +9,7 @@ import {
 	VENDOR_CATEGORIES,
 	VENDOR_STATUSES,
 } from "../../lib/domain/categories";
+import { INVITE_SIDES, RSVP_STATUSES } from "../../lib/domain/guests";
 
 function literalUnion<T extends string>(
 	values: readonly T[],
@@ -23,3 +24,5 @@ export const vendorStatusValidator = literalUnion(VENDOR_STATUSES);
 export const taskPriorityValidator = literalUnion(TASK_PRIORITIES);
 export const taskStatusValidator = literalUnion(TASK_STATUSES);
 export const attachmentKindValidator = literalUnion(ATTACHMENT_KINDS);
+export const rsvpStatusValidator = literalUnion(RSVP_STATUSES);
+export const inviteSideValidator = literalUnion(INVITE_SIDES);
