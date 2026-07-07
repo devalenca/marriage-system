@@ -2,7 +2,13 @@
 
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { Check, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import {
+	Check,
+	ChevronLeft,
+	ChevronRight,
+	ListChecks,
+	Plus,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { TaskDialog } from "@/components/checklist/task-dialog";
@@ -14,8 +20,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { monthGrid, monthLabelPT, shiftMonth } from "@/lib/domain/calendar";
-import { PRIORITY_LABELS, type TaskPriority } from "@/lib/domain/categories";
-import { monthsBeforeLabel } from "@/lib/domain/checklist";
+import {
+	PRIORITY_LABELS,
+	TASK_STATUS_LABELS,
+	TASK_STATUSES,
+	type TaskPriority,
+} from "@/lib/domain/categories";
+import { isTaskOverdue, monthsBeforeLabel } from "@/lib/domain/checklist";
 import { formatDateBR, todayInSaoPaulo } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import { notifyError } from "@/lib/notify";
@@ -52,7 +63,7 @@ export function ChecklistContent() {
 	const doneCount = tasks?.filter((t) => t.status === "concluida").length ?? 0;
 
 	return (
-		<div>
+		<div className="animate-screen-enter">
 			<PageHeader
 				title="Checklist"
 				subtitle={
@@ -61,7 +72,7 @@ export function ChecklistContent() {
 				action={
 					<Button onClick={openCreate}>
 						<Plus data-icon="inline-start" aria-hidden />
-						Nova
+						Nova tarefa
 					</Button>
 				}
 			/>
@@ -77,12 +88,18 @@ export function ChecklistContent() {
 						<TabsTrigger value="lista" className="flex-1">
 							Lista
 						</TabsTrigger>
+						<TabsTrigger value="quadro" className="flex-1">
+							Quadro
+						</TabsTrigger>
 						<TabsTrigger value="calendario" className="flex-1">
 							Calendário
 						</TabsTrigger>
 					</TabsList>
 					<TabsContent value="lista">
 						<TaskListView tasks={tasks} today={today} onEdit={openEdit} />
+					</TabsContent>
+					<TabsContent value="quadro">
+						<KanbanView tasks={tasks} today={today} onEdit={openEdit} />
 					</TabsContent>
 					<TabsContent value="calendario">
 						<CalendarView
@@ -127,9 +144,14 @@ function TaskListView({
 	if (tasks.length === 0) {
 		return (
 			<Card>
-				<CardContent className="py-10 text-center text-sm text-muted-foreground">
-					Nenhuma tarefa por aqui. Crie a primeira ou gere o checklist nas
-					Configurações.
+				<CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+					<span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+						<ListChecks className="size-6" aria-hidden />
+					</span>
+					<p className="max-w-sm text-sm text-muted-foreground text-balance">
+						Nenhuma tarefa por aqui. Crie a primeira ou gere o checklist nas
+						Configurações.
+					</p>
 				</CardContent>
 			</Card>
 		);
@@ -162,6 +184,73 @@ function TaskListView({
 	);
 }
 
+function KanbanView({
+	tasks,
+	today,
+	onEdit,
+}: {
+	tasks: Task[];
+	today: string;
+	onEdit: (task: Task) => void;
+}) {
+	const [onlyOverdue, setOnlyOverdue] = useState(false);
+	const overdueCount = tasks.filter((t) => isTaskOverdue(t, today)).length;
+	// Never leave the filter "on" when there is nothing overdue to show.
+	const showOverdueOnly = onlyOverdue && overdueCount > 0;
+	const visible = showOverdueOnly
+		? tasks.filter((t) => isTaskOverdue(t, today))
+		: tasks;
+
+	return (
+		<div className="flex flex-col gap-4">
+			<div className="flex items-center gap-2">
+				<Button
+					variant={showOverdueOnly ? "default" : "outline"}
+					size="sm"
+					disabled={overdueCount === 0}
+					aria-pressed={showOverdueOnly}
+					onClick={() => setOnlyOverdue((v) => !v)}
+				>
+					Atrasadas ({overdueCount})
+				</Button>
+			</div>
+			<div className="grid gap-4 md:grid-cols-3">
+				{TASK_STATUSES.map((status) => {
+					const columnTasks = visible.filter((t) => t.status === status);
+					return (
+						<section key={status} className="flex flex-col">
+							<h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+								<span className="first-letter:uppercase">
+									{TASK_STATUS_LABELS[status]}
+								</span>
+								<span className="tabular-nums">{columnTasks.length}</span>
+							</h2>
+							<Card className="flex-1">
+								<CardContent className="flex min-h-24 flex-col divide-y py-2">
+									{columnTasks.length === 0 ? (
+										<p className="flex flex-1 items-center justify-center py-6 text-center text-sm text-muted-foreground">
+											Nada por aqui
+										</p>
+									) : (
+										columnTasks.map((task) => (
+											<TaskRow
+												key={task._id}
+												task={task}
+												today={today}
+												onEdit={onEdit}
+											/>
+										))
+									)}
+								</CardContent>
+							</Card>
+						</section>
+					);
+				})}
+			</div>
+		</div>
+	);
+}
+
 function TaskRow({
 	task,
 	today,
@@ -173,8 +262,7 @@ function TaskRow({
 }) {
 	const updateTask = useMutation(api.tasks.update);
 	const isDone = task.status === "concluida";
-	const isOverdue =
-		!isDone && task.dueDate !== undefined && task.dueDate < today;
+	const isOverdue = isTaskOverdue(task, today);
 
 	async function toggle() {
 		try {
@@ -201,7 +289,7 @@ function TaskRow({
 				className={cn(
 					"flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors",
 					isDone
-						? "border-success bg-success text-white"
+						? "border-success bg-success text-primary-foreground"
 						: "border-border text-transparent hover:border-success hover:text-success",
 				)}
 			>

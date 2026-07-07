@@ -30,10 +30,13 @@ export function FinanceContent() {
 		return (
 			<div aria-busy>
 				<PageHeader title="Financeiro" />
-				<div className="grid gap-4 lg:grid-cols-2">
-					<Skeleton className="h-72 rounded-[2rem]" />
-					<Skeleton className="h-72 rounded-[2rem]" />
-					<Skeleton className="h-40 rounded-[2rem] lg:col-span-2" />
+				<div className="flex flex-col gap-4">
+					<div className="grid gap-4 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+						<Skeleton className="h-72 rounded-[2rem]" />
+						<Skeleton className="h-72 rounded-[22px]" />
+					</div>
+					<Skeleton className="h-40 rounded-[2rem]" />
+					<Skeleton className="h-40 rounded-[2rem]" />
 				</div>
 			</div>
 		);
@@ -127,7 +130,12 @@ function ExportButton() {
 	}
 
 	return (
-		<Button variant="outline" size="sm" onClick={handleExport}>
+		<Button
+			variant="outline"
+			size="sm"
+			onClick={handleExport}
+			className="h-11 px-3.5 sm:h-7 sm:px-2.5"
+		>
 			<Download data-icon="inline-start" aria-hidden />
 			Exportar CSV
 		</Button>

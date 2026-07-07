@@ -3,6 +3,7 @@
 import { useQuery } from "convex/react";
 import { Plus, Search } from "lucide-react";
 import Link from "next/link";
+import type * as React from "react";
 import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -31,6 +32,15 @@ import {
 } from "@/lib/domain/categories";
 import { formatBRL } from "@/lib/domain/money";
 
+const CATEGORY_FILTER_ITEMS: Record<string, React.ReactNode> = {
+	todas: "Todas as categorias",
+	...CATEGORY_LABELS,
+};
+const STATUS_FILTER_ITEMS: Record<string, React.ReactNode> = {
+	todos: "Todos os status",
+	...STATUS_LABELS,
+};
+
 export function VendorsContent() {
 	const vendors = useQuery(api.vendors.list, {});
 	const [search, setSearch] = useState("");
@@ -43,7 +53,7 @@ export function VendorsContent() {
 		: [];
 
 	return (
-		<div>
+		<div className="animate-screen-enter">
 			<PageHeader
 				title="Fornecedores"
 				subtitle={
@@ -52,7 +62,10 @@ export function VendorsContent() {
 						: undefined
 				}
 				action={
-					<Button onClick={() => setCreateOpen(true)}>
+					<Button
+						onClick={() => setCreateOpen(true)}
+						className="h-11 px-3.5 sm:h-8 sm:px-2.5"
+					>
 						<Plus data-icon="inline-start" aria-hidden />
 						Novo
 					</Button>
@@ -70,18 +83,18 @@ export function VendorsContent() {
 						placeholder="Buscar por nome..."
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
-						className="pl-9"
+						className="h-11 pl-9 sm:h-8"
 					/>
 				</div>
 				<div className="flex gap-2">
 					<Select
 						value={category}
 						onValueChange={(v) => setCategory(v as VendorCategory | "todas")}
+						items={CATEGORY_FILTER_ITEMS}
 					>
 						<SelectTrigger
 							aria-label="Filtrar por categoria"
-							className="flex-1"
-							size="sm"
+							className="min-h-11 flex-1 sm:min-h-8"
 						>
 							<SelectValue />
 						</SelectTrigger>
@@ -97,11 +110,11 @@ export function VendorsContent() {
 					<Select
 						value={status}
 						onValueChange={(v) => setStatus(v as VendorStatus | "todos")}
+						items={STATUS_FILTER_ITEMS}
 					>
 						<SelectTrigger
 							aria-label="Filtrar por status"
-							className="flex-1"
-							size="sm"
+							className="min-h-11 flex-1 sm:min-h-8"
 						>
 							<SelectValue />
 						</SelectTrigger>
@@ -124,34 +137,56 @@ export function VendorsContent() {
 					<Skeleton className="h-20 rounded-2xl" />
 				</div>
 			) : filtered.length === 0 ? (
-				<Card>
+				<Card className="animate-card-enter">
 					<CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-						<p className="text-sm text-muted-foreground">
+						<p className="text-pretty text-sm text-muted-foreground">
 							{vendors.length === 0
 								? "Nenhum fornecedor ainda. Cadastre o primeiro e comece a dar vida ao casamento."
-								: "Nenhum fornecedor encontrado com esses filtros."}
+								: "Nenhum fornecedor com esses filtros. Ajuste a busca para ver mais."}
 						</p>
 						{vendors.length === 0 ? (
-							<Button onClick={() => setCreateOpen(true)}>
+							<Button
+								onClick={() => setCreateOpen(true)}
+								className="h-11 px-3.5 sm:h-8 sm:px-2.5"
+							>
 								<Plus data-icon="inline-start" aria-hidden />
 								Cadastrar fornecedor
 							</Button>
-						) : null}
+						) : (
+							<Button
+								variant="outline"
+								onClick={() => {
+									setSearch("");
+									setCategory("todas");
+									setStatus("todos");
+								}}
+								className="h-11 px-3.5 sm:h-8 sm:px-2.5"
+							>
+								Limpar filtros
+							</Button>
+						)}
 					</CardContent>
 				</Card>
 			) : (
 				<ul className="flex flex-col gap-3">
-					{filtered.map((vendor) => {
+					{filtered.map((vendor, index) => {
 						const mainValue =
 							vendor.contractedCents ?? vendor.estimateCents ?? null;
 						const progress = vendor.contractedCents
 							? Math.round(vendor.financials.progress * 100)
 							: null;
 						return (
-							<li key={vendor._id}>
-								<Link href={`/fornecedores/${vendor._id}`}>
+							<li
+								key={vendor._id}
+								className="animate-card-enter"
+								style={{ animationDelay: `${Math.min(index, 6) * 45}ms` }}
+							>
+								<Link
+									href={`/fornecedores/${vendor._id}`}
+									className="block rounded-[var(--radius-lg)] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+								>
 									<Card className="transition-colors hover:border-primary/40">
-										<CardContent className="flex flex-col gap-2 py-4">
+										<CardContent className="flex flex-col gap-2.5 py-4">
 											<div className="flex items-start justify-between gap-3">
 												<div className="min-w-0">
 													<p className="truncate font-medium">{vendor.name}</p>
@@ -162,7 +197,7 @@ export function VendorsContent() {
 												<div className="flex shrink-0 flex-col items-end gap-1">
 													<StatusBadge status={vendor.status} />
 													{mainValue !== null ? (
-														<span className="text-sm font-semibold tabular-nums">
+														<span className="font-display text-sm font-semibold tabular-nums">
 															{formatBRL(mainValue)}
 														</span>
 													) : null}
@@ -172,10 +207,10 @@ export function VendorsContent() {
 												<div className="flex items-center gap-2">
 													<Progress
 														value={progress}
-														className="h-1"
+														className="h-1.5"
 														aria-label={`${progress}% pago`}
 													/>
-													<span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
+													<span className="shrink-0 text-xs text-muted-foreground tabular-nums">
 														{progress}% pago
 													</span>
 												</div>

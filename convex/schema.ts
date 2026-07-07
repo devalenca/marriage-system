@@ -3,6 +3,8 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import {
 	attachmentKindValidator,
+	inviteSideValidator,
+	rsvpStatusValidator,
 	taskPriorityValidator,
 	taskStatusValidator,
 	vendorCategoryValidator,
@@ -18,6 +20,9 @@ export default defineSchema({
 		coupleNames: v.string(),
 		weddingDate: v.string(), // ISO yyyy-MM-dd (America/Sao_Paulo)
 		budgetGoalCents: v.number(),
+		ceremonyVenue: v.optional(v.string()),
+		receptionVenue: v.optional(v.string()),
+		weddingTime: v.optional(v.string()), // ISO HH:mm (24h), America/Sao_Paulo
 	}),
 
 	vendors: defineTable({
@@ -65,6 +70,39 @@ export default defineSchema({
 	})
 		.index("by_vendor", ["vendorId"])
 		.index("by_payment", ["paymentId"]),
+
+	// Inspirações: named moodboards, each holding uploaded reference images.
+	galleries: defineTable({
+		name: v.string(),
+	}),
+
+	inspirationImages: defineTable({
+		galleryId: v.id("galleries"),
+		storageId: v.id("_storage"),
+		caption: v.optional(v.string()),
+		uploadedAt: v.number(), // epoch ms
+	}).index("by_gallery", ["galleryId"]),
+
+	// An invitation addressed to a household/party. Groups one or more guests.
+	invites: defineTable({
+		title: v.string(),
+		group: v.optional(v.string()), // free-text grouping (e.g. "Família da noiva")
+		side: v.optional(inviteSideValidator),
+		phone: v.optional(v.string()),
+		notes: v.optional(v.string()),
+	}),
+
+	// A single person under an invite. RSVP is confirmed manually by the couple.
+	guests: defineTable({
+		inviteId: v.id("invites"),
+		name: v.string(),
+		rsvpStatus: rsvpStatusValidator,
+		isChild: v.optional(v.boolean()),
+		mealNotes: v.optional(v.string()),
+		checkedIn: v.optional(v.boolean()), // day-of attendance
+	})
+		.index("by_invite", ["inviteId"])
+		.index("by_rsvpStatus", ["rsvpStatus"]),
 
 	tasks: defineTable({
 		title: v.string(),

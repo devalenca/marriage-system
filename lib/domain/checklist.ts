@@ -3,8 +3,30 @@
 // celebrante, doces/bolo, open bar). Generated tasks are editable —
 // the template is only the starting point.
 
-import type { TaskPriority, VendorCategory } from "./categories";
+import type { TaskPriority, TaskStatus, VendorCategory } from "./categories";
 import { addMonthsISO } from "./dates";
+
+/** Minimal task shape needed to decide overdue-ness (backend-agnostic). */
+export interface OverdueTaskInput {
+	dueDate?: string;
+	status: TaskStatus;
+}
+
+/**
+ * A task is overdue when it has a due date strictly before today and is not
+ * yet completed. ISO `yyyy-MM-dd` strings compare lexicographically, matching
+ * calendar order.
+ */
+export function isTaskOverdue(
+	task: OverdueTaskInput,
+	todayISO: string,
+): boolean {
+	return (
+		task.dueDate !== undefined &&
+		task.dueDate < todayISO &&
+		task.status !== "concluida"
+	);
+}
 
 export interface ChecklistTemplateTask {
 	title: string;

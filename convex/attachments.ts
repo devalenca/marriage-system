@@ -69,6 +69,55 @@ export const listByPayment = query({
 	},
 });
 
+export const listAll = query({
+	args: {},
+	handler: async (ctx) => {
+		const [attachments, vendors, payments] = await Promise.all([
+			ctx.db.query("attachments").collect(),
+			ctx.db.query("vendors").collect(),
+			ctx.db.query("payments").collect(),
+		]);
+		const vendorById = new Map(vendors.map((v) => [v._id, v]));
+		const paymentById = new Map(payments.map((p) => [p._id, p]));
+
+		const rows = await Promise.all(
+			attachments.map(async (a) => {
+				const base = await withUrl(ctx, a);
+				let source: {
+					type: "vendor" | "payment";
+					vendorId: Id<"vendors"> | null;
+					vendorName: string | null;
+					paymentDescription?: string;
+				};
+				if (a.vendorId) {
+					const vendor = vendorById.get(a.vendorId);
+					source = {
+						type: "vendor",
+						vendorId: a.vendorId,
+						vendorName: vendor?.name ?? null,
+					};
+				} else if (a.paymentId) {
+					const payment = paymentById.get(a.paymentId);
+					const vendor = payment ? vendorById.get(payment.vendorId) : undefined;
+					source = {
+						type: "payment",
+						vendorId: payment?.vendorId ?? null,
+						vendorName: vendor?.name ?? null,
+						paymentDescription: payment?.description,
+					};
+				} else {
+					// Unreachable (create enforces exactly one source); keep for exhaustiveness.
+					source = { type: "vendor", vendorId: null, vendorName: null };
+				}
+				return { ...base, source };
+			}),
+		);
+
+		// Newest first.
+		return rows.sort((a, b) => b.uploadedAt - a.uploadedAt);
+	},
+});
+
 export const remove = mutation({
 	args: { id: v.id("attachments") },
 	handler: async (ctx, { id }) => {

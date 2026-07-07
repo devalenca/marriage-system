@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
-import { isValidISODate } from "@/lib/domain/dates";
+import { isValidISODate, isValidISOTime } from "@/lib/domain/dates";
 import { notifyError } from "@/lib/notify";
 
 export function SettingsContent() {
@@ -37,17 +37,20 @@ export function SettingsContent() {
 
 	if (settings === undefined) {
 		return (
-			<div aria-busy>
+			<div className="animate-screen-enter" aria-busy>
 				<PageHeader title="Configurações" />
-				<Skeleton className="h-64 rounded-2xl" />
+				<div className="flex flex-col gap-3">
+					<Skeleton className="h-72 rounded-2xl" />
+					<Skeleton className="h-32 rounded-2xl" />
+				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div>
+		<div className="animate-screen-enter">
 			<PageHeader title="Configurações" />
-			<div className="flex flex-col gap-4">
+			<div className="flex flex-col gap-3">
 				{/* Keyed so the form state re-seeds if the settings row changes. */}
 				<SettingsForm
 					key={settings?._id ?? "new"}
@@ -90,6 +93,13 @@ function SettingsForm({ initial }: { initial?: Doc<"settings"> }) {
 	const [budgetCents, setBudgetCents] = useState<number | null>(
 		initial?.budgetGoalCents ?? null,
 	);
+	const [weddingTime, setWeddingTime] = useState(initial?.weddingTime ?? "");
+	const [ceremonyVenue, setCeremonyVenue] = useState(
+		initial?.ceremonyVenue ?? "",
+	);
+	const [receptionVenue, setReceptionVenue] = useState(
+		initial?.receptionVenue ?? "",
+	);
 	const [saving, setSaving] = useState(false);
 
 	async function handleSave(event: React.FormEvent) {
@@ -106,6 +116,10 @@ function SettingsForm({ initial }: { initial?: Doc<"settings"> }) {
 			toast.error("Defina a meta de orçamento");
 			return;
 		}
+		if (weddingTime && !isValidISOTime(weddingTime)) {
+			toast.error("Horário inválido");
+			return;
+		}
 
 		setSaving(true);
 		try {
@@ -113,6 +127,9 @@ function SettingsForm({ initial }: { initial?: Doc<"settings"> }) {
 				coupleNames: coupleNames.trim(),
 				weddingDate,
 				budgetGoalCents: budgetCents,
+				ceremonyVenue: ceremonyVenue.trim() || undefined,
+				receptionVenue: receptionVenue.trim() || undefined,
+				weddingTime: weddingTime || undefined,
 			});
 			toast.success("Configurações salvas");
 		} catch (error) {
@@ -158,6 +175,31 @@ function SettingsForm({ initial }: { initial?: Doc<"settings"> }) {
 								onValueChange={setBudgetCents}
 							/>
 						</div>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="settings-time">Horário</Label>
+						<Input
+							id="settings-time"
+							type="time"
+							value={weddingTime}
+							onChange={(e) => setWeddingTime(e.target.value)}
+						/>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="settings-ceremony">Local da cerimônia</Label>
+						<Input
+							id="settings-ceremony"
+							value={ceremonyVenue}
+							onChange={(e) => setCeremonyVenue(e.target.value)}
+						/>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="settings-reception">Local da recepção</Label>
+						<Input
+							id="settings-reception"
+							value={receptionVenue}
+							onChange={(e) => setReceptionVenue(e.target.value)}
+						/>
 					</div>
 					<Button type="submit" disabled={saving} className="self-end">
 						{saving ? "Salvando..." : "Salvar"}

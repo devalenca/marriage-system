@@ -158,6 +158,7 @@ export function VendorFormDialog({
 							<Select
 								value={category}
 								onValueChange={(value) => setCategory(value as VendorCategory)}
+								items={CATEGORY_LABELS}
 							>
 								<SelectTrigger id="vendor-category" className="w-full">
 									<SelectValue />
@@ -176,6 +177,7 @@ export function VendorFormDialog({
 							<Select
 								value={status}
 								onValueChange={(value) => setStatus(value as VendorStatus)}
+								items={STATUS_LABELS}
 							>
 								<SelectTrigger id="vendor-status" className="w-full">
 									<SelectValue />

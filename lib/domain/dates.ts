@@ -5,6 +5,7 @@
 import { addMonths, differenceInCalendarDays, format } from "date-fns";
 
 const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const ISO_TIME_RE = /^(\d{2}):(\d{2})$/;
 
 /** Parses an ISO date string into a local-time Date (safe for calendar math). */
 function toLocalDate(iso: string): Date {
@@ -24,6 +25,15 @@ export function isValidISODate(iso: string): boolean {
 		date.getMonth() === Number(month) - 1 &&
 		date.getDate() === Number(day)
 	);
+}
+
+/** Validates an ISO `HH:mm` 24-hour time string (00:00–23:59). */
+export function isValidISOTime(time: string): boolean {
+	const match = ISO_TIME_RE.exec(time);
+	if (!match) return false;
+	const hours = Number(match[1]);
+	const minutes = Number(match[2]);
+	return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
 }
 
 export function formatDateBR(iso: string): string {

@@ -47,17 +47,20 @@ export function BudgetCard({ finance }: { finance: FinanceSummary }) {
 					className={cn("h-2", overBudget && "[&>div]:bg-destructive")}
 					aria-label={`${percent}% do orçamento consumido`}
 				/>
-				<dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+				<dl className="grid grid-cols-2 gap-3">
 					{kpis.map(({ label, value, tone }) => (
 						<div
 							key={label}
-							className="rounded-2xl bg-card/45 p-3 ring-1 ring-border/60"
+							className="rounded-2xl bg-card/45 p-3 ring-1 ring-border/60 transition-colors hover:bg-card/60"
 						>
-							<dt className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+							<dt className="text-xs font-medium text-muted-foreground">
 								{label}
 							</dt>
 							<dd
-								className={cn("mt-1 text-sm font-semibold tabular-nums", tone)}
+								className={cn(
+									"mt-1 text-base font-semibold tabular-nums",
+									tone,
+								)}
 							>
 								{formatBRL(value)}
 							</dd>

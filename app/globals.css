@@ -139,6 +139,15 @@
 		@apply font-sans;
 	}
 
+	/* Consistent keyboard focus ring across every interactive surface. The
+	   Button primitive owns its own richer focus styling, so it is excluded
+	   here; this covers links, nav rows, badges, inputs and anything else
+	   reached via keyboard that would otherwise have no visible focus state. */
+	:focus-visible:not([data-slot="button"]) {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
 	body {
 		@apply text-foreground;
 		position: relative;
@@ -561,5 +570,28 @@
 			animation-iteration-count: 1 !important;
 			transition-duration: 0.01ms !important;
 		}
+	}
+}
+
+/* Printing: show only the region marked with data-print-area (the guest print
+   sheet) and hide the app shell, so window.print() yields a clean page. */
+@media print {
+	@page {
+		margin: 1.5cm;
+	}
+
+	body * {
+		visibility: hidden;
+	}
+
+	[data-print-area],
+	[data-print-area] * {
+		visibility: visible;
+	}
+
+	[data-print-area] {
+		position: absolute;
+		inset: 0;
+		width: 100%;
 	}
 }

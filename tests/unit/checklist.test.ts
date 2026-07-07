@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
 	CHECKLIST_TEMPLATE,
 	generateChecklist,
+	isTaskOverdue,
 	monthsBeforeLabel,
 } from "@/lib/domain/checklist";
 
 const WEDDING_DATE = "2027-06-12";
+const TODAY = "2026-07-07";
 
 describe("monthsBeforeLabel", () => {
 	it("labels plural months", () => {
@@ -74,5 +76,42 @@ describe("generateChecklist", () => {
 
 		const dates = tasks.map((t) => t.dueDate);
 		expect(dates).toEqual([...dates].sort());
+	});
+});
+
+describe("isTaskOverdue", () => {
+	it("flags a task due before today that is not done", () => {
+		expect(
+			isTaskOverdue({ dueDate: "2026-07-06", status: "pendente" }, TODAY),
+		).toBe(true);
+	});
+
+	it("flags an in-progress task due in the past", () => {
+		expect(
+			isTaskOverdue({ dueDate: "2026-01-01", status: "em_andamento" }, TODAY),
+		).toBe(true);
+	});
+
+	it("does not flag a completed task", () => {
+		expect(
+			isTaskOverdue({ dueDate: "2026-01-01", status: "concluida" }, TODAY),
+		).toBe(false);
+	});
+
+	it("does not flag a task due today (strict boundary)", () => {
+		expect(isTaskOverdue({ dueDate: TODAY, status: "pendente" }, TODAY)).toBe(
+			false,
+		);
+	});
+
+	it("does not flag a task due in the future", () => {
+		expect(
+			isTaskOverdue({ dueDate: "2026-12-31", status: "pendente" }, TODAY),
+		).toBe(false);
+	});
+
+	it("does not flag a task without a due date", () => {
+		expect(isTaskOverdue({ status: "pendente" }, TODAY)).toBe(false);
+		expect(isTaskOverdue({ status: "em_andamento" }, TODAY)).toBe(false);
 	});
 });
