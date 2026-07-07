@@ -64,6 +64,7 @@ export function DashboardContent() {
 				</div>
 			)}
 			<MonthTasksCard tasks={summary.monthTasks} />
+			<GuestsSummaryCard />
 			<CategorySummaryCard categories={summary.categories} />
 		</div>
 	);
@@ -158,6 +159,56 @@ function MonthTasksCard({ tasks }: { tasks: Summary["monthTasks"] }) {
 							</li>
 						))}
 					</ul>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function GuestsSummaryCard() {
+	const guests = useQuery(api.guests.summary, {});
+	if (guests === undefined) return <Skeleton className="h-32 rounded-[2rem]" />;
+
+	return (
+		<Card>
+			<CardHeader className="flex-row items-center justify-between">
+				<CardTitle className="font-display text-lg">Convidados</CardTitle>
+				<Button variant="ghost" size="sm" render={<Link href="/convidados" />}>
+					Ver tudo
+					<ArrowRight data-icon="inline-end" aria-hidden />
+				</Button>
+			</CardHeader>
+			<CardContent>
+				{guests.total === 0 ? (
+					<div className="flex flex-col items-center gap-3 py-2 text-center">
+						<p className="text-sm text-muted-foreground">
+							Monte sua lista de convidados e acompanhe as confirmações.
+						</p>
+						<Button size="sm" render={<Link href="/convidados" />}>
+							Criar convite
+						</Button>
+					</div>
+				) : (
+					<div className="grid grid-cols-3 gap-3 text-center">
+						<div className="rounded-2xl bg-card/45 p-3 ring-1 ring-border/60">
+							<p className="text-2xl font-semibold tabular-nums text-success">
+								{guests.confirmed}
+							</p>
+							<p className="text-xs text-muted-foreground">Confirmados</p>
+						</div>
+						<div className="rounded-2xl bg-card/45 p-3 ring-1 ring-border/60">
+							<p className="text-2xl font-semibold tabular-nums text-warning">
+								{guests.pending}
+							</p>
+							<p className="text-xs text-muted-foreground">Pendentes</p>
+						</div>
+						<div className="rounded-2xl bg-card/45 p-3 ring-1 ring-border/60">
+							<p className="text-2xl font-semibold tabular-nums">
+								{guests.total}
+							</p>
+							<p className="text-xs text-muted-foreground">Convidados</p>
+						</div>
+					</div>
 				)}
 			</CardContent>
 		</Card>
