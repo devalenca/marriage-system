@@ -6,9 +6,9 @@ export default function AppLayout({
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<AuthGate>
-			<div className="min-h-screen md:pl-72">
+			<div className="min-h-screen md:pl-60">
 				<AppNav />
-				<main className="mx-auto w-full max-w-5xl px-4 pt-5 pb-24 sm:px-6 md:px-8 md:pt-8 md:pb-14">
+				<main className="mx-auto w-full max-w-5xl px-4 pt-20 pb-12 sm:px-6 md:px-8 md:pt-8 md:pb-14">
 					{children}
 				</main>
 			</div>

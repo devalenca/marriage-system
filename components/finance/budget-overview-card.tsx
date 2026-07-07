@@ -111,7 +111,7 @@ export function BudgetOverviewCard({
 					Previsão dos próximos meses
 				</div>
 				<div
-					className="flex min-h-24 flex-1 items-end gap-3.5"
+					className="flex h-28 items-end gap-3.5"
 					role="img"
 					aria-label="Previsão de pagamentos por mês"
 				>
