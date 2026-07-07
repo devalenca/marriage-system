@@ -6,6 +6,8 @@ import {
 	ListChecks,
 	type LucideIcon,
 	Menu,
+	PanelLeftClose,
+	PanelLeftOpen,
 	Paperclip,
 	Settings,
 	Store,
@@ -23,6 +25,12 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
@@ -59,6 +67,7 @@ function isActive(pathname: string, href: string) {
 	return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** A nav row for the mobile drawer — always shows its label. */
 function NavLink({
 	item,
 	pathname,
@@ -95,7 +104,7 @@ function NavLink({
 	);
 }
 
-/** The grouped item list, shared by the desktop sidebar and the mobile sheet. */
+/** The grouped item list for the mobile sheet (labels always visible). */
 function NavList({
 	pathname,
 	onNavigate,
@@ -168,7 +177,104 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
 	);
 }
 
-export function AppNav() {
+/** A desktop rail row. When collapsed it's icon-only with a hover tooltip. */
+function RailLink({
+	item,
+	pathname,
+	collapsed,
+}: {
+	item: NavItem;
+	pathname: string;
+	collapsed: boolean;
+}) {
+	const { href, label, icon: Icon } = item;
+	const active = isActive(pathname, href);
+
+	const link = (
+		<Link
+			href={href}
+			aria-label={collapsed ? label : undefined}
+			aria-current={active ? "page" : undefined}
+			className={cn(
+				"flex items-center rounded-2xl font-semibold transition-colors",
+				collapsed ? "justify-center p-1.5" : "gap-2.5 px-3 py-2 text-sm",
+				active
+					? "bg-card/80 text-sidebar-primary shadow-sm ring-1 ring-sidebar-border"
+					: "text-muted-foreground hover:bg-card/50 hover:text-foreground",
+			)}
+		>
+			<span
+				className={cn(
+					"flex size-9 shrink-0 items-center justify-center rounded-full transition-colors",
+					active ? "bg-primary/12 text-primary" : "bg-card/40 text-current",
+				)}
+			>
+				<Icon className="size-4.5" aria-hidden />
+			</span>
+			{collapsed ? null : <span className="whitespace-nowrap">{label}</span>}
+		</Link>
+	);
+
+	if (!collapsed) return link;
+	return (
+		<Tooltip>
+			<TooltipTrigger render={link} />
+			<TooltipContent side="right">{label}</TooltipContent>
+		</Tooltip>
+	);
+}
+
+/** Desktop nav: grouped rows; dividers when collapsed, headers when expanded. */
+function RailNav({
+	pathname,
+	collapsed,
+}: {
+	pathname: string;
+	collapsed: boolean;
+}) {
+	return (
+		<nav
+			aria-label="Navegação principal"
+			className="flex flex-1 flex-col gap-1"
+		>
+			{NAV_GROUPS.map((group, i) => (
+				<Fragment key={group.label ?? `group-${i}`}>
+					{collapsed
+						? i > 0 && <div className="mx-2 my-1 h-px bg-sidebar-border/70" />
+						: group.label && (
+								<p className="px-3 pt-2 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+									{group.label}
+								</p>
+							)}
+					{group.items.map((item) => (
+						<RailLink
+							key={item.href}
+							item={item}
+							pathname={pathname}
+							collapsed={collapsed}
+						/>
+					))}
+				</Fragment>
+			))}
+			<div className="mt-auto">
+				<div className="mx-2 my-1.5 h-px bg-sidebar-border/70" />
+				<RailLink
+					item={SETTINGS_ITEM}
+					pathname={pathname}
+					collapsed={collapsed}
+				/>
+			</div>
+		</nav>
+	);
+}
+
+export function AppNav({
+	collapsed,
+	onToggle,
+}: {
+	collapsed: boolean;
+	onToggle: () => void;
+}) {
 	const pathname = usePathname();
 	const [open, setOpen] = useState(false);
 
@@ -179,7 +285,7 @@ export function AppNav() {
 	}, [pathname]);
 
 	return (
-		<>
+		<TooltipProvider delay={0}>
 			{/* Mobile: slim top bar with a hamburger that opens a drawer. */}
 			<header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-sidebar-border bg-sidebar/85 px-3 backdrop-blur-2xl md:hidden">
 				<Link href="/dashboard" className="rounded-2xl px-1 py-1">
@@ -209,78 +315,43 @@ export function AppNav() {
 				</Sheet>
 			</header>
 
-			{/* Desktop: slim icon rail that expands on hover. */}
-			<aside className="group fixed inset-y-0 left-0 z-50 hidden w-[4.75rem] flex-col gap-3 overflow-hidden border-r border-sidebar-border bg-sidebar/90 p-3 shadow-[18px_0_60px_oklch(0.32_0.07_132_/_0.12)] backdrop-blur-2xl transition-[width] duration-200 ease-out hover:w-64 md:flex">
-				<Link
-					href="/dashboard"
-					title="Nosso Casamento"
-					className="flex items-center gap-3 rounded-2xl p-1.5 transition-colors hover:bg-card/55"
-				>
-					<span className="flex size-10 shrink-0 items-center justify-center rounded-[1rem] bg-primary/12 text-primary ring-1 ring-primary/15">
-						<House className="size-5" aria-hidden />
-					</span>
-					<span className="whitespace-nowrap font-display text-lg font-semibold leading-none text-primary opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-						Nosso Casamento
-					</span>
-				</Link>
-				<RailNav pathname={pathname} />
-			</aside>
-		</>
-	);
-}
-
-function RailLink({ item, pathname }: { item: NavItem; pathname: string }) {
-	const { href, label, icon: Icon } = item;
-	const active = isActive(pathname, href);
-	return (
-		<Link
-			href={href}
-			title={label}
-			aria-label={label}
-			aria-current={active ? "page" : undefined}
-			className={cn(
-				"flex items-center gap-3 rounded-2xl px-2.5 py-2 font-semibold transition-colors",
-				active
-					? "bg-card/80 text-sidebar-primary shadow-sm ring-1 ring-sidebar-border"
-					: "text-muted-foreground hover:bg-card/50 hover:text-foreground",
-			)}
-		>
-			<span
+			{/* Desktop: collapsible sidebar toggled by a button. */}
+			<aside
 				className={cn(
-					"flex size-9 shrink-0 items-center justify-center rounded-full transition-colors",
-					active ? "bg-primary/12 text-primary" : "bg-card/40 text-current",
+					"fixed inset-y-0 left-0 z-50 hidden flex-col gap-3 border-r border-sidebar-border bg-sidebar/85 p-3 shadow-[18px_0_60px_oklch(0.32_0.07_132_/_0.12)] backdrop-blur-2xl transition-[width] duration-200 ease-out md:flex",
+					collapsed ? "w-[4.75rem]" : "w-64",
 				)}
 			>
-				<Icon className="size-4.5" aria-hidden />
-			</span>
-			<span className="whitespace-nowrap text-sm opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-				{label}
-			</span>
-		</Link>
-	);
-}
-
-/** Desktop rail: grouped icons with thin dividers; labels fade in on expand. */
-function RailNav({ pathname }: { pathname: string }) {
-	return (
-		<nav
-			aria-label="Navegação principal"
-			className="flex flex-1 flex-col gap-1"
-		>
-			{NAV_GROUPS.map((group, i) => (
-				<Fragment key={group.label ?? `group-${i}`}>
-					{i > 0 ? (
-						<div className="mx-2 my-1 h-px bg-sidebar-border/70" />
-					) : null}
-					{group.items.map((item) => (
-						<RailLink key={item.href} item={item} pathname={pathname} />
-					))}
-				</Fragment>
-			))}
-			<div className="mt-auto">
-				<div className="mx-2 my-1 h-px bg-sidebar-border/70" />
-				<RailLink item={SETTINGS_ITEM} pathname={pathname} />
-			</div>
-		</nav>
+				<div
+					className={cn(
+						"flex items-center gap-2",
+						collapsed ? "justify-center" : "justify-between",
+					)}
+				>
+					{collapsed ? null : (
+						<Link
+							href="/dashboard"
+							className="min-w-0 rounded-2xl p-1 transition-colors hover:bg-card/55"
+						>
+							<BrandMark compact />
+						</Link>
+					)}
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={onToggle}
+						aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+						aria-expanded={!collapsed}
+					>
+						{collapsed ? (
+							<PanelLeftOpen aria-hidden />
+						) : (
+							<PanelLeftClose aria-hidden />
+						)}
+					</Button>
+				</div>
+				<RailNav pathname={pathname} collapsed={collapsed} />
+			</aside>
+		</TooltipProvider>
 	);
 }
