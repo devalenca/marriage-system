@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation } from "convex/react";
+import type * as React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,11 @@ import {
 import { notifyError } from "@/lib/notify";
 
 const NO_SIDE = "nenhum";
+
+const SIDE_ITEMS: Record<string, React.ReactNode> = {
+	[NO_SIDE]: "—",
+	...INVITE_SIDE_LABELS,
+};
 
 interface InviteFormDialogProps {
 	open: boolean;
@@ -136,6 +142,7 @@ export function InviteFormDialog({
 								onValueChange={(value) =>
 									setSide(value as InviteSide | typeof NO_SIDE)
 								}
+								items={SIDE_ITEMS}
 							>
 								<SelectTrigger id="invite-side" className="w-full">
 									<SelectValue />

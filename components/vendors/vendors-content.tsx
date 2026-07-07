@@ -3,6 +3,7 @@
 import { useQuery } from "convex/react";
 import { Plus, Search } from "lucide-react";
 import Link from "next/link";
+import type * as React from "react";
 import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -30,6 +31,15 @@ import {
 	type VendorStatus,
 } from "@/lib/domain/categories";
 import { formatBRL } from "@/lib/domain/money";
+
+const CATEGORY_FILTER_ITEMS: Record<string, React.ReactNode> = {
+	todas: "Todas as categorias",
+	...CATEGORY_LABELS,
+};
+const STATUS_FILTER_ITEMS: Record<string, React.ReactNode> = {
+	todos: "Todos os status",
+	...STATUS_LABELS,
+};
 
 export function VendorsContent() {
 	const vendors = useQuery(api.vendors.list, {});
@@ -77,6 +87,7 @@ export function VendorsContent() {
 					<Select
 						value={category}
 						onValueChange={(v) => setCategory(v as VendorCategory | "todas")}
+						items={CATEGORY_FILTER_ITEMS}
 					>
 						<SelectTrigger
 							aria-label="Filtrar por categoria"
@@ -97,6 +108,7 @@ export function VendorsContent() {
 					<Select
 						value={status}
 						onValueChange={(v) => setStatus(v as VendorStatus | "todos")}
+						items={STATUS_FILTER_ITEMS}
 					>
 						<SelectTrigger
 							aria-label="Filtrar por status"

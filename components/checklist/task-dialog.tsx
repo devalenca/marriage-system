@@ -158,6 +158,7 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
 							<Select
 								value={priority}
 								onValueChange={(value) => setPriority(value as TaskPriority)}
+								items={PRIORITY_LABELS}
 							>
 								<SelectTrigger id="task-priority" className="w-full">
 									<SelectValue />
@@ -188,6 +189,7 @@ export function TaskDialog({ open, onOpenChange, task }: TaskDialogProps) {
 								<Select
 									value={status}
 									onValueChange={(value) => setStatus(value as TaskStatus)}
+									items={TASK_STATUS_LABELS}
 								>
 									<SelectTrigger id="task-status" className="w-full">
 										<SelectValue />

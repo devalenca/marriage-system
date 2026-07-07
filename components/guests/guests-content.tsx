@@ -12,6 +12,7 @@ import {
 	UserPlus,
 } from "lucide-react";
 import Link from "next/link";
+import type * as React from "react";
 import { useMemo, useState } from "react";
 import { GuestExportButton } from "@/components/guests/guest-export-button";
 import { GuestFormDialog } from "@/components/guests/guest-form-dialog";
@@ -51,6 +52,11 @@ const STATUS_STYLES: Record<RsvpStatus, string> = {
 	recusado: "text-muted-foreground",
 };
 
+const RSVP_FILTER_ITEMS: Record<string, React.ReactNode> = {
+	todos: "Todos os status",
+	...RSVP_STATUS_LABELS,
+};
+
 export function GuestsContent() {
 	const invites = useQuery(api.guests.listInvites, {});
 
@@ -76,6 +82,14 @@ export function GuestsContent() {
 			),
 		].sort((a, b) => a.localeCompare(b));
 	}, [invites]);
+
+	const groupItems = useMemo(
+		() => ({
+			todos: "Todos os grupos",
+			...Object.fromEntries(groups.map((g) => [g, g])),
+		}),
+		[groups],
+	);
 
 	const totals = useMemo(() => {
 		const acc = { total: 0, confirmed: 0, pending: 0, declined: 0 };
@@ -164,6 +178,7 @@ export function GuestsContent() {
 						<Select
 							value={view}
 							onValueChange={(v) => setView(v as "convite" | "convidado")}
+							items={{ convite: "Por convite", convidado: "Por convidado" }}
 						>
 							<SelectTrigger aria-label="Modo de visualização" size="sm">
 								<SelectValue />
@@ -177,6 +192,7 @@ export function GuestsContent() {
 							<Select
 								value={group}
 								onValueChange={(v) => setGroup(v ?? "todos")}
+								items={groupItems}
 							>
 								<SelectTrigger
 									aria-label="Filtrar por grupo"
@@ -199,6 +215,7 @@ export function GuestsContent() {
 							<Select
 								value={status}
 								onValueChange={(v) => setStatus(v as RsvpStatus | "todos")}
+								items={RSVP_FILTER_ITEMS}
 							>
 								<SelectTrigger
 									aria-label="Filtrar por status"
@@ -460,7 +477,11 @@ function GuestRow({
 					</p>
 				) : null}
 			</div>
-			<Select value={guest.rsvpStatus} onValueChange={handleStatus}>
+			<Select
+				value={guest.rsvpStatus}
+				onValueChange={handleStatus}
+				items={RSVP_STATUS_LABELS}
+			>
 				<SelectTrigger
 					size="sm"
 					aria-label={`Status de ${guest.name}`}

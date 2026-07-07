@@ -114,6 +114,7 @@ export function GuestFormDialog({
 							onValueChange={(value) =>
 								setAgeGroup(value as "adulto" | "crianca")
 							}
+							items={{ adulto: "Adulto", crianca: "Criança" }}
 						>
 							<SelectTrigger id="guest-age" className="w-full">
 								<SelectValue />
