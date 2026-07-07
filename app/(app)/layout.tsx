@@ -1,4 +1,4 @@
-import { AppShell } from "@/components/app-shell";
+import { AppNav } from "@/components/app-nav";
 import { AuthGate } from "@/components/auth-gate";
 
 export default function AppLayout({
@@ -6,7 +6,12 @@ export default function AppLayout({
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<AuthGate>
-			<AppShell>{children}</AppShell>
+			<div className="min-h-screen md:pl-72">
+				<AppNav />
+				<main className="mx-auto w-full max-w-5xl px-4 pt-5 pb-24 sm:px-6 md:px-8 md:pt-8 md:pb-14">
+					{children}
+				</main>
+			</div>
 		</AuthGate>
 	);
 }

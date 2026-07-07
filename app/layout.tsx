@@ -1,32 +1,23 @@
 import type { Metadata, Viewport } from "next";
-import {
-	Cormorant_Garamond,
-	Geist_Mono,
-	Hanken_Grotesk,
-} from "next/font/google";
+import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { Toaster } from "@/components/ui/sonner";
 
-// "Editorial Sereno" type system: Hanken Grotesk for body/UI, Cormorant
-// Garamond for serif display (countdown, headings). Geist Mono stays for
-// any monospaced/tabular needs.
-const hankenSans = Hanken_Grotesk({
-	variable: "--font-sans-base",
+const geistSans = Geist({
+	variable: "--font-geist-sans",
 	subsets: ["latin"],
-	weight: ["400", "500", "600", "700", "800"],
 });
 
 const geistMono = Geist_Mono({
-	variable: "--font-mono-base",
+	variable: "--font-geist-mono",
 	subsets: ["latin"],
 });
 
-const cormorant = Cormorant_Garamond({
+const fraunces = Fraunces({
 	variable: "--font-display",
 	subsets: ["latin"],
-	weight: ["500", "600", "700"],
-	style: ["normal", "italic"],
+	weight: ["500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -47,7 +38,7 @@ export default function RootLayout({
 	return (
 		<html
 			lang="pt-BR"
-			className={`${hankenSans.variable} ${geistMono.variable} ${cormorant.variable} h-full antialiased`}
+			className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
 		>
 			<body className="min-h-full flex flex-col">
 				<ConvexClientProvider>{children}</ConvexClientProvider>
