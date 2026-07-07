@@ -145,9 +145,11 @@ function MonthTasksCard({ tasks }: { tasks: Summary["monthTasks"] }) {
 									type="button"
 									onClick={() => handleComplete(task._id)}
 									aria-label={`Concluir tarefa: ${task.title}`}
-									className="flex size-6 shrink-0 items-center justify-center rounded-full border border-border text-transparent transition-colors hover:border-success hover:text-success"
+									className="group/check -my-1.5 flex size-11 shrink-0 items-center justify-center rounded-full text-transparent transition-colors hover:text-success focus-visible:text-success"
 								>
-									<Check className="size-3.5" aria-hidden />
+									<span className="flex size-6 items-center justify-center rounded-full border border-border transition-colors group-hover/check:border-success group-focus-visible/check:border-success">
+										<Check className="size-3.5" aria-hidden />
+									</span>
 								</button>
 								<div className="min-w-0 flex-1">
 									<p className="truncate text-sm font-medium">{task.title}</p>
@@ -185,7 +187,11 @@ function GuestsSummaryCard() {
 						<p className="text-sm text-muted-foreground">
 							Monte sua lista de convidados e acompanhe as confirmações.
 						</p>
-						<Button size="sm" render={<Link href="/convidados" />}>
+						<Button
+							size="sm"
+							className="h-11 px-4 sm:h-7 sm:px-2.5"
+							render={<Link href="/convidados" />}
+						>
 							Criar convite
 						</Button>
 					</div>
@@ -237,7 +243,11 @@ function CategorySummaryCard({
 							Cadastre seu primeiro fornecedor para acompanhar o orçamento por
 							categoria.
 						</p>
-						<Button size="sm" render={<Link href="/fornecedores" />}>
+						<Button
+							size="sm"
+							className="h-11 px-4 sm:h-7 sm:px-2.5"
+							render={<Link href="/fornecedores" />}
+						>
 							Cadastrar fornecedor
 						</Button>
 					</div>
@@ -257,10 +267,10 @@ function CategorySummaryCard({
 									className="rounded-2xl bg-card/45 p-3 ring-1 ring-border/60"
 								>
 									<div className="flex items-baseline justify-between gap-2">
-										<span className="text-sm font-medium">
+										<span className="min-w-0 truncate text-sm font-medium">
 											{CATEGORY_LABELS[row.category]}
-											<span className="ml-1.5 text-xs text-muted-foreground">
-												{row.vendorCount}
+											<span className="ml-1.5 text-xs font-normal text-muted-foreground tabular-nums">
+												{row.vendorCount} forn.
 											</span>
 										</span>
 										<span className="text-sm font-semibold tabular-nums">
@@ -289,13 +299,11 @@ function CategorySummaryCard({
 
 function DashboardSkeleton() {
 	return (
-		<div
-			className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]"
-			aria-busy
-		>
-			<Skeleton className="h-76 rounded-[2rem]" />
-			<Skeleton className="h-76 rounded-[2rem]" />
-			<Skeleton className="h-40 rounded-[2rem] lg:col-span-2" />
+		<div className="flex flex-col gap-4" aria-busy>
+			<Skeleton className="h-96 rounded-[2rem]" />
+			<Skeleton className="h-56 rounded-[22px]" />
+			<Skeleton className="h-40 rounded-[2rem]" />
+			<Skeleton className="h-32 rounded-[2rem]" />
 		</div>
 	);
 }

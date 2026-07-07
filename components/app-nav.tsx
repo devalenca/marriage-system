@@ -85,7 +85,7 @@ function NavLink({
 			onClick={onNavigate}
 			aria-current={active ? "page" : undefined}
 			className={cn(
-				"flex items-center gap-2.5 rounded-2xl px-3 py-2 text-sm font-semibold transition-all",
+				"flex min-h-11 items-center gap-2.5 rounded-2xl px-3 py-2 text-sm font-semibold transition-all active:translate-y-px",
 				active
 					? "bg-card/80 text-sidebar-primary shadow-sm ring-1 ring-sidebar-border"
 					: "text-muted-foreground hover:bg-card/50 hover:text-foreground",
@@ -196,7 +196,7 @@ function RailLink({
 			aria-label={collapsed ? label : undefined}
 			aria-current={active ? "page" : undefined}
 			className={cn(
-				"flex items-center rounded-2xl font-semibold transition-colors",
+				"flex items-center rounded-2xl font-semibold transition-colors active:translate-y-px",
 				collapsed ? "justify-center p-1.5" : "gap-2.5 px-3 py-2 text-sm",
 				active
 					? "bg-card/80 text-sidebar-primary shadow-sm ring-1 ring-sidebar-border"

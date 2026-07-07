@@ -139,6 +139,15 @@
 		@apply font-sans;
 	}
 
+	/* Consistent keyboard focus ring across every interactive surface. The
+	   Button primitive owns its own richer focus styling, so it is excluded
+	   here; this covers links, nav rows, badges, inputs and anything else
+	   reached via keyboard that would otherwise have no visible focus state. */
+	:focus-visible:not([data-slot="button"]) {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
 	body {
 		@apply text-foreground;
 		position: relative;

@@ -37,17 +37,20 @@ export function SettingsContent() {
 
 	if (settings === undefined) {
 		return (
-			<div aria-busy>
+			<div className="animate-screen-enter" aria-busy>
 				<PageHeader title="Configurações" />
-				<Skeleton className="h-64 rounded-2xl" />
+				<div className="flex flex-col gap-3">
+					<Skeleton className="h-72 rounded-2xl" />
+					<Skeleton className="h-32 rounded-2xl" />
+				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div>
+		<div className="animate-screen-enter">
 			<PageHeader title="Configurações" />
-			<div className="flex flex-col gap-4">
+			<div className="flex flex-col gap-3">
 				{/* Keyed so the form state re-seeds if the settings row changes. */}
 				<SettingsForm
 					key={settings?._id ?? "new"}

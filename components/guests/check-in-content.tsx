@@ -35,7 +35,7 @@ export function CheckInContent() {
 	}
 
 	return (
-		<div>
+		<div className="animate-screen-enter">
 			<PageHeader
 				title="Check-in do dia"
 				subtitle={`${present} de ${expected} presentes`}
@@ -49,19 +49,29 @@ export function CheckInContent() {
 
 			{expected === 0 ? (
 				<Card>
-					<CardContent className="py-10 text-center text-sm text-muted-foreground">
-						Nenhum convidado confirmado ainda.
+					<CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+						<span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+							<Check className="size-6" aria-hidden />
+						</span>
+						<p className="text-sm text-muted-foreground text-balance">
+							Nenhum convidado confirmado ainda. As confirmações aparecem aqui
+							no dia.
+						</p>
 					</CardContent>
 				</Card>
 			) : (
 				<ul className="flex flex-col gap-3">
-					{invites.map((invite) => {
+					{invites.map((invite, index) => {
 						const confirmed = invite.guests.filter(
 							(g) => g.rsvpStatus === "confirmado",
 						);
 						if (confirmed.length === 0) return null;
 						return (
-							<li key={invite._id}>
+							<li
+								key={invite._id}
+								className="animate-card-enter"
+								style={{ animationDelay: `${Math.min(index, 6) * 45}ms` }}
+							>
 								<Card>
 									<CardContent className="flex flex-col gap-3 py-4">
 										<p className="truncate font-medium">{invite.title}</p>
@@ -83,6 +93,7 @@ export function CheckInContent() {
 													<Button
 														variant={guest.checkedIn ? "default" : "outline"}
 														size="sm"
+														className="h-11 shrink-0 sm:h-7"
 														aria-label={
 															guest.checkedIn
 																? `Desfazer check-in de ${guest.name}`

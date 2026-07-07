@@ -102,6 +102,7 @@ export function PaymentListCard({
 							size="sm"
 							variant="outline"
 							onClick={() => handlePay(payment._id)}
+							className="h-11 shrink-0 px-3.5 sm:h-7 sm:px-2.5"
 						>
 							Pagar
 						</Button>

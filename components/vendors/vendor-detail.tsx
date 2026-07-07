@@ -104,11 +104,11 @@ export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
 	const progress = Math.round(financials.progress * 100);
 
 	return (
-		<div className="flex flex-col gap-4">
+		<div className="flex flex-col gap-4 animate-screen-enter">
 			<header>
 				<Link
 					href="/fornecedores"
-					className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+					className="-mx-1 mb-3 inline-flex min-h-11 items-center gap-1 rounded-lg px-1 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-h-0"
 				>
 					<ArrowLeft className="size-4" aria-hidden />
 					Fornecedores
@@ -148,7 +148,7 @@ export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
 				</div>
 			</header>
 
-			<Card>
+			<Card className="animate-card-enter">
 				<CardHeader>
 					<CardTitle className="font-display text-lg">Valores</CardTitle>
 				</CardHeader>
@@ -191,14 +191,15 @@ export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
 				</CardContent>
 			</Card>
 
-			<Card>
-				<CardHeader className="flex-row items-center justify-between">
+			<Card className="animate-card-enter" style={{ animationDelay: "60ms" }}>
+				<CardHeader className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<CardTitle className="font-display text-lg">Pagamentos</CardTitle>
 					<div className="flex gap-2">
 						<Button
 							variant="outline"
 							size="sm"
 							onClick={() => setScheduleOpen(true)}
+							className="h-11 flex-1 sm:h-7 sm:flex-none"
 						>
 							<CalendarPlus data-icon="inline-start" aria-hidden />
 							Gerar parcelas
@@ -209,6 +210,7 @@ export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
 								setEditingPayment(undefined);
 								setPaymentOpen(true);
 							}}
+							className="h-11 flex-1 sm:h-7 sm:flex-none"
 						>
 							<Plus data-icon="inline-start" aria-hidden />
 							Adicionar
@@ -240,20 +242,25 @@ export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
 			vendor.instagram ||
 			vendor.website ||
 			vendor.notes ? (
-				<Card>
+				<Card
+					className="animate-card-enter"
+					style={{ animationDelay: "120ms" }}
+				>
 					<CardHeader>
 						<CardTitle className="font-display text-lg">
 							Contato e observações
 						</CardTitle>
 					</CardHeader>
-					<CardContent className="flex flex-col gap-2 text-sm">
-						{vendor.contactName ? <p>{vendor.contactName}</p> : null}
+					<CardContent className="flex flex-col gap-1 text-sm">
+						{vendor.contactName ? (
+							<p className="py-1">{vendor.contactName}</p>
+						) : null}
 						{vendor.phone ? (
 							<a
 								href={`tel:${vendor.phone.replace(/\D/g, "")}`}
-								className="flex items-center gap-2 text-primary"
+								className="-mx-1 inline-flex min-h-11 items-center gap-2 rounded-lg px-1 text-primary transition-colors hover:text-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-h-0 sm:py-1"
 							>
-								<Phone className="size-4" aria-hidden />
+								<Phone className="size-4 shrink-0" aria-hidden />
 								{vendor.phone}
 							</a>
 						) : null}
@@ -262,9 +269,9 @@ export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
 								href={`https://instagram.com/${vendor.instagram.replace(/^@/, "")}`}
 								target="_blank"
 								rel="noreferrer"
-								className="flex items-center gap-2 text-primary"
+								className="-mx-1 inline-flex min-h-11 items-center gap-2 rounded-lg px-1 text-primary transition-colors hover:text-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-h-0 sm:py-1"
 							>
-								<AtSign className="size-4" aria-hidden />
+								<AtSign className="size-4 shrink-0" aria-hidden />
 								{vendor.instagram}
 							</a>
 						) : null}
@@ -273,14 +280,14 @@ export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
 								href={vendor.website}
 								target="_blank"
 								rel="noreferrer"
-								className="flex items-center gap-2 text-primary"
+								className="-mx-1 inline-flex min-h-11 items-center gap-2 rounded-lg px-1 text-primary transition-colors hover:text-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-h-0 sm:py-1"
 							>
-								<ExternalLink className="size-4" aria-hidden />
-								{vendor.website}
+								<ExternalLink className="size-4 shrink-0" aria-hidden />
+								<span className="truncate">{vendor.website}</span>
 							</a>
 						) : null}
 						{vendor.notes ? (
-							<p className="whitespace-pre-wrap text-muted-foreground">
+							<p className="mt-1 whitespace-pre-wrap text-muted-foreground">
 								{vendor.notes}
 							</p>
 						) : null}
@@ -288,7 +295,7 @@ export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
 				</Card>
 			) : null}
 
-			<Card>
+			<Card className="animate-card-enter" style={{ animationDelay: "180ms" }}>
 				<CardHeader>
 					<CardTitle className="font-display text-lg">
 						Contrato e anexos
@@ -301,9 +308,9 @@ export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
 							href={link.url}
 							target="_blank"
 							rel="noreferrer"
-							className="flex items-center gap-2 text-sm text-primary"
+							className="-mx-1 inline-flex min-h-11 items-center gap-2 rounded-lg px-1 text-sm text-primary transition-colors hover:text-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-h-0 sm:py-1"
 						>
-							<ExternalLink className="size-4" aria-hidden />
+							<ExternalLink className="size-4 shrink-0" aria-hidden />
 							{link.label}
 						</a>
 					))}
@@ -421,9 +428,9 @@ function PaymentList({
 								)
 					}
 					className={cn(
-						"flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors",
+						"flex size-6 shrink-0 items-center justify-center rounded-full border outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 before:absolute before:-inset-2.5 before:content-[''] relative sm:before:hidden",
 						isPaid
-							? "border-success bg-success text-success-foreground text-white"
+							? "border-success bg-success text-primary-foreground"
 							: isOverdue
 								? "border-destructive text-transparent hover:text-destructive"
 								: "border-border text-transparent hover:border-success hover:text-success",

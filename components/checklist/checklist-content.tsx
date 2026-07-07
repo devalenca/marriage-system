@@ -2,7 +2,13 @@
 
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { Check, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import {
+	Check,
+	ChevronLeft,
+	ChevronRight,
+	ListChecks,
+	Plus,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { TaskDialog } from "@/components/checklist/task-dialog";
@@ -57,7 +63,7 @@ export function ChecklistContent() {
 	const doneCount = tasks?.filter((t) => t.status === "concluida").length ?? 0;
 
 	return (
-		<div>
+		<div className="animate-screen-enter">
 			<PageHeader
 				title="Checklist"
 				subtitle={
@@ -66,7 +72,7 @@ export function ChecklistContent() {
 				action={
 					<Button onClick={openCreate}>
 						<Plus data-icon="inline-start" aria-hidden />
-						Nova
+						Nova tarefa
 					</Button>
 				}
 			/>
@@ -138,9 +144,14 @@ function TaskListView({
 	if (tasks.length === 0) {
 		return (
 			<Card>
-				<CardContent className="py-10 text-center text-sm text-muted-foreground">
-					Nenhuma tarefa por aqui. Crie a primeira ou gere o checklist nas
-					Configurações.
+				<CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+					<span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+						<ListChecks className="size-6" aria-hidden />
+					</span>
+					<p className="max-w-sm text-sm text-muted-foreground text-balance">
+						Nenhuma tarefa por aqui. Crie a primeira ou gere o checklist nas
+						Configurações.
+					</p>
 				</CardContent>
 			</Card>
 		);
@@ -207,18 +218,18 @@ function KanbanView({
 				{TASK_STATUSES.map((status) => {
 					const columnTasks = visible.filter((t) => t.status === status);
 					return (
-						<section key={status}>
+						<section key={status} className="flex flex-col">
 							<h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
 								<span className="first-letter:uppercase">
 									{TASK_STATUS_LABELS[status]}
 								</span>
 								<span className="tabular-nums">{columnTasks.length}</span>
 							</h2>
-							<Card>
-								<CardContent className="flex flex-col divide-y py-2">
+							<Card className="flex-1">
+								<CardContent className="flex min-h-24 flex-col divide-y py-2">
 									{columnTasks.length === 0 ? (
-										<p className="py-2.5 text-sm text-muted-foreground">
-											Nada aqui
+										<p className="flex flex-1 items-center justify-center py-6 text-center text-sm text-muted-foreground">
+											Nada por aqui
 										</p>
 									) : (
 										columnTasks.map((task) => (
@@ -278,7 +289,7 @@ function TaskRow({
 				className={cn(
 					"flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors",
 					isDone
-						? "border-success bg-success text-white"
+						? "border-success bg-success text-primary-foreground"
 						: "border-border text-transparent hover:border-success hover:text-success",
 				)}
 			>

@@ -124,7 +124,7 @@ export function InspirationContent() {
 	}
 
 	return (
-		<div>
+		<div className="animate-screen-enter">
 			<PageHeader
 				title="Inspirações"
 				subtitle={
@@ -198,7 +198,7 @@ export function InspirationContent() {
 										setConfirmingDelete(false);
 									}}
 									className={cn(
-										"rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
+										"inline-flex min-h-9 items-center rounded-full px-4 text-sm font-semibold transition-colors",
 										active
 											? "bg-primary text-primary-foreground"
 											: "bg-card/55 text-muted-foreground ring-1 ring-border/60 hover:text-foreground",
@@ -324,19 +324,27 @@ export function InspirationContent() {
 
 							{activeGallery.images.length === 0 ? (
 								<Card>
-									<CardContent className="py-10 text-center">
-										<p className="text-sm text-muted-foreground">
-											Nenhuma imagem ainda.
+									<CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+										<Images
+											className="size-8 text-muted-foreground"
+											aria-hidden
+										/>
+										<p className="text-pretty text-sm text-muted-foreground">
+											Nenhuma imagem ainda. Adicione fotos que inspiram o seu
+											casamento.
 										</p>
 									</CardContent>
 								</Card>
 							) : (
 								<div className="columns-2 gap-3 md:columns-3 lg:columns-4">
-									{activeGallery.images.map((image) =>
+									{activeGallery.images.map((image, index) =>
 										image.url ? (
 											<figure
 												key={image._id}
-												className="group relative mb-3 break-inside-avoid overflow-hidden rounded-xl ring-1 ring-border/60"
+												className="group animate-card-enter relative mb-3 break-inside-avoid overflow-hidden rounded-xl ring-1 ring-border/60"
+												style={{
+													animationDelay: `${Math.min(index, 8) * 40}ms`,
+												}}
 											>
 												{/* biome-ignore lint/performance/noImgElement: Convex storage URLs are not statically known. */}
 												<img
@@ -348,7 +356,7 @@ export function InspirationContent() {
 													type="button"
 													aria-label="Remover imagem"
 													onClick={() => handleRemoveImage(image._id)}
-													className="absolute top-2 right-2 rounded-full bg-background/80 p-1.5 text-muted-foreground opacity-0 backdrop-blur-sm transition-opacity hover:text-destructive group-hover:opacity-100"
+													className="absolute top-2 right-2 flex size-9 items-center justify-center rounded-full bg-background/80 text-muted-foreground backdrop-blur-sm transition-opacity hover:text-destructive focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
 												>
 													<Trash2 className="size-4" aria-hidden />
 												</button>

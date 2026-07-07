@@ -111,7 +111,13 @@ export function BudgetOverviewCard({
 					Previsão dos próximos meses
 				</div>
 				<div
-					className="flex h-28 items-end gap-3.5"
+					className={cn(
+						"flex items-end gap-3.5",
+						// Standalone (dashboard): fixed height so the % bars resolve.
+						// In the Financeiro grid (!showBudget): fill so the card matches
+						// its taller sibling instead of leaving dead space below.
+						showBudget ? "h-28" : "min-h-28 flex-1",
+					)}
 					role="img"
 					aria-label="Previsão de pagamentos por mês"
 				>

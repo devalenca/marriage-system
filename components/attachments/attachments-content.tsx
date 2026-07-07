@@ -1,12 +1,13 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { Download, FileText, Search } from "lucide-react";
+import { Download, FileText, Paperclip, Search } from "lucide-react";
 import Link from "next/link";
 import type * as React from "react";
 import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -54,7 +55,7 @@ export function AttachmentsContent() {
 	const filtered = files ? filterAttachments(files, { search, kind }) : [];
 
 	return (
-		<div>
+		<div className="animate-screen-enter">
 			<PageHeader
 				title="Anexos"
 				subtitle={
@@ -108,18 +109,31 @@ export function AttachmentsContent() {
 					<Skeleton className="h-20 rounded-2xl" />
 				</div>
 			) : filtered.length === 0 ? (
-				<Card>
+				<Card className="animate-card-enter">
 					<CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-						<p className="text-sm text-muted-foreground">
+						<Paperclip className="size-8 text-muted-foreground" aria-hidden />
+						<p className="text-pretty text-sm text-muted-foreground">
 							{files.length === 0
 								? "Nenhum anexo ainda. Anexe contratos e comprovantes nas páginas de fornecedores e pagamentos."
-								: "Nenhum anexo encontrado com esses filtros."}
+								: "Nenhum anexo com esses filtros. Ajuste a busca para ver mais."}
 						</p>
+						{files.length > 0 ? (
+							<Button
+								variant="outline"
+								onClick={() => {
+									setSearch("");
+									setKind("todos");
+								}}
+								className="h-11 px-3.5 sm:h-8 sm:px-2.5"
+							>
+								Limpar filtros
+							</Button>
+						) : null}
 					</CardContent>
 				</Card>
 			) : (
 				<ul className="flex flex-col gap-3">
-					{filtered.map((file) => {
+					{filtered.map((file, index) => {
 						const sourceLabel =
 							file.source.type === "vendor"
 								? (file.source.vendorName ?? "Fornecedor removido")
@@ -129,7 +143,11 @@ export function AttachmentsContent() {
 						);
 						const size = formatBytes(file.sizeBytes);
 						return (
-							<li key={file._id}>
+							<li
+								key={file._id}
+								className="animate-card-enter"
+								style={{ animationDelay: `${Math.min(index, 6) * 45}ms` }}
+							>
 								<Card>
 									<CardContent className="flex items-center gap-3 py-4">
 										<FileText
@@ -155,7 +173,7 @@ export function AttachmentsContent() {
 													{sourceLabel}
 												</p>
 											)}
-											<p className="text-[11px] text-muted-foreground">
+											<p className="text-xs text-muted-foreground tabular-nums">
 												{size ? `${size} · ${uploadedAt}` : uploadedAt}
 											</p>
 										</div>
@@ -165,7 +183,7 @@ export function AttachmentsContent() {
 												target="_blank"
 												rel="noreferrer"
 												aria-label={`Abrir ${file.name}`}
-												className="text-muted-foreground transition-colors hover:text-primary"
+												className="-mr-1 flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent/40 hover:text-primary sm:size-9"
 											>
 												<Download className="size-4" aria-hidden />
 											</a>

@@ -5,11 +5,14 @@ import type { FunctionReturnType } from "convex/server";
 import {
 	Baby,
 	CalendarCheck,
+	Check,
+	CircleDashed,
 	Pencil,
 	Plus,
 	Search,
 	Trash2,
 	UserPlus,
+	X,
 } from "lucide-react";
 import Link from "next/link";
 import type * as React from "react";
@@ -49,7 +52,13 @@ type Guest = InviteWithGuests["guests"][number];
 const STATUS_STYLES: Record<RsvpStatus, string> = {
 	pendente: "text-warning",
 	confirmado: "text-success",
-	recusado: "text-muted-foreground",
+	recusado: "text-foreground",
+};
+
+const STATUS_ICONS: Record<RsvpStatus, React.ReactNode> = {
+	pendente: <CircleDashed className="size-3.5 text-warning" aria-hidden />,
+	confirmado: <Check className="size-3.5 text-success" aria-hidden />,
+	recusado: <X className="size-3.5 text-muted-foreground" aria-hidden />,
 };
 
 const RSVP_FILTER_ITEMS: Record<string, React.ReactNode> = {
@@ -115,7 +124,7 @@ export function GuestsContent() {
 	const hasAny = invites.length > 0;
 
 	return (
-		<div>
+		<div className="animate-screen-enter">
 			<GuestPrintSheet invites={invites} />
 			<PageHeader
 				title="Convidados"
@@ -125,14 +134,15 @@ export function GuestsContent() {
 						: undefined
 				}
 				action={
-					<div className="flex items-center gap-2">
+					<div className="flex flex-wrap items-center justify-end gap-2">
 						{hasAny ? <GuestExportButton invites={invites} /> : null}
 						<Button
 							variant="outline"
 							render={<Link href="/convidados/check-in" />}
 						>
 							<CalendarCheck data-icon="inline-start" aria-hidden />
-							Check-in do dia
+							<span className="hidden sm:inline">Check-in do dia</span>
+							<span className="sm:hidden">Check-in</span>
 						</Button>
 						<Button onClick={() => setCreateInviteOpen(true)}>
 							<Plus data-icon="inline-start" aria-hidden />
@@ -180,7 +190,11 @@ export function GuestsContent() {
 							onValueChange={(v) => setView(v as "convite" | "convidado")}
 							items={{ convite: "Por convite", convidado: "Por convidado" }}
 						>
-							<SelectTrigger aria-label="Modo de visualização" size="sm">
+							<SelectTrigger
+								aria-label="Modo de visualização"
+								className="flex-1"
+								size="sm"
+							>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
@@ -240,9 +254,12 @@ export function GuestsContent() {
 
 			{!hasAny ? (
 				<Card>
-					<CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-						<p className="text-sm text-muted-foreground">
-							Nenhum convite ainda. Crie o primeiro e monte sua lista.
+					<CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+						<span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+							<UserPlus className="size-6" aria-hidden />
+						</span>
+						<p className="max-w-xs text-sm text-muted-foreground text-balance">
+							Nenhum convite ainda. Crie o primeiro e comece a montar sua lista.
 						</p>
 						<Button onClick={() => setCreateInviteOpen(true)}>
 							<Plus data-icon="inline-start" aria-hidden />
@@ -252,14 +269,23 @@ export function GuestsContent() {
 				</Card>
 			) : filteredInvites.length === 0 ? (
 				<Card>
-					<CardContent className="py-10 text-center text-sm text-muted-foreground">
-						Nenhum convite encontrado com esses filtros.
+					<CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+						<span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+							<Search className="size-6" aria-hidden />
+						</span>
+						<p className="text-sm text-muted-foreground text-balance">
+							Nenhum convite encontrado com esses filtros.
+						</p>
 					</CardContent>
 				</Card>
 			) : view === "convite" ? (
 				<ul className="flex flex-col gap-3">
-					{filteredInvites.map((invite) => (
-						<li key={invite._id}>
+					{filteredInvites.map((invite, index) => (
+						<li
+							key={invite._id}
+							className="animate-card-enter"
+							style={{ animationDelay: `${Math.min(index, 6) * 45}ms` }}
+						>
 							<InviteCard
 								invite={invite}
 								onEdit={() => setEditingInvite(invite)}
@@ -310,8 +336,12 @@ function SummaryTile({
 	tone?: string;
 }) {
 	return (
-		<div className="rounded-2xl bg-card/45 p-3 text-center ring-1 ring-border/60">
-			<p className={cn("text-2xl font-semibold tabular-nums", tone)}>{value}</p>
+		<div className="rounded-2xl bg-card/45 p-3 text-center ring-1 ring-border/60 transition-colors">
+			<p
+				className={cn("font-display text-2xl font-semibold tabular-nums", tone)}
+			>
+				{value}
+			</p>
 			<p className="text-xs text-muted-foreground">{label}</p>
 		</div>
 	);
@@ -377,6 +407,7 @@ function InviteCard({
 							size="icon"
 							aria-label="Editar convite"
 							onClick={onEdit}
+							className="size-9 sm:size-8"
 						>
 							<Pencil aria-hidden />
 						</Button>
@@ -385,6 +416,7 @@ function InviteCard({
 							size="icon"
 							aria-label="Excluir convite"
 							onClick={handleRemove}
+							className="size-9 sm:size-8"
 						>
 							<Trash2 aria-hidden />
 						</Button>
@@ -485,8 +517,12 @@ function GuestRow({
 				<SelectTrigger
 					size="sm"
 					aria-label={`Status de ${guest.name}`}
-					className={cn("w-[7.5rem]", STATUS_STYLES[guest.rsvpStatus])}
+					className={cn(
+						"w-[8rem] font-medium",
+						STATUS_STYLES[guest.rsvpStatus],
+					)}
 				>
+					{STATUS_ICONS[guest.rsvpStatus]}
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
@@ -502,6 +538,7 @@ function GuestRow({
 				size="icon"
 				aria-label={`Editar ${guest.name}`}
 				onClick={onEdit}
+				className="size-9 sm:size-8"
 			>
 				<Pencil aria-hidden />
 			</Button>
@@ -510,6 +547,7 @@ function GuestRow({
 				size="icon"
 				aria-label={`Remover ${guest.name}`}
 				onClick={handleRemove}
+				className="size-9 sm:size-8"
 			>
 				<Trash2 aria-hidden />
 			</Button>
@@ -535,8 +573,13 @@ function GuestFlatList({
 	if (rows.length === 0) {
 		return (
 			<Card>
-				<CardContent className="py-10 text-center text-sm text-muted-foreground">
-					Nenhum convidado com esse status.
+				<CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+					<span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+						<Search className="size-6" aria-hidden />
+					</span>
+					<p className="text-sm text-muted-foreground">
+						Nenhum convidado com esse status.
+					</p>
 				</CardContent>
 			</Card>
 		);

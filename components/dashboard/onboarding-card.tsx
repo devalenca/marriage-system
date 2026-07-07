@@ -98,7 +98,12 @@ export function OnboardingCard() {
 							onValueChange={setBudgetCents}
 						/>
 					</div>
-					<Button type="submit" size="lg" disabled={saving} className="mt-2">
+					<Button
+						type="submit"
+						size="lg"
+						disabled={saving}
+						className="mt-2 h-11"
+					>
 						{saving ? "Preparando..." : "Começar a planejar"}
 					</Button>
 				</form>
