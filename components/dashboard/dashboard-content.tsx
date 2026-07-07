@@ -103,16 +103,6 @@ function CountdownCard({ summary }: { summary: Summary }) {
 					{formatDateBR(settings.weddingDate)}
 					{settings.weddingTime ? ` · ${settings.weddingTime}` : ""}
 				</p>
-				{(settings.ceremonyVenue || settings.receptionVenue) && (
-					<div className="hero-subject flex flex-col items-center gap-1 rounded-2xl bg-black/25 px-4 py-2 text-xs font-medium text-white/80 shadow-sm ring-1 ring-white/20 backdrop-blur-md">
-						{settings.ceremonyVenue && (
-							<span>Cerimônia · {settings.ceremonyVenue}</span>
-						)}
-						{settings.receptionVenue && (
-							<span>Recepção · {settings.receptionVenue}</span>
-						)}
-					</div>
-				)}
 			</CardContent>
 		</Card>
 	);
