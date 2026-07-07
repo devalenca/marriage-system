@@ -163,3 +163,88 @@ describe("attachments cascade delete", () => {
 		expect(list).toHaveLength(0);
 	});
 });
+
+describe("attachments.listAll", () => {
+	it("enriches a vendor attachment with the vendor name", async () => {
+		const t = setupTest();
+		const vendorId = await createVendor(t);
+		await t.mutation(api.attachments.create, {
+			storageId: await storeBlob(t),
+			name: "contrato.pdf",
+			kind: "contrato",
+			vendorId,
+		});
+
+		const list = await t.query(api.attachments.listAll, {});
+		expect(list).toHaveLength(1);
+		expect(list[0]).toMatchObject({
+			name: "contrato.pdf",
+			kind: "contrato",
+			source: { type: "vendor", vendorName: "Espaço Jardim" },
+		});
+		expect(typeof list[0]?.url).toBe("string");
+	});
+
+	it("enriches a payment attachment with payment description + vendor name", async () => {
+		const t = setupTest();
+		const vendorId = await createVendor(t);
+		const paymentId = await t.mutation(api.payments.create, {
+			vendorId,
+			description: "Entrada",
+			amountCents: 300000,
+			dueDate: "2026-07-01",
+		});
+		await t.mutation(api.attachments.create, {
+			storageId: await storeBlob(t),
+			name: "comprovante.png",
+			kind: "comprovante",
+			paymentId,
+		});
+
+		const list = await t.query(api.attachments.listAll, {});
+		expect(list).toHaveLength(1);
+		expect(list[0]?.source).toMatchObject({
+			type: "payment",
+			vendorName: "Espaço Jardim",
+			paymentDescription: "Entrada",
+		});
+	});
+
+	it("returns attachments newest-first across both sources", async () => {
+		const t = setupTest();
+		const vendorId = await createVendor(t);
+		const paymentId = await t.mutation(api.payments.create, {
+			vendorId,
+			description: "Entrada",
+			amountCents: 300000,
+			dueDate: "2026-07-01",
+		});
+		await t.mutation(api.attachments.create, {
+			storageId: await storeBlob(t),
+			name: "contrato.pdf",
+			kind: "contrato",
+			vendorId,
+		});
+		await t.mutation(api.attachments.create, {
+			storageId: await storeBlob(t),
+			name: "comprovante.png",
+			kind: "comprovante",
+			paymentId,
+		});
+
+		const list = await t.query(api.attachments.listAll, {});
+		expect(list).toHaveLength(2);
+		expect(list.map((f) => f.name)).toEqual(
+			expect.arrayContaining(["contrato.pdf", "comprovante.png"]),
+		);
+		expect(list[0]?.uploadedAt).toBeGreaterThanOrEqual(
+			list[1]?.uploadedAt ?? 0,
+		);
+	});
+
+	it("empty when no attachments", async () => {
+		const t = setupTest();
+		const list = await t.query(api.attachments.listAll, {});
+		expect(list).toEqual([]);
+	});
+});

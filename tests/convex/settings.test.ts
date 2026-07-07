@@ -66,4 +66,67 @@ describe("settings", () => {
 			}),
 		).rejects.toThrow();
 	});
+
+	it("saves optional event details", async () => {
+		const t = setupTest();
+		await t.mutation(api.settings.save, {
+			coupleNames: "Gabriel & Alice",
+			weddingDate: "2027-06-12",
+			budgetGoalCents: 5500000,
+			ceremonyVenue: "Igreja Matriz",
+			receptionVenue: "Espaço Villa",
+			weddingTime: "16:30",
+		});
+		const settings = await t.query(api.settings.get, {});
+		expect(settings).toMatchObject({
+			ceremonyVenue: "Igreja Matriz",
+			receptionVenue: "Espaço Villa",
+			weddingTime: "16:30",
+		});
+	});
+
+	it("trims venues and omits empty event details", async () => {
+		const t = setupTest();
+		await t.mutation(api.settings.save, {
+			coupleNames: "Gabriel & Alice",
+			weddingDate: "2027-06-12",
+			budgetGoalCents: 5500000,
+			ceremonyVenue: "  Igreja  ",
+			receptionVenue: "   ",
+			weddingTime: "",
+		});
+		const settings = await t.query(api.settings.get, {});
+		expect(settings?.ceremonyVenue).toBe("Igreja");
+		expect(settings?.receptionVenue).toBeUndefined();
+		expect(settings?.weddingTime).toBeUndefined();
+	});
+
+	it("rejects an invalid wedding time", async () => {
+		const t = setupTest();
+		await expect(
+			t.mutation(api.settings.save, {
+				coupleNames: "Gabriel & Alice",
+				weddingDate: "2027-06-12",
+				budgetGoalCents: 5500000,
+				weddingTime: "25:00",
+			}),
+		).rejects.toThrow();
+	});
+
+	it("clears a previously set venue on update", async () => {
+		const t = setupTest();
+		await t.mutation(api.settings.save, {
+			coupleNames: "Gabriel & Alice",
+			weddingDate: "2027-06-12",
+			budgetGoalCents: 5500000,
+			ceremonyVenue: "Igreja Matriz",
+		});
+		await t.mutation(api.settings.save, {
+			coupleNames: "Gabriel & Alice",
+			weddingDate: "2027-06-12",
+			budgetGoalCents: 5500000,
+		});
+		const settings = await t.query(api.settings.get, {});
+		expect(settings?.ceremonyVenue).toBeUndefined();
+	});
 });

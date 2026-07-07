@@ -20,6 +20,9 @@ export default defineSchema({
 		coupleNames: v.string(),
 		weddingDate: v.string(), // ISO yyyy-MM-dd (America/Sao_Paulo)
 		budgetGoalCents: v.number(),
+		ceremonyVenue: v.optional(v.string()),
+		receptionVenue: v.optional(v.string()),
+		weddingTime: v.optional(v.string()), // ISO HH:mm (24h), America/Sao_Paulo
 	}),
 
 	vendors: defineTable({
@@ -67,6 +70,18 @@ export default defineSchema({
 	})
 		.index("by_vendor", ["vendorId"])
 		.index("by_payment", ["paymentId"]),
+
+	// Inspirações: named moodboards, each holding uploaded reference images.
+	galleries: defineTable({
+		name: v.string(),
+	}),
+
+	inspirationImages: defineTable({
+		galleryId: v.id("galleries"),
+		storageId: v.id("_storage"),
+		caption: v.optional(v.string()),
+		uploadedAt: v.number(), // epoch ms
+	}).index("by_gallery", ["galleryId"]),
 
 	// An invitation addressed to a household/party. Groups one or more guests.
 	invites: defineTable({

@@ -2,7 +2,9 @@
 
 import {
 	House,
+	Images,
 	ListChecks,
+	Paperclip,
 	Settings,
 	Store,
 	Users,
@@ -18,6 +20,8 @@ const NAV_ITEMS = [
 	{ href: "/financeiro", label: "Financeiro", icon: Wallet },
 	{ href: "/convidados", label: "Convidados", icon: Users },
 	{ href: "/checklist", label: "Checklist", icon: ListChecks },
+	{ href: "/anexos", label: "Anexos", icon: Paperclip },
+	{ href: "/inspiracoes", label: "Inspirações", icon: Images },
 	{ href: "/configuracoes", label: "Ajustes", icon: Settings },
 ] as const;
 
@@ -30,7 +34,7 @@ export function AppNav() {
 				aria-label="Navegação principal"
 				className="fixed inset-x-3 bottom-3 z-40 rounded-[1.75rem] border border-sidebar-border bg-sidebar/85 shadow-[0_18px_44px_oklch(0.32_0.07_132_/_0.18)] backdrop-blur-2xl md:hidden"
 			>
-				<ul className="grid grid-cols-6 p-1.5">
+				<ul className="grid grid-cols-8 p-1.5">
 					{NAV_ITEMS.map(({ href, label, icon: Icon }) => {
 						const active = pathname.startsWith(href);
 						return (

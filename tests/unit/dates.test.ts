@@ -4,6 +4,7 @@ import {
 	daysBetween,
 	formatDateBR,
 	isValidISODate,
+	isValidISOTime,
 	todayInSaoPaulo,
 } from "@/lib/domain/dates";
 
@@ -27,6 +28,22 @@ describe("isValidISODate", () => {
 		expect(isValidISODate("2026-13-01")).toBe(false);
 		expect(isValidISODate("2026-02-30")).toBe(false);
 		expect(isValidISODate("")).toBe(false);
+	});
+});
+
+describe("isValidISOTime", () => {
+	it("accepts valid 24-hour times", () => {
+		expect(isValidISOTime("00:00")).toBe(true);
+		expect(isValidISOTime("15:30")).toBe(true);
+		expect(isValidISOTime("23:59")).toBe(true);
+	});
+
+	it("rejects out-of-range or malformed times", () => {
+		expect(isValidISOTime("24:00")).toBe(false);
+		expect(isValidISOTime("15:60")).toBe(false);
+		expect(isValidISOTime("9:5")).toBe(false); // unpadded
+		expect(isValidISOTime("15h30")).toBe(false);
+		expect(isValidISOTime("")).toBe(false);
 	});
 });
 
