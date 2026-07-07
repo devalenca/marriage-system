@@ -126,7 +126,22 @@ export const updateGuest = mutation({
 		const guest = await ctx.db.get(id);
 		if (!guest) throw new Error("Convidado não encontrado");
 		requireName(patch.name, "Informe o nome do convidado");
-		await ctx.db.patch(id, patch);
+		// A guest who is no longer confirmed can't be checked in — clear stale state.
+		const clearCheckIn =
+			patch.rsvpStatus !== undefined && patch.rsvpStatus !== "confirmado";
+		await ctx.db.patch(
+			id,
+			clearCheckIn ? { ...patch, checkedIn: false } : patch,
+		);
+	},
+});
+
+export const setCheckIn = mutation({
+	args: { id: v.id("guests"), checkedIn: v.boolean() },
+	handler: async (ctx, { id, checkedIn }) => {
+		const guest = await ctx.db.get(id);
+		if (!guest) throw new Error("Convidado não encontrado");
+		await ctx.db.patch(id, { checkedIn });
 	},
 });
 

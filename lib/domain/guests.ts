@@ -23,6 +23,7 @@ export const INVITE_SIDE_LABELS: Record<InviteSide, string> = {
 export interface GuestSnapshot {
 	rsvpStatus: RsvpStatus;
 	isChild?: boolean;
+	checkedIn?: boolean;
 }
 
 export interface GuestCounts {
@@ -59,4 +60,23 @@ export function guestCounts(guests: GuestSnapshot[]): GuestCounts {
 	}
 
 	return counts;
+}
+
+export interface CheckInCounts {
+	/** Confirmed guests who have been checked in. */
+	present: number;
+	/** Confirmed guests — the denominator for the day-of counter. */
+	expected: number;
+}
+
+/** Day-of attendance tally: present are confirmed AND checked in. */
+export function checkInCounts(guests: GuestSnapshot[]): CheckInCounts {
+	let present = 0;
+	let expected = 0;
+	for (const guest of guests) {
+		if (guest.rsvpStatus !== "confirmado") continue;
+		expected += 1;
+		if (guest.checkedIn) present += 1;
+	}
+	return { present, expected };
 }

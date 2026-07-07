@@ -2,9 +2,20 @@
 
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { Baby, Pencil, Plus, Search, Trash2, UserPlus } from "lucide-react";
+import {
+	Baby,
+	CalendarCheck,
+	Pencil,
+	Plus,
+	Search,
+	Trash2,
+	UserPlus,
+} from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
+import { GuestExportButton } from "@/components/guests/guest-export-button";
 import { GuestFormDialog } from "@/components/guests/guest-form-dialog";
+import { GuestPrintSheet } from "@/components/guests/guest-print-sheet";
 import { InviteFormDialog } from "@/components/guests/invite-form-dialog";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -91,6 +102,7 @@ export function GuestsContent() {
 
 	return (
 		<div>
+			<GuestPrintSheet invites={invites} />
 			<PageHeader
 				title="Convidados"
 				subtitle={
@@ -99,10 +111,20 @@ export function GuestsContent() {
 						: undefined
 				}
 				action={
-					<Button onClick={() => setCreateInviteOpen(true)}>
-						<Plus data-icon="inline-start" aria-hidden />
-						Novo convite
-					</Button>
+					<div className="flex items-center gap-2">
+						{hasAny ? <GuestExportButton invites={invites} /> : null}
+						<Button
+							variant="outline"
+							render={<Link href="/convidados/check-in" />}
+						>
+							<CalendarCheck data-icon="inline-start" aria-hidden />
+							Check-in do dia
+						</Button>
+						<Button onClick={() => setCreateInviteOpen(true)}>
+							<Plus data-icon="inline-start" aria-hidden />
+							Novo convite
+						</Button>
+					</div>
 				}
 			/>
 

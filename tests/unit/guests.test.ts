@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { type GuestSnapshot, guestCounts } from "@/lib/domain/guests";
+import {
+	checkInCounts,
+	type GuestSnapshot,
+	guestCounts,
+} from "@/lib/domain/guests";
 
 describe("guestCounts", () => {
 	it("returns all-zero counts for an empty list", () => {
@@ -41,5 +45,28 @@ describe("guestCounts", () => {
 		expect(counts.confirmedChildren).toBe(0);
 		expect(counts.confirmedAdults).toBe(0);
 		expect(counts.confirmed).toBe(0);
+	});
+});
+
+describe("checkInCounts", () => {
+	it("returns all-zero counts for an empty list", () => {
+		expect(checkInCounts([])).toEqual({ present: 0, expected: 0 });
+	});
+
+	it("counts confirmed+checkedIn as present and all confirmed as expected", () => {
+		const guests: GuestSnapshot[] = [
+			{ rsvpStatus: "confirmado", checkedIn: true },
+			{ rsvpStatus: "confirmado" },
+			{ rsvpStatus: "confirmado", checkedIn: false },
+		];
+		expect(checkInCounts(guests)).toEqual({ present: 1, expected: 3 });
+	});
+
+	it("ignores check-in on non-confirmed guests", () => {
+		const guests: GuestSnapshot[] = [
+			{ rsvpStatus: "pendente", checkedIn: true },
+			{ rsvpStatus: "recusado", checkedIn: true },
+		];
+		expect(checkInCounts(guests)).toEqual({ present: 0, expected: 0 });
 	});
 });

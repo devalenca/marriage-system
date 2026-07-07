@@ -109,3 +109,79 @@ describe("guests: RSVP tracking", () => {
 		).rejects.toThrow();
 	});
 });
+
+describe("guests: day-of check-in", () => {
+	it("toggles check-in on and off", async () => {
+		const t = setupTest();
+		const inviteId = await t.mutation(api.guests.createInvite, {
+			title: "Padrinhos",
+		});
+		const guestId = await t.mutation(api.guests.addGuest, {
+			inviteId,
+			name: "Ana",
+		});
+		await t.mutation(api.guests.updateGuest, {
+			id: guestId,
+			rsvpStatus: "confirmado",
+		});
+
+		await t.mutation(api.guests.setCheckIn, { id: guestId, checkedIn: true });
+		let list = await t.query(api.guests.listInvites, {});
+		expect(list[0]?.guests[0]?.checkedIn).toBe(true);
+
+		await t.mutation(api.guests.setCheckIn, { id: guestId, checkedIn: false });
+		list = await t.query(api.guests.listInvites, {});
+		expect(list[0]?.guests[0]?.checkedIn).toBe(false);
+	});
+
+	it("defaults to no check-in for a freshly added guest", async () => {
+		const t = setupTest();
+		const inviteId = await t.mutation(api.guests.createInvite, {
+			title: "Amigos",
+		});
+		await t.mutation(api.guests.addGuest, { inviteId, name: "Bruno" });
+
+		const list = await t.query(api.guests.listInvites, {});
+		expect(list[0]?.guests[0]?.checkedIn).toBeFalsy();
+	});
+
+	it("rejects a missing guest", async () => {
+		const t = setupTest();
+		const inviteId = await t.mutation(api.guests.createInvite, {
+			title: "Temp",
+		});
+		const guestId = await t.mutation(api.guests.addGuest, {
+			inviteId,
+			name: "Some",
+		});
+		await t.mutation(api.guests.removeGuest, { id: guestId });
+
+		await expect(
+			t.mutation(api.guests.setCheckIn, { id: guestId, checkedIn: true }),
+		).rejects.toThrow();
+	});
+
+	it("clears check-in when a guest stops being confirmed", async () => {
+		const t = setupTest();
+		const inviteId = await t.mutation(api.guests.createInvite, {
+			title: "Vizinhos",
+		});
+		const guestId = await t.mutation(api.guests.addGuest, {
+			inviteId,
+			name: "Rita",
+		});
+		await t.mutation(api.guests.updateGuest, {
+			id: guestId,
+			rsvpStatus: "confirmado",
+		});
+		await t.mutation(api.guests.setCheckIn, { id: guestId, checkedIn: true });
+
+		// Moving away from "confirmado" must drop the stale check-in.
+		await t.mutation(api.guests.updateGuest, {
+			id: guestId,
+			rsvpStatus: "recusado",
+		});
+		const list = await t.query(api.guests.listInvites, {});
+		expect(list[0]?.guests[0]?.checkedIn).toBe(false);
+	});
+});

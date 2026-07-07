@@ -84,6 +84,7 @@ export default defineSchema({
 		rsvpStatus: rsvpStatusValidator,
 		isChild: v.optional(v.boolean()),
 		mealNotes: v.optional(v.string()),
+		checkedIn: v.optional(v.boolean()), // day-of attendance
 	})
 		.index("by_invite", ["inviteId"])
 		.index("by_rsvpStatus", ["rsvpStatus"]),
