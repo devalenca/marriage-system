@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Sheet,
@@ -209,16 +209,78 @@ export function AppNav() {
 				</Sheet>
 			</header>
 
-			{/* Desktop: thin fixed sidebar. */}
-			<aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col gap-5 border-r border-sidebar-border bg-sidebar/75 p-4 shadow-[18px_0_60px_oklch(0.32_0.07_132_/_0.12)] backdrop-blur-2xl md:flex">
+			{/* Desktop: slim icon rail that expands on hover. */}
+			<aside className="group fixed inset-y-0 left-0 z-50 hidden w-[4.75rem] flex-col gap-3 overflow-hidden border-r border-sidebar-border bg-sidebar/90 p-3 shadow-[18px_0_60px_oklch(0.32_0.07_132_/_0.12)] backdrop-blur-2xl transition-[width] duration-200 ease-out hover:w-64 md:flex">
 				<Link
 					href="/dashboard"
-					className="rounded-[1.5rem] border border-sidebar-border bg-card/55 p-3 shadow-sm transition-colors hover:bg-card/70"
+					title="Nosso Casamento"
+					className="flex items-center gap-3 rounded-2xl p-1.5 transition-colors hover:bg-card/55"
 				>
-					<BrandMark />
+					<span className="flex size-10 shrink-0 items-center justify-center rounded-[1rem] bg-primary/12 text-primary ring-1 ring-primary/15">
+						<House className="size-5" aria-hidden />
+					</span>
+					<span className="whitespace-nowrap font-display text-lg font-semibold leading-none text-primary opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+						Nosso Casamento
+					</span>
 				</Link>
-				<NavList pathname={pathname} />
+				<RailNav pathname={pathname} />
 			</aside>
 		</>
+	);
+}
+
+function RailLink({ item, pathname }: { item: NavItem; pathname: string }) {
+	const { href, label, icon: Icon } = item;
+	const active = isActive(pathname, href);
+	return (
+		<Link
+			href={href}
+			title={label}
+			aria-label={label}
+			aria-current={active ? "page" : undefined}
+			className={cn(
+				"flex items-center gap-3 rounded-2xl px-2.5 py-2 font-semibold transition-colors",
+				active
+					? "bg-card/80 text-sidebar-primary shadow-sm ring-1 ring-sidebar-border"
+					: "text-muted-foreground hover:bg-card/50 hover:text-foreground",
+			)}
+		>
+			<span
+				className={cn(
+					"flex size-9 shrink-0 items-center justify-center rounded-full transition-colors",
+					active ? "bg-primary/12 text-primary" : "bg-card/40 text-current",
+				)}
+			>
+				<Icon className="size-4.5" aria-hidden />
+			</span>
+			<span className="whitespace-nowrap text-sm opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+				{label}
+			</span>
+		</Link>
+	);
+}
+
+/** Desktop rail: grouped icons with thin dividers; labels fade in on expand. */
+function RailNav({ pathname }: { pathname: string }) {
+	return (
+		<nav
+			aria-label="Navegação principal"
+			className="flex flex-1 flex-col gap-1"
+		>
+			{NAV_GROUPS.map((group, i) => (
+				<Fragment key={group.label ?? `group-${i}`}>
+					{i > 0 ? (
+						<div className="mx-2 my-1 h-px bg-sidebar-border/70" />
+					) : null}
+					{group.items.map((item) => (
+						<RailLink key={item.href} item={item} pathname={pathname} />
+					))}
+				</Fragment>
+			))}
+			<div className="mt-auto">
+				<div className="mx-2 my-1 h-px bg-sidebar-border/70" />
+				<RailLink item={SETTINGS_ITEM} pathname={pathname} />
+			</div>
+		</nav>
 	);
 }
