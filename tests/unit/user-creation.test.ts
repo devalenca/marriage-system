@@ -3,15 +3,15 @@ import { canCreateUser } from "../../convex/lib/userCreation";
 
 // Account creation policy: the superadmin (provisioning tenants) and a wedding
 // admin (adding members) can create accounts; otherwise only the very first
-// account (bootstrap) is allowed, and only for the superadmin e-mail.
+// account (bootstrap) is allowed, and only for a configured superadmin e-mail.
 
 describe("canCreateUser", () => {
-	const adminEmail = "admin@example.com";
+	const superadminEmails = ["admin@example.com", "second@example.com"];
 	const base = {
 		callerIsSuperadmin: false,
 		callerIsWeddingAdmin: false,
 		anyUserExists: true,
-		adminEmail,
+		superadminEmails,
 	};
 
 	test("superadmin caller can create any account", () => {
@@ -34,12 +34,19 @@ describe("canCreateUser", () => {
 		).toBe(true);
 	});
 
-	test("bootstrap: first account allowed only for the superadmin e-mail", () => {
+	test("bootstrap: first account allowed for any configured superadmin e-mail", () => {
 		expect(
 			canCreateUser({
 				...base,
 				anyUserExists: false,
-				email: "ADMIN@example.com ",
+				email: "admin@example.com",
+			}),
+		).toBe(true);
+		expect(
+			canCreateUser({
+				...base,
+				anyUserExists: false,
+				email: "second@example.com",
 			}),
 		).toBe(true);
 		expect(
@@ -52,16 +59,16 @@ describe("canCreateUser", () => {
 	});
 
 	test("self sign-up is rejected once any user exists", () => {
-		expect(canCreateUser({ ...base, email: adminEmail })).toBe(false);
+		expect(canCreateUser({ ...base, email: "admin@example.com" })).toBe(false);
 	});
 
-	test("fails closed without a configured superadmin e-mail or empty e-mail", () => {
+	test("fails closed without configured superadmins or with an empty e-mail", () => {
 		expect(
 			canCreateUser({
 				...base,
 				anyUserExists: false,
 				email: "x@example.com",
-				adminEmail: "",
+				superadminEmails: [],
 			}),
 		).toBe(false);
 		expect(

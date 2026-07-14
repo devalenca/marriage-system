@@ -26,15 +26,22 @@ async function requireUser(ctx: QueryCtx | MutationCtx) {
 }
 
 /**
- * True when the e-mail belongs to the platform superadmin (AUTH_ADMIN_EMAIL)
- * — the product owner, who manages weddings and accounts across all tenants.
- * Not to be confused with a wedding's admin (the "admin" membership role).
+ * The platform superadmins, configured via AUTH_ADMIN_EMAIL as one e-mail or
+ * a comma/semicolon-separated list (e.g. two operators). These are the
+ * product owners who manage weddings and accounts across all tenants — not to
+ * be confused with a wedding's admin (the "admin" membership role).
  */
+export function superadminEmails(): string[] {
+	return (process.env.AUTH_ADMIN_EMAIL ?? "")
+		.split(/[,;]/)
+		.map((entry) => entry.trim().toLowerCase())
+		.filter((entry) => entry.length > 0);
+}
+
+/** True when the e-mail belongs to one of the configured superadmins. */
 export function isSuperadminEmail(email: string | undefined): boolean {
-	const adminEmail = (process.env.AUTH_ADMIN_EMAIL ?? "").trim().toLowerCase();
-	return (
-		adminEmail.length > 0 && (email ?? "").trim().toLowerCase() === adminEmail
-	);
+	const target = (email ?? "").trim().toLowerCase();
+	return target.length > 0 && superadminEmails().includes(target);
 }
 
 /** The signed-in user's document, or null when there is none. */
