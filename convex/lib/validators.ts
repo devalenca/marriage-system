@@ -20,7 +20,10 @@ function literalUnion<T extends string>(
 }
 
 /** Role of a user inside a wedding: admin manages accesses, member uses it. */
-export const membershipRoleValidator = literalUnion(["admin", "member"] as const);
+export const membershipRoleValidator = literalUnion([
+	"admin",
+	"member",
+] as const);
 
 export const vendorCategoryValidator = literalUnion(VENDOR_CATEGORIES);
 export const vendorStatusValidator = literalUnion(VENDOR_STATUSES);

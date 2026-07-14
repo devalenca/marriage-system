@@ -45,6 +45,7 @@
 		"includes": [
 			"**",
 			"!node_modules",
+			"!exports",
 			"!.next",
 			"!.convex",
 			"!convex/_generated",
