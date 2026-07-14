@@ -4,6 +4,8 @@ import {
 	customMutation,
 	customQuery,
 } from "convex-helpers/server/customFunctions";
+import { v } from "convex/values";
+import type { Doc, Id } from "../_generated/dataModel";
 import {
 	type MutationCtx,
 	mutation,
@@ -82,3 +84,74 @@ export const adminMutation = customMutation(
 		return {};
 	}),
 );
+
+// ---------------------------------------------------------------------------
+// Wedding-scoped access (multi-tenant): a user reaches exactly one wedding
+// through their membership. Feature code receives weddingId/role on ctx and
+// must never query tenant data without filtering by that weddingId.
+
+export type WeddingCtx = {
+	viewer: Doc<"users">;
+	weddingId: Id<"weddings">;
+	/** Caller's power inside this wedding. Superadmin acts as "admin". */
+	role: "admin" | "member";
+};
+
+async function resolveWeddingCtx(
+	ctx: QueryCtx | MutationCtx,
+	weddingIdArg: Id<"weddings"> | undefined,
+): Promise<WeddingCtx> {
+	const viewer = await getViewer(ctx);
+	if (viewer === null) {
+		throw new Error("Não autenticado");
+	}
+
+	// Explicit target: allowed for members of that wedding and the superadmin
+	// (who acts as admin anywhere — the support/oversight path).
+	if (weddingIdArg !== undefined) {
+		const membership = await ctx.db
+			.query("memberships")
+			.withIndex("by_wedding_user", (q) =>
+				q.eq("weddingId", weddingIdArg).eq("userId", viewer._id),
+			)
+			.unique();
+		if (membership !== null) {
+			return { viewer, weddingId: weddingIdArg, role: membership.role };
+		}
+		if (isAdminEmail(viewer.email)) {
+			return { viewer, weddingId: weddingIdArg, role: "admin" };
+		}
+		throw new Error("Acesso negado a este casamento");
+	}
+
+	const membership = await ctx.db
+		.query("memberships")
+		.withIndex("by_user", (q) => q.eq("userId", viewer._id))
+		.first();
+	if (membership === null) {
+		throw new Error("Este acesso não está vinculado a nenhum casamento");
+	}
+	return { viewer, weddingId: membership.weddingId, role: membership.role };
+}
+
+// Every wedding-scoped function accepts an optional explicit target; the
+// builder consumes it, so handlers only ever see ctx.weddingId.
+const weddingScopedArgs = { weddingId: v.optional(v.id("weddings")) };
+
+/** Query builder scoped to the caller's wedding. */
+export const weddingQuery = customQuery(query, {
+	args: weddingScopedArgs,
+	input: async (ctx, { weddingId }) => ({
+		ctx: await resolveWeddingCtx(ctx, weddingId),
+		args: {},
+	}),
+});
+
+/** Mutation builder scoped to the caller's wedding. */
+export const weddingMutation = customMutation(mutation, {
+	args: weddingScopedArgs,
+	input: async (ctx, { weddingId }) => ({
+		ctx: await resolveWeddingCtx(ctx, weddingId),
+		args: {},
+	}),
+});
