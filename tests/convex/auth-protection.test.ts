@@ -39,7 +39,20 @@ async function seed(t: TestCtx) {
 		const userId = await ctx.db.insert("users", {
 			email: "alguem@example.com",
 		});
-		return { storageId, vendorId, paymentId, attachmentId, taskId, userId };
+		const weddingId = await ctx.db.insert("weddings", {
+			coupleNames: "A & B",
+			weddingDate: "2026-11-21",
+			budgetGoalCents: 0,
+		});
+		return {
+			storageId,
+			vendorId,
+			paymentId,
+			attachmentId,
+			taskId,
+			userId,
+			weddingId,
+		};
 	});
 }
 
@@ -185,24 +198,53 @@ const cases: Case[] = [
 	// absent: they are the two public functions the login page needs before
 	// any session exists (a boolean, and the idempotent env-driven seeding).
 	["users.viewer", (t) => t.query(api.users.viewer, {})],
-	["users.list", (t) => t.query(api.users.list, {})],
-	[
-		"users.remove",
-		(t, ids) => t.mutation(api.users.remove, { id: ids.userId }),
-	],
-	[
-		"users.create",
-		(t) =>
-			t.action(api.users.create, {
-				email: "x@example.com",
-				password: "senha-forte-123",
-			}),
-	],
 	[
 		"users.resetPassword",
 		(t, ids) =>
 			t.action(api.users.resetPassword, {
 				id: ids.userId,
+				password: "senha-forte-123",
+			}),
+	],
+	["weddings.subscriptionStatus", (t) => t.query(api.weddings.subscriptionStatus, {})],
+	["weddings.listAll", (t) => t.query(api.weddings.listAll, {})],
+	[
+		"weddings.setSubscription",
+		(t, ids) =>
+			t.mutation(api.weddings.setSubscription, {
+				weddingId: ids.weddingId,
+				activeUntil: null,
+			}),
+	],
+	[
+		"access.provision",
+		(t) =>
+			t.action(api.access.provision, {
+				coupleNames: "A & B",
+				weddingDate: "2026-11-21",
+				budgetGoalCents: 0,
+				email: "x@example.com",
+				password: "senha-forte-123",
+			}),
+	],
+	["access.listMembers", (t) => t.query(api.access.listMembers, {})],
+	[
+		"access.createMember",
+		(t) =>
+			t.action(api.access.createMember, {
+				email: "x@example.com",
+				password: "senha-forte-123",
+			}),
+	],
+	[
+		"access.removeMember",
+		(t, ids) => t.mutation(api.access.removeMember, { userId: ids.userId }),
+	],
+	[
+		"access.resetMemberPassword",
+		(t, ids) =>
+			t.action(api.access.resetMemberPassword, {
+				userId: ids.userId,
 				password: "senha-forte-123",
 			}),
 	],

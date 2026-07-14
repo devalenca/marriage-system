@@ -1,10 +1,12 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import {
 	customCtx,
 	customMutation,
 	customQuery,
 } from "convex-helpers/server/customFunctions";
+import { todayInSaoPaulo } from "../../lib/domain/dates";
+import { isSubscriptionActive } from "../../lib/domain/subscription";
 import type { Doc, Id } from "../_generated/dataModel";
 import {
 	type MutationCtx,
@@ -44,6 +46,17 @@ export async function getViewer(ctx: QueryCtx | MutationCtx) {
 export async function viewerIsSuperadmin(ctx: QueryCtx | MutationCtx) {
 	const viewer = await getViewer(ctx);
 	return isSuperadminEmail(viewer?.email);
+}
+
+/** True when the caller is the admin of some wedding (via their membership). */
+export async function viewerIsWeddingAdmin(ctx: QueryCtx | MutationCtx) {
+	const userId = await getAuthUserId(ctx);
+	if (userId === null) return false;
+	const membership = await ctx.db
+		.query("memberships")
+		.withIndex("by_user", (q) => q.eq("userId", userId))
+		.first();
+	return membership?.role === "admin";
 }
 
 export async function requireSuperadmin(ctx: QueryCtx | MutationCtx) {
@@ -161,13 +174,51 @@ async function resolveWeddingCtx(
 	};
 }
 
+/**
+ * Resolves the caller as the admin of their own wedding — for actions (which
+ * can't use the wedding builders). Throws when the caller isn't a wedding
+ * admin. Returns the trusted weddingId so callers never take it as an arg.
+ */
+export async function requireWeddingAdmin(ctx: QueryCtx | MutationCtx) {
+	const w = await resolveWeddingCtx(ctx, undefined);
+	if (w.role !== "admin") {
+		throw new Error("Acesso restrito ao administrador do casamento");
+	}
+	return { weddingId: w.weddingId, viewerId: w.viewer._id };
+}
+
 // Every wedding-scoped function accepts an optional explicit target; the
 // builder consumes it, so handlers only ever see ctx.weddingId. This makes
 // `weddingId` a RESERVED argument name — feature functions built on these
 // builders must not declare their own.
 const weddingScopedArgs = { weddingId: v.optional(v.id("weddings")) };
 
-function weddingScoped(requiredRole?: "admin") {
+/**
+ * Message thrown by wedding writes when the subscription has lapsed. Carried
+ * as a ConvexError so it survives to the client (plain Errors are redacted in
+ * production) and the UI can recognize the read-only state.
+ */
+export const SUBSCRIPTION_EXPIRED =
+	"Assinatura expirada. O acesso está em modo somente leitura até a renovação.";
+
+/**
+ * A wedding whose subscription lapsed is read-only: queries keep working so
+ * the couple can still see their data, but writes are blocked. The superadmin
+ * is never blocked (they extend the subscription and provide support).
+ */
+async function assertWritable(ctx: QueryCtx | MutationCtx, w: WeddingCtx) {
+	if (w.isSuperadmin) return;
+	const wedding = await ctx.db.get(w.weddingId);
+	const activeUntil = wedding?.subscriptionActiveUntil;
+	if (!isSubscriptionActive(activeUntil, todayInSaoPaulo())) {
+		throw new ConvexError(SUBSCRIPTION_EXPIRED);
+	}
+}
+
+function weddingScoped(opts?: {
+	requiredRole?: "admin";
+	enforceSubscription?: boolean;
+}) {
 	return {
 		args: weddingScopedArgs,
 		input: async (
@@ -175,22 +226,31 @@ function weddingScoped(requiredRole?: "admin") {
 			{ weddingId }: { weddingId?: Id<"weddings"> },
 		) => {
 			const weddingCtx = await resolveWeddingCtx(ctx, weddingId);
-			if (requiredRole !== undefined && weddingCtx.role !== requiredRole) {
+			if (
+				opts?.requiredRole !== undefined &&
+				weddingCtx.role !== opts.requiredRole
+			) {
 				throw new Error("Acesso restrito ao administrador do casamento");
+			}
+			if (opts?.enforceSubscription) {
+				await assertWritable(ctx, weddingCtx);
 			}
 			return { ctx: weddingCtx, args: {} };
 		},
 	};
 }
 
-/** Query builder scoped to the caller's wedding. */
+/** Query builder scoped to the caller's wedding (allowed when read-only). */
 export const weddingQuery = customQuery(query, weddingScoped());
 
-/** Mutation builder scoped to the caller's wedding. */
-export const weddingMutation = customMutation(mutation, weddingScoped());
+/** Mutation builder scoped to the caller's wedding; blocked when read-only. */
+export const weddingMutation = customMutation(
+	mutation,
+	weddingScoped({ enforceSubscription: true }),
+);
 
-/** Mutation builder for the wedding's admin (settings, access management). */
+/** Mutation builder for the wedding's admin; blocked when read-only. */
 export const weddingAdminMutation = customMutation(
 	mutation,
-	weddingScoped("admin"),
+	weddingScoped({ requiredRole: "admin", enforceSubscription: true }),
 );
