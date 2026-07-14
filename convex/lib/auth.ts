@@ -155,3 +155,15 @@ export const weddingMutation = customMutation(mutation, {
 		args: {},
 	}),
 });
+
+/** Mutation builder for the wedding's admin (settings, access management). */
+export const weddingAdminMutation = customMutation(mutation, {
+	args: weddingScopedArgs,
+	input: async (ctx, { weddingId }) => {
+		const weddingCtx = await resolveWeddingCtx(ctx, weddingId);
+		if (weddingCtx.role !== "admin") {
+			throw new Error("Acesso restrito ao administrador do casamento");
+		}
+		return { ctx: weddingCtx, args: {} };
+	},
+});

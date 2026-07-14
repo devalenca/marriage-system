@@ -132,3 +132,74 @@ describe("wedding isolation", () => {
 		).rejects.toThrowError(/casamento/i);
 	});
 });
+
+describe("weddings.save", () => {
+	const validArgs = {
+		coupleNames: "Ana & Bruno Silva",
+		weddingDate: "2027-07-10",
+		budgetGoalCents: 6_000_000,
+	};
+
+	test("wedding admin updates the wedding in place", async () => {
+		const { asAdminA, weddingA, t } = await setupWeddingsTest();
+		await asAdminA.mutation(api.weddings.save, {
+			...validArgs,
+			ceremonyVenue: "  Igreja Matriz  ",
+			receptionVenue: "   ",
+		});
+
+		const weddings = await t.run((ctx) => ctx.db.query("weddings").collect());
+		expect(weddings).toHaveLength(2); // updated, not duplicated
+		const updated = weddings.find((w) => w._id === weddingA);
+		expect(updated).toMatchObject(validArgs);
+		expect(updated?.ceremonyVenue).toBe("Igreja Matriz");
+		expect(updated?.receptionVenue).toBeUndefined();
+	});
+
+	test("member without the admin role is rejected", async () => {
+		const { asMemberA } = await setupWeddingsTest();
+		await expect(
+			asMemberA.mutation(api.weddings.save, validArgs),
+		).rejects.toThrowError(/administrador/i);
+	});
+
+	test("superadmin edits any wedding explicitly", async () => {
+		const { asSuperadmin, weddingB, t } = await setupWeddingsTest();
+		await asSuperadmin.mutation(api.weddings.save, {
+			...validArgs,
+			weddingId: weddingB,
+		});
+		const updated = await t.run((ctx) => ctx.db.get(weddingB));
+		expect(updated?.coupleNames).toBe(validArgs.coupleNames);
+	});
+
+	test("rejects an invalid wedding date", async () => {
+		const { asAdminA } = await setupWeddingsTest();
+		await expect(
+			asAdminA.mutation(api.weddings.save, {
+				...validArgs,
+				weddingDate: "10/07/2027",
+			}),
+		).rejects.toThrowError(/data/i);
+	});
+
+	test("rejects a negative budget goal", async () => {
+		const { asAdminA } = await setupWeddingsTest();
+		await expect(
+			asAdminA.mutation(api.weddings.save, {
+				...validArgs,
+				budgetGoalCents: -1,
+			}),
+		).rejects.toThrowError(/orçamento/i);
+	});
+
+	test("rejects an invalid wedding time", async () => {
+		const { asAdminA } = await setupWeddingsTest();
+		await expect(
+			asAdminA.mutation(api.weddings.save, {
+				...validArgs,
+				weddingTime: "25:00",
+			}),
+		).rejects.toThrowError(/horário/i);
+	});
+});
