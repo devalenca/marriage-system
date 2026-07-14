@@ -6,16 +6,13 @@ import {
 import { ConvexError, v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { action, internalQuery, query } from "./_generated/server";
-import {
-	assertValidPassword,
-	normalizeEmail,
-	PASSWORD_PROVIDER,
-} from "./lib/accounts";
+import { assertValidPassword, PASSWORD_PROVIDER } from "./lib/accounts";
 import {
 	authedQuery,
 	getViewer,
 	isSuperadminEmail,
 	requireSuperadmin,
+	superadminEmails,
 } from "./lib/auth";
 
 /**
@@ -40,7 +37,9 @@ export const bootstrapStatus = query({
 export const ensureAdminSeeded = action({
 	args: {},
 	handler: async (ctx) => {
-		const email = normalizeEmail(process.env.AUTH_ADMIN_EMAIL ?? "");
+		// With several superadmins configured, bootstrap seeds only the first
+		// operator's account; the others are added as normal accounts later.
+		const email = superadminEmails()[0] ?? "";
 		const password = process.env.AUTH_ADMIN_PASSWORD ?? "";
 		if (email.length === 0 || password.length < 8) return null;
 
