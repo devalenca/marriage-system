@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
 import { PageHeader } from "@/components/page-header";
 import { AccessCard } from "@/components/settings/access-card";
+import { FeedbackCard } from "@/components/settings/feedback-card";
 import { ThemeCard } from "@/components/settings/theme-card";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ export function SettingsContent() {
 					<ThemeCard current={resolveTheme(wedding.theme ?? undefined)} />
 				) : null}
 				<AccessCard />
+				<FeedbackCard />
 				<Card>
 					<CardHeader>
 						<CardTitle className="font-display text-lg">Sessão</CardTitle>
@@ -82,8 +84,8 @@ export function SettingsContent() {
 					</CardHeader>
 					<CardContent className="text-sm text-muted-foreground">
 						<p>
-							Uso privado do casal. Os dados ficam no banco local (Convex) desta
-							máquina — nada é enviado para a internet.
+							O espaço de planejamento do casal. Só quem vocês convidam tem
+							acesso aos dados do casamento.
 						</p>
 					</CardContent>
 				</Card>

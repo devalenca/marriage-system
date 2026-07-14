@@ -40,6 +40,21 @@ export default defineSchema({
 		termsAcceptedAt: v.optional(v.number()), // epoch ms, set at self-signup
 	}),
 
+	// Feedback from couples ("ouvir as dores dos clientes"): suggestions,
+	// problems and praise the superadmin reads to shape the product.
+	feedback: defineTable({
+		userId: v.id("users"),
+		weddingId: v.optional(v.id("weddings")),
+		email: v.optional(v.string()),
+		kind: v.union(
+			v.literal("sugestao"),
+			v.literal("problema"),
+			v.literal("elogio"),
+		),
+		message: v.string(),
+		createdAt: v.number(), // epoch ms
+	}).index("by_created", ["createdAt"]),
+
 	// Links a user to a wedding. A user belongs to exactly one wedding today;
 	// the superadmin (AUTH_ADMIN_EMAIL) reaches any wedding without one.
 	memberships: defineTable({

@@ -12,6 +12,7 @@ import type * as access from "../access.js";
 import type * as attachments from "../attachments.js";
 import type * as auth from "../auth.js";
 import type * as dashboard from "../dashboard.js";
+import type * as feedback from "../feedback.js";
 import type * as finance from "../finance.js";
 import type * as guests from "../guests.js";
 import type * as http from "../http.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   attachments: typeof attachments;
   auth: typeof auth;
   dashboard: typeof dashboard;
+  feedback: typeof feedback;
   finance: typeof finance;
   guests: typeof guests;
   http: typeof http;
