@@ -8,9 +8,13 @@ import { isWeddingTheme } from "../lib/domain/themes";
 import { normalizeWeddingFields } from "../lib/domain/wedding";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
+import { purgeAuthRows } from "./lib/accounts";
 import {
+	authedMutation,
 	authedQuery,
 	getViewer,
+	isSuperadminEmail,
+	requireWeddingAdmin,
 	superadminMutation,
 	superadminQuery,
 	weddingAdminMutation,
@@ -27,6 +31,7 @@ export async function createWeddingWithAdmin(
 	ctx: MutationCtx,
 	adminUserId: Id<"users">,
 	fields: Parameters<typeof normalizeWeddingFields>[0],
+	opts?: { termsAcceptedAt?: number },
 ): Promise<Id<"weddings">> {
 	const doc = normalizeWeddingFields(fields);
 	const [adminUser, linked] = await Promise.all([
@@ -45,6 +50,7 @@ export async function createWeddingWithAdmin(
 	const weddingId = await ctx.db.insert("weddings", {
 		...doc,
 		subscriptionActiveUntil: trialUntil(todayInSaoPaulo()),
+		termsAcceptedAt: opts?.termsAcceptedAt,
 	});
 	await ctx.db.insert("memberships", {
 		weddingId,
@@ -52,6 +58,60 @@ export async function createWeddingWithAdmin(
 		role: "admin",
 	});
 	return weddingId;
+}
+
+// Tenant tables holding stored blobs (delete storage before the row) and the
+// plain tenant tables. Kept in sync with the by_wedding index on each table.
+const STORAGE_TABLES = ["attachments", "inspirationImages"] as const;
+const PLAIN_TENANT_TABLES = [
+	"vendors",
+	"payments",
+	"tasks",
+	"invites",
+	"guests",
+	"galleries",
+] as const;
+
+/**
+ * Permanently deletes a wedding and everything under it: stored files, all
+ * tenant rows, memberships, and the member accounts (never a superadmin's).
+ */
+export async function deleteWeddingCascade(
+	ctx: MutationCtx,
+	weddingId: Id<"weddings">,
+) {
+	for (const table of STORAGE_TABLES) {
+		const rows = await ctx.db
+			.query(table)
+			.withIndex("by_wedding", (q) => q.eq("weddingId", weddingId))
+			.collect();
+		for (const row of rows) {
+			await ctx.storage.delete(row.storageId);
+			await ctx.db.delete(row._id);
+		}
+	}
+	for (const table of PLAIN_TENANT_TABLES) {
+		const rows = await ctx.db
+			.query(table)
+			.withIndex("by_wedding", (q) => q.eq("weddingId", weddingId))
+			.collect();
+		for (const row of rows) {
+			await ctx.db.delete(row._id);
+		}
+	}
+	const memberships = await ctx.db
+		.query("memberships")
+		.withIndex("by_wedding_user", (q) => q.eq("weddingId", weddingId))
+		.collect();
+	for (const membership of memberships) {
+		await ctx.db.delete(membership._id);
+		const user = await ctx.db.get(membership.userId);
+		if (user !== null && !isSuperadminEmail(user.email)) {
+			await purgeAuthRows(ctx, membership.userId);
+			await ctx.db.delete(membership.userId);
+		}
+	}
+	await ctx.db.delete(weddingId);
 }
 
 /**
@@ -111,17 +171,39 @@ export const create = superadminMutation({
 	},
 });
 
+/**
+ * Public self-signup's second step: the freshly-registered user creates their
+ * own wedding (as its admin) with a trial, recording their terms acceptance.
+ * The account itself is created by the Convex Auth signUp flow beforehand.
+ */
+export const createForSelf = authedMutation({
+	args: { ...weddingFieldValidators, acceptedTerms: v.boolean() },
+	handler: async (ctx, { acceptedTerms, ...fields }) => {
+		if (!acceptedTerms) {
+			throw new ConvexError("É preciso aceitar os termos para continuar");
+		}
+		const viewer = await getViewer(ctx);
+		if (viewer === null) {
+			throw new ConvexError("Não autenticado");
+		}
+		return await createWeddingWithAdmin(ctx, viewer._id, fields, {
+			termsAcceptedAt: Date.now(),
+		});
+	},
+});
+
 /** Updates the caller's wedding — the multi-tenant successor of `settings.save`. */
 export const save = weddingAdminMutation({
 	args: weddingFieldValidators,
 	handler: async (ctx, args) => {
 		// Replace preserving the fields this form doesn't own (subscription,
-		// theme), and so that cleared optionals are removed rather than stale.
+		// theme, terms), and so that cleared optionals are removed, not stale.
 		const current = await ctx.db.get(ctx.weddingId);
 		await ctx.db.replace(ctx.weddingId, {
 			...normalizeWeddingFields(args),
 			subscriptionActiveUntil: current?.subscriptionActiveUntil,
 			theme: current?.theme,
+			termsAcceptedAt: current?.termsAcceptedAt,
 		});
 		return ctx.weddingId;
 	},
@@ -186,6 +268,32 @@ export const setSubscription = superadminMutation({
 		await ctx.db.patch(weddingId, {
 			subscriptionActiveUntil: activeUntil ?? undefined,
 		});
+		return null;
+	},
+});
+
+/**
+ * LGPD: the wedding admin permanently deletes their own wedding and all of
+ * its data. Allowed even on a lapsed subscription (it's not subscription
+ * enforced), so it uses requireWeddingAdmin rather than the write builder.
+ */
+export const deleteOwn = authedMutation({
+	args: {},
+	handler: async (ctx) => {
+		const { weddingId } = await requireWeddingAdmin(ctx);
+		await deleteWeddingCascade(ctx, weddingId);
+		return null;
+	},
+});
+
+/** Superadmin-only: permanently deletes any wedding and all of its data. */
+export const remove = superadminMutation({
+	args: { weddingId: v.id("weddings") },
+	handler: async (ctx, { weddingId }) => {
+		if ((await ctx.db.get(weddingId)) === null) {
+			throw new ConvexError("Casamento não encontrado");
+		}
+		await deleteWeddingCascade(ctx, weddingId);
 		return null;
 	},
 });

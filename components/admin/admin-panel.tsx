@@ -1,7 +1,12 @@
 "use client";
 
 import { useAction, useMutation, useQuery } from "convex/react";
-import { Infinity as InfinityIcon, KeyRound, UserPlus } from "lucide-react";
+import {
+	Infinity as InfinityIcon,
+	KeyRound,
+	Trash2,
+	UserPlus,
+} from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
@@ -290,12 +295,15 @@ function SubscriptionBadge({
 function WeddingRow({ wedding }: { wedding: Wedding }) {
 	const setSubscription = useMutation(api.weddings.setSubscription);
 	const resetPassword = useAction(api.users.resetPassword);
+	const removeWedding = useMutation(api.weddings.remove);
 
 	const [until, setUntil] = useState(wedding.subscription.activeUntil ?? "");
 	const [savingSub, setSavingSub] = useState(false);
 	const [resetOpen, setResetOpen] = useState(false);
 	const [newPassword, setNewPassword] = useState("");
 	const [resetting, setResetting] = useState(false);
+	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [deleting, setDeleting] = useState(false);
 
 	async function handleSaveUntil() {
 		if (!isValidISODate(until)) {
@@ -339,6 +347,19 @@ function WeddingRow({ wedding }: { wedding: Wedding }) {
 			notifyError(error, "Não foi possível redefinir a senha");
 		} finally {
 			setResetting(false);
+		}
+	}
+
+	async function handleDelete() {
+		setDeleting(true);
+		try {
+			await removeWedding({ weddingId: wedding._id });
+			setDeleteOpen(false);
+			toast.success(`Casamento de ${wedding.coupleNames} excluído`);
+		} catch (error) {
+			notifyError(error, "Não foi possível excluir o casamento");
+		} finally {
+			setDeleting(false);
 		}
 	}
 
@@ -403,6 +424,15 @@ function WeddingRow({ wedding }: { wedding: Wedding }) {
 					<KeyRound data-icon="inline-start" aria-hidden />
 					Redefinir senha
 				</Button>
+				<Button
+					variant="destructive"
+					size="sm"
+					onClick={() => setDeleteOpen(true)}
+					aria-label={`Excluir o casamento de ${wedding.coupleNames}`}
+				>
+					<Trash2 data-icon="inline-start" aria-hidden />
+					Excluir
+				</Button>
 			</div>
 
 			<Dialog open={resetOpen} onOpenChange={setResetOpen}>
@@ -443,6 +473,37 @@ function WeddingRow({ wedding }: { wedding: Wedding }) {
 							</Button>
 						</DialogFooter>
 					</form>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle className="font-display">
+							Excluir o casamento de {wedding.coupleNames}?
+						</DialogTitle>
+						<DialogDescription>
+							Todos os dados do casamento — fornecedores, orçamento, pagamentos,
+							checklist e acessos — são apagados permanentemente. Esta ação não
+							pode ser desfeita.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setDeleteOpen(false)}
+						>
+							Cancelar
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={handleDelete}
+							disabled={deleting}
+						>
+							{deleting ? "Excluindo..." : "Excluir para sempre"}
+						</Button>
+					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 		</div>

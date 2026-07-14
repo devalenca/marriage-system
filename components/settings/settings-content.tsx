@@ -1,7 +1,8 @@
 "use client";
 
+import { useAuthActions } from "@convex-dev/auth/react";
 import { useMutation, useQuery } from "convex/react";
-import { ListChecks } from "lucide-react";
+import { ListChecks, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
@@ -86,8 +87,113 @@ export function SettingsContent() {
 						</p>
 					</CardContent>
 				</Card>
+				<DangerZoneCard />
 			</div>
 		</div>
+	);
+}
+
+/**
+ * Lets the wedding admin permanently delete the wedding and every record
+ * tied to it (LGPD right to erasure). Only rendered for the admin — members
+ * never see it. A typed confirmation guards the irreversible action.
+ */
+function DangerZoneCard() {
+	const members = useQuery(api.access.listMembers, {});
+	const deleteWedding = useMutation(api.weddings.deleteOwn);
+	const { signOut } = useAuthActions();
+	const [open, setOpen] = useState(false);
+	const [confirmText, setConfirmText] = useState("");
+	const [deleting, setDeleting] = useState(false);
+
+	// Same rule as AccessCard: only the wedding admin gets management powers.
+	const isAdmin = Boolean(
+		members?.some((member) => member.isSelf && member.role === "admin"),
+	);
+	if (!isAdmin) return null;
+
+	const confirmed = confirmText.trim() === "EXCLUIR";
+
+	function handleOpenChange(next: boolean) {
+		setOpen(next);
+		if (!next) setConfirmText("");
+	}
+
+	async function handleDelete() {
+		if (!confirmed) return;
+		setDeleting(true);
+		try {
+			await deleteWedding({});
+			await signOut();
+			// Hard navigation: the account is gone, so a full teardown avoids the
+			// now-invalid wedding queries racing a soft client transition.
+			window.location.assign("/");
+		} catch (error) {
+			notifyError(error, "Não foi possível excluir o casamento");
+			setDeleting(false);
+		}
+	}
+
+	return (
+		<Card className="border-destructive/35 bg-destructive/5">
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2 font-display text-lg text-destructive">
+					<TriangleAlert data-icon="inline-start" aria-hidden />
+					Zona de perigo
+				</CardTitle>
+				<CardDescription>
+					Excluir o casamento apaga em definitivo todos os dados — fornecedores,
+					orçamento, pagamentos e checklist — para você e para todos os acessos.
+					Esta ação não pode ser desfeita.
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<Button variant="destructive" onClick={() => setOpen(true)}>
+					<TriangleAlert data-icon="inline-start" aria-hidden />
+					Excluir casamento
+				</Button>
+			</CardContent>
+
+			<Dialog open={open} onOpenChange={handleOpenChange}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle className="font-display">
+							Excluir este casamento?
+						</DialogTitle>
+						<DialogDescription>
+							Todos os dados são apagados permanentemente e você será
+							desconectado. Para confirmar, digite{" "}
+							<span className="font-semibold text-foreground">EXCLUIR</span>{" "}
+							abaixo.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="delete-wedding-confirm">
+							Digite EXCLUIR para confirmar
+						</Label>
+						<Input
+							id="delete-wedding-confirm"
+							value={confirmText}
+							onChange={(e) => setConfirmText(e.target.value)}
+							autoComplete="off"
+							placeholder="EXCLUIR"
+						/>
+					</div>
+					<DialogFooter>
+						<Button variant="outline" onClick={() => handleOpenChange(false)}>
+							Cancelar
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={handleDelete}
+							disabled={!confirmed || deleting}
+						>
+							{deleting ? "Excluindo..." : "Excluir para sempre"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</Card>
 	);
 }
 

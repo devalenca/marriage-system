@@ -455,3 +455,127 @@ describe("weddings.setTheme", () => {
 		expect((await t.run((ctx) => ctx.db.get(weddingA)))?.theme).toBe("lavanda");
 	});
 });
+
+describe("weddings.createForSelf (public signup)", () => {
+	const fields = {
+		coupleNames: "Novo Casal",
+		weddingDate: "2028-05-20",
+		budgetGoalCents: 3_000_000,
+	};
+
+	test("a signed-in user without a wedding creates one and accepts terms", async () => {
+		const { asLooseUser, looseUser, t } = await setupWeddingsTest();
+		const weddingId = await asLooseUser.mutation(api.weddings.createForSelf, {
+			...fields,
+			acceptedTerms: true,
+		});
+		const rows = await t.run(async (ctx) => ({
+			wedding: await ctx.db.get(weddingId),
+			membership: await ctx.db
+				.query("memberships")
+				.withIndex("by_user", (q) => q.eq("userId", looseUser))
+				.unique(),
+		}));
+		expect(rows.wedding).toMatchObject({ coupleNames: "Novo Casal" });
+		expect(rows.wedding?.termsAcceptedAt).toBeTypeOf("number");
+		expect(rows.wedding?.subscriptionActiveUntil).toBe(
+			trialUntil(todayInSaoPaulo()),
+		);
+		expect(rows.membership).toMatchObject({ weddingId, role: "admin" });
+	});
+
+	test("rejects when the terms are not accepted", async () => {
+		const { asLooseUser } = await setupWeddingsTest();
+		await expect(
+			asLooseUser.mutation(api.weddings.createForSelf, {
+				...fields,
+				acceptedTerms: false,
+			}),
+		).rejects.toThrowError(/termos/i);
+	});
+
+	test("rejects a user who already has a wedding", async () => {
+		const { asAdminA } = await setupWeddingsTest();
+		await expect(
+			asAdminA.mutation(api.weddings.createForSelf, {
+				...fields,
+				acceptedTerms: true,
+			}),
+		).rejects.toThrowError(/já está vinculado/i);
+	});
+});
+
+describe("wedding deletion", () => {
+	async function seedData(
+		t: Awaited<ReturnType<typeof setupWeddingsTest>>["t"],
+		weddingId: string,
+	) {
+		return await t.run(async (ctx) => {
+			const vendorId = await ctx.db.insert("vendors", {
+				weddingId: weddingId as never,
+				name: "Buffet",
+				category: "buffet",
+				status: "pesquisando",
+			});
+			await ctx.db.insert("payments", {
+				weddingId: weddingId as never,
+				vendorId,
+				description: "Sinal",
+				amountCents: 1000,
+				dueDate: "2027-01-01",
+				status: "pendente",
+			});
+			await ctx.db.insert("tasks", {
+				weddingId: weddingId as never,
+				title: "Tarefa",
+				priority: "media",
+				status: "pendente",
+				isGenerated: false,
+			});
+		});
+	}
+
+	test("deleteOwn wipes the wedding, its data, memberships and member accounts", async () => {
+		const ctx = await setupWeddingsTest();
+		await seedData(ctx.t, ctx.weddingA);
+		await ctx.asAdminA.mutation(api.weddings.deleteOwn, {});
+
+		const left = await ctx.t.run(async (db) => ({
+			wedding: await db.db.get(ctx.weddingA),
+			vendors: await db.db.query("vendors").collect(),
+			tasks: await db.db.query("tasks").collect(),
+			memberships: await db.db
+				.query("memberships")
+				.withIndex("by_wedding_user", (q) => q.eq("weddingId", ctx.weddingA))
+				.collect(),
+			adminUser: await db.db.get(ctx.adminA),
+			otherWedding: await db.db.get(ctx.weddingB),
+		}));
+		expect(left.wedding).toBeNull();
+		expect(left.vendors).toHaveLength(0);
+		expect(left.tasks).toHaveLength(0);
+		expect(left.memberships).toHaveLength(0);
+		expect(left.adminUser).toBeNull();
+		expect(left.otherWedding).not.toBeNull(); // wedding B untouched
+	});
+
+	test("a plain member cannot delete the wedding", async () => {
+		const { asMemberA } = await setupWeddingsTest();
+		await expect(
+			asMemberA.mutation(api.weddings.deleteOwn, {}),
+		).rejects.toThrowError(/administrador/i);
+	});
+
+	test("superadmin removes any wedding", async () => {
+		const { asSuperadmin, weddingB, t } = await setupWeddingsTest();
+		await asSuperadmin.mutation(api.weddings.remove, { weddingId: weddingB });
+		expect(await t.run((ctx) => ctx.db.get(weddingB))).toBeNull();
+	});
+
+	test("remove is superadmin-only", async () => {
+		const { asAdminA, weddingB } = await setupWeddingsTest();
+		await expect(
+			asAdminA.mutation(api.weddings.remove, { weddingId: weddingB }),
+		).rejects.toThrowError(/administrador/i);
+	});
+});
