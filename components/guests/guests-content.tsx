@@ -33,6 +33,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useOpenOnCreateParam } from "@/components/use-create-param";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import {
@@ -75,6 +76,7 @@ export function GuestsContent() {
 	const [view, setView] = useState<"convite" | "convidado">("convite");
 
 	const [createInviteOpen, setCreateInviteOpen] = useState(false);
+	useOpenOnCreateParam(setCreateInviteOpen);
 	const [editingInvite, setEditingInvite] = useState<Doc<"invites"> | null>(
 		null,
 	);

@@ -3,22 +3,23 @@
 import { useQuery } from "convex/react";
 import {
 	House,
-	Images,
-	ListChecks,
-	type LucideIcon,
 	Menu,
 	PanelLeftClose,
 	PanelLeftOpen,
-	Paperclip,
-	Settings,
-	ShieldCheck,
-	Store,
-	Users,
-	Wallet,
+	Plus,
+	Search,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
+import { OPEN_COMMAND_PALETTE } from "@/components/command-palette";
+import {
+	ADMIN_ITEM,
+	NAV_GROUPS,
+	type NavItem,
+	SETTINGS_ITEM,
+} from "@/components/nav-config";
+import { OPEN_QUICK_CREATE } from "@/components/quick-create-menu";
 import { Button } from "@/components/ui/button";
 import {
 	Sheet,
@@ -37,35 +38,13 @@ import { api } from "@/convex/_generated/api";
 import { daysBetween, formatDateBR, todayInSaoPaulo } from "@/lib/domain/dates";
 import { cn } from "@/lib/utils";
 
-type NavItem = { href: string; label: string; icon: LucideIcon };
+function openPalette() {
+	window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE));
+}
 
-// Three sections, separated by a faint hairline instead of loud headers.
-const NAV_GROUPS: NavItem[][] = [
-	[{ href: "/dashboard", label: "Início", icon: House }],
-	[
-		{ href: "/checklist", label: "Checklist", icon: ListChecks },
-		{ href: "/convidados", label: "Convidados", icon: Users },
-		{ href: "/inspiracoes", label: "Inspirações", icon: Images },
-	],
-	[
-		{ href: "/fornecedores", label: "Fornecedores", icon: Store },
-		{ href: "/financeiro", label: "Financeiro", icon: Wallet },
-		{ href: "/anexos", label: "Anexos", icon: Paperclip },
-	],
-];
-
-const SETTINGS_ITEM: NavItem = {
-	href: "/configuracoes",
-	label: "Ajustes",
-	icon: Settings,
-};
-
-// Only rendered for the platform superadmin (gated in AppNav).
-const ADMIN_ITEM: NavItem = {
-	href: "/admin",
-	label: "Administração",
-	icon: ShieldCheck,
-};
+function openQuickCreate() {
+	window.dispatchEvent(new Event(OPEN_QUICK_CREATE));
+}
 
 function isActive(pathname: string, href: string) {
 	return pathname === href || pathname.startsWith(`${href}/`);
@@ -128,7 +107,7 @@ function NavRow({
 	collapsed?: boolean;
 	onNavigate?: () => void;
 }) {
-	const { href, label, icon: Icon } = item;
+	const { href, label, icon: Icon, shortcut } = item;
 	const active = isActive(pathname, href);
 
 	const link = (
@@ -138,7 +117,7 @@ function NavRow({
 			aria-label={collapsed ? label : undefined}
 			aria-current={active ? "page" : undefined}
 			className={cn(
-				"flex items-center rounded-2xl font-semibold transition-colors active:translate-y-px",
+				"group flex items-center rounded-2xl font-semibold transition-colors active:translate-y-px",
 				collapsed
 					? "justify-center p-1.5"
 					: "min-h-11 gap-2.5 px-3 py-2 text-sm",
@@ -155,7 +134,16 @@ function NavRow({
 			>
 				<Icon className="size-4.5" aria-hidden />
 			</span>
-			{collapsed ? null : <span className="truncate">{label}</span>}
+			{collapsed ? null : (
+				<>
+					<span className="flex-1 truncate">{label}</span>
+					{shortcut ? (
+						<kbd className="hidden shrink-0 rounded-md border border-sidebar-border bg-card/60 px-1.5 py-0.5 font-sans text-[11px] font-medium text-muted-foreground/70 group-hover:inline-block">
+							{shortcut}
+						</kbd>
+					) : null}
+				</>
+			)}
 		</Link>
 	);
 
@@ -163,13 +151,82 @@ function NavRow({
 	return (
 		<Tooltip>
 			<TooltipTrigger render={link} />
-			<TooltipContent side="right">{label}</TooltipContent>
+			<TooltipContent side="right">
+				{label}
+				{shortcut ? (
+					<span className="ml-1.5 opacity-70">{shortcut}</span>
+				) : null}
+			</TooltipContent>
 		</Tooltip>
 	);
 }
 
 function Hairline() {
 	return <div className="mx-3 my-1.5 h-px bg-sidebar-border/60" />;
+}
+
+/** Search (⌘K/Ctrl+K palette) and quick-create (+) controls for the sidebar. */
+function NavToolbar({ collapsed }: { collapsed: boolean }) {
+	if (collapsed) {
+		return (
+			<div className="flex flex-col items-center gap-1">
+				<Tooltip>
+					<TooltipTrigger
+						render={
+							<Button
+								variant="ghost"
+								size="icon"
+								aria-label="Buscar (Ctrl+K)"
+								onClick={openPalette}
+							/>
+						}
+					>
+						<Search aria-hidden />
+					</TooltipTrigger>
+					<TooltipContent side="right">Buscar · Ctrl K</TooltipContent>
+				</Tooltip>
+				<Tooltip>
+					<TooltipTrigger
+						render={
+							<Button
+								variant="ghost"
+								size="icon"
+								aria-label="Criar rápido"
+								onClick={openQuickCreate}
+							/>
+						}
+					>
+						<Plus aria-hidden />
+					</TooltipTrigger>
+					<TooltipContent side="right">Criar rápido</TooltipContent>
+				</Tooltip>
+			</div>
+		);
+	}
+	return (
+		<div className="flex items-center gap-1.5">
+			<Button
+				variant="outline"
+				onClick={openPalette}
+				className="h-10 flex-1 justify-start gap-2 rounded-2xl bg-card/50 font-normal text-muted-foreground"
+			>
+				<Search className="size-4" aria-hidden />
+				<span className="text-sm">Buscar</span>
+				<kbd className="ml-auto rounded-md border border-border bg-card/70 px-1.5 py-0.5 font-sans text-[11px] font-medium">
+					Ctrl K
+				</kbd>
+			</Button>
+			<Button
+				variant="outline"
+				size="icon"
+				onClick={openQuickCreate}
+				aria-label="Criar rápido"
+				className="size-10 rounded-2xl"
+			>
+				<Plus aria-hidden />
+			</Button>
+		</div>
+	);
 }
 
 /** The shared item list: three groups, a hairline between each. */
@@ -187,23 +244,28 @@ function NavItems({
 	return (
 		<nav
 			aria-label="Navegação principal"
-			className="flex flex-1 flex-col gap-1"
+			className="flex min-h-0 flex-1 flex-col gap-1"
 		>
-			{NAV_GROUPS.map((group, i) => (
-				<Fragment key={group[0]?.href ?? i}>
-					{i > 0 ? <Hairline /> : null}
-					{group.map((item) => (
-						<NavRow
-							key={item.href}
-							item={item}
-							pathname={pathname}
-							collapsed={collapsed}
-							onNavigate={onNavigate}
-						/>
-					))}
-				</Fragment>
-			))}
-			<div className="mt-auto flex flex-col gap-1 pt-1">
+			{/* The main groups scroll when they outgrow the viewport, so nothing
+			    (least of all Ajustes below) is ever pushed out of reach. */}
+			<div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+				{NAV_GROUPS.map((group, i) => (
+					<Fragment key={group[0]?.href ?? i}>
+						{i > 0 ? <Hairline /> : null}
+						{group.map((item) => (
+							<NavRow
+								key={item.href}
+								item={item}
+								pathname={pathname}
+								collapsed={collapsed}
+								onNavigate={onNavigate}
+							/>
+						))}
+					</Fragment>
+				))}
+			</div>
+			{/* Ajustes (and Administração) stay pinned at the bottom. */}
+			<div className="flex shrink-0 flex-col gap-1 pt-1">
 				<Hairline />
 				{showAdmin ? (
 					<NavRow
@@ -254,33 +316,51 @@ export function AppNav({
 					<BrandIcon size="sm" />
 					<BrandIdentity identity={identity} />
 				</Link>
-				<Sheet open={open} onOpenChange={setOpen}>
-					<SheetTrigger
-						render={
-							<Button variant="ghost" size="icon" aria-label="Abrir menu" />
-						}
+				<div className="flex items-center gap-0.5">
+					<Button
+						variant="ghost"
+						size="icon"
+						aria-label="Buscar"
+						onClick={openPalette}
 					>
-						<Menu aria-hidden />
-					</SheetTrigger>
-					<SheetContent
-						side="left"
-						className="w-[17rem] gap-0 border-sidebar-border bg-sidebar/95 p-4 backdrop-blur-2xl"
+						<Search aria-hidden />
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon"
+						aria-label="Criar rápido"
+						onClick={openQuickCreate}
 					>
-						<SheetTitle className="sr-only">Menu de navegação</SheetTitle>
-						<SheetDescription className="sr-only">
-							Acesse as seções do planejamento do casamento.
-						</SheetDescription>
-						<div className="mb-5 flex items-center gap-2.5 px-1">
-							<BrandIcon />
-							<BrandIdentity identity={identity} />
-						</div>
-						<NavItems
-							pathname={pathname}
-							showAdmin={showAdmin}
-							onNavigate={() => setOpen(false)}
-						/>
-					</SheetContent>
-				</Sheet>
+						<Plus aria-hidden />
+					</Button>
+					<Sheet open={open} onOpenChange={setOpen}>
+						<SheetTrigger
+							render={
+								<Button variant="ghost" size="icon" aria-label="Abrir menu" />
+							}
+						>
+							<Menu aria-hidden />
+						</SheetTrigger>
+						<SheetContent
+							side="left"
+							className="w-[17rem] gap-0 border-sidebar-border bg-sidebar/95 p-4 backdrop-blur-2xl"
+						>
+							<SheetTitle className="sr-only">Menu de navegação</SheetTitle>
+							<SheetDescription className="sr-only">
+								Acesse as seções do planejamento do casamento.
+							</SheetDescription>
+							<div className="mb-5 flex items-center gap-2.5 px-1">
+								<BrandIcon />
+								<BrandIdentity identity={identity} />
+							</div>
+							<NavItems
+								pathname={pathname}
+								showAdmin={showAdmin}
+								onNavigate={() => setOpen(false)}
+							/>
+						</SheetContent>
+					</Sheet>
+				</div>
 			</header>
 
 			{/* Desktop: collapsible sidebar. */}
@@ -331,6 +411,8 @@ export function AppNav({
 						<BrandIdentity identity={identity} />
 					</Link>
 				)}
+
+				<NavToolbar collapsed={collapsed} />
 
 				<NavItems
 					pathname={pathname}

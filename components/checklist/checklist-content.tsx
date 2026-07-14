@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useOpenOnCreateParam } from "@/components/use-create-param";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { monthGrid, monthLabelPT, shiftMonth } from "@/lib/domain/calendar";
@@ -49,6 +50,7 @@ export function ChecklistContent() {
 	const pendingPayments = useQuery(api.payments.listPending, {});
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+	useOpenOnCreateParam(setDialogOpen);
 
 	function openCreate() {
 		setEditingTask(undefined);
