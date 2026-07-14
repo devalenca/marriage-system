@@ -420,3 +420,38 @@ describe("superadmin subscription management", () => {
 		});
 	});
 });
+
+describe("weddings.setTheme", () => {
+	test("wedding admin sets a valid accent theme", async () => {
+		const { asAdminA, weddingA, t } = await setupWeddingsTest();
+		await asAdminA.mutation(api.weddings.setTheme, { theme: "terracota" });
+		expect((await t.run((ctx) => ctx.db.get(weddingA)))?.theme).toBe(
+			"terracota",
+		);
+	});
+
+	test("rejects an unknown theme", async () => {
+		const { asAdminA } = await setupWeddingsTest();
+		await expect(
+			asAdminA.mutation(api.weddings.setTheme, { theme: "neon" }),
+		).rejects.toThrowError(/tema/i);
+	});
+
+	test("a plain member cannot change the theme", async () => {
+		const { asMemberA } = await setupWeddingsTest();
+		await expect(
+			asMemberA.mutation(api.weddings.setTheme, { theme: "oceano" }),
+		).rejects.toThrowError(/administrador/i);
+	});
+
+	test("save preserves the chosen theme", async () => {
+		const { asAdminA, weddingA, t } = await setupWeddingsTest();
+		await asAdminA.mutation(api.weddings.setTheme, { theme: "lavanda" });
+		await asAdminA.mutation(api.weddings.save, {
+			coupleNames: "Ana & Bruno",
+			weddingDate: "2027-06-12",
+			budgetGoalCents: 5_000_000,
+		});
+		expect((await t.run((ctx) => ctx.db.get(weddingA)))?.theme).toBe("lavanda");
+	});
+});

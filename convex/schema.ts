@@ -36,6 +36,7 @@ export default defineSchema({
 	weddings: defineTable({
 		...weddingFieldValidators,
 		subscriptionActiveUntil: v.optional(v.string()), // ISO yyyy-MM-dd
+		theme: v.optional(v.string()), // accent theme id (see lib/domain/themes)
 	}),
 
 	// Links a user to a wedding. A user belongs to exactly one wedding today;

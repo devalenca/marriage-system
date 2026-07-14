@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
 import { PageHeader } from "@/components/page-header";
 import { AccessCard } from "@/components/settings/access-card";
+import { ThemeCard } from "@/components/settings/theme-card";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { isValidISODate, isValidISOTime } from "@/lib/domain/dates";
+import { resolveTheme } from "@/lib/domain/themes";
 import { notifyError } from "@/lib/notify";
 
 export function SettingsContent() {
@@ -57,6 +59,9 @@ export function SettingsContent() {
 					initial={wedding ?? undefined}
 				/>
 				<ChecklistCard hasWedding={wedding !== null} />
+				{wedding !== null ? (
+					<ThemeCard current={resolveTheme(wedding.theme ?? undefined)} />
+				) : null}
 				<AccessCard />
 				<Card>
 					<CardHeader>

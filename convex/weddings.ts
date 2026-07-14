@@ -4,10 +4,13 @@ import {
 	subscriptionStatus as computeStatus,
 	trialUntil,
 } from "../lib/domain/subscription";
+import { isWeddingTheme } from "../lib/domain/themes";
 import { normalizeWeddingFields } from "../lib/domain/wedding";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import {
+	authedQuery,
+	getViewer,
 	superadminMutation,
 	superadminQuery,
 	weddingAdminMutation,
@@ -51,6 +54,31 @@ export async function createWeddingWithAdmin(
 	return weddingId;
 }
 
+/**
+ * Lightweight identity of the caller's wedding for the nav brand and accent
+ * theme. Unlike getCurrent it never throws for an account without a wedding
+ * (a wedding-less superadmin included) — it just returns null.
+ */
+export const currentIdentity = authedQuery({
+	args: {},
+	handler: async (ctx) => {
+		const viewer = await getViewer(ctx);
+		if (viewer === null) return null;
+		const membership = await ctx.db
+			.query("memberships")
+			.withIndex("by_user", (q) => q.eq("userId", viewer._id))
+			.first();
+		if (membership === null) return null;
+		const wedding = await ctx.db.get(membership.weddingId);
+		if (wedding === null) return null;
+		return {
+			coupleNames: wedding.coupleNames,
+			weddingDate: wedding.weddingDate,
+			theme: wedding.theme ?? null,
+		};
+	},
+});
+
 /** The caller's wedding — the multi-tenant successor of `settings.get`. */
 export const getCurrent = weddingQuery({
 	args: {},
@@ -87,14 +115,27 @@ export const create = superadminMutation({
 export const save = weddingAdminMutation({
 	args: weddingFieldValidators,
 	handler: async (ctx, args) => {
-		// Replace preserving the superadmin-owned subscription field, and so
-		// that cleared optionals are removed rather than left stale.
+		// Replace preserving the fields this form doesn't own (subscription,
+		// theme), and so that cleared optionals are removed rather than stale.
 		const current = await ctx.db.get(ctx.weddingId);
 		await ctx.db.replace(ctx.weddingId, {
 			...normalizeWeddingFields(args),
 			subscriptionActiveUntil: current?.subscriptionActiveUntil,
+			theme: current?.theme,
 		});
 		return ctx.weddingId;
+	},
+});
+
+/** Sets the couple's accent theme (see lib/domain/themes). */
+export const setTheme = weddingAdminMutation({
+	args: { theme: v.string() },
+	handler: async (ctx, { theme }) => {
+		if (!isWeddingTheme(theme)) {
+			throw new ConvexError("Tema inválido");
+		}
+		await ctx.db.patch(ctx.weddingId, { theme });
+		return null;
 	},
 });
 
