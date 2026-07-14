@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { isValidISODate, isValidISOTime } from "../lib/domain/dates";
-import { weddingAdminMutation, weddingQuery } from "./lib/auth";
+import { adminMutation, weddingAdminMutation, weddingQuery } from "./lib/auth";
 
 export const weddingFields = {
 	coupleNames: v.string(),
@@ -52,6 +52,31 @@ export const getCurrent = weddingQuery({
 	args: {},
 	handler: async (ctx) => {
 		return await ctx.db.get(ctx.weddingId);
+	},
+});
+
+/** Superadmin-only: creates a wedding and links its admin user to it. */
+export const create = adminMutation({
+	args: { ...weddingFields, adminUserId: v.id("users") },
+	handler: async (ctx, { adminUserId, ...fields }) => {
+		const doc = normalizeWeddingFields(fields);
+		if ((await ctx.db.get(adminUserId)) === null) {
+			throw new Error("Usuário não encontrado");
+		}
+		const linked = await ctx.db
+			.query("memberships")
+			.withIndex("by_user", (q) => q.eq("userId", adminUserId))
+			.first();
+		if (linked !== null) {
+			throw new Error("Este usuário já está vinculado a um casamento");
+		}
+		const weddingId = await ctx.db.insert("weddings", doc);
+		await ctx.db.insert("memberships", {
+			weddingId,
+			userId: adminUserId,
+			role: "admin",
+		});
+		return weddingId;
 	},
 });
 

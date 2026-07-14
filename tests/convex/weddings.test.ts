@@ -203,3 +203,64 @@ describe("weddings.save", () => {
 		).rejects.toThrowError(/horário/i);
 	});
 });
+
+describe("weddings.create", () => {
+	const newWedding = {
+		coupleNames: "Elisa & Fábio",
+		weddingDate: "2028-03-18",
+		budgetGoalCents: 4_000_000,
+	};
+
+	test("superadmin creates a wedding with its admin membership", async () => {
+		const { asSuperadmin, looseUser, t } = await setupWeddingsTest();
+		const weddingId = await asSuperadmin.mutation(api.weddings.create, {
+			...newWedding,
+			adminUserId: looseUser,
+		});
+
+		const rows = await t.run(async (ctx) => ({
+			wedding: await ctx.db.get(weddingId),
+			membership: await ctx.db
+				.query("memberships")
+				.withIndex("by_user", (q) => q.eq("userId", looseUser))
+				.unique(),
+		}));
+		expect(rows.wedding).toMatchObject(newWedding);
+		expect(rows.membership).toMatchObject({
+			weddingId,
+			userId: looseUser,
+			role: "admin",
+		});
+	});
+
+	test("a wedding admin cannot create weddings", async () => {
+		const { asAdminA, looseUser } = await setupWeddingsTest();
+		await expect(
+			asAdminA.mutation(api.weddings.create, {
+				...newWedding,
+				adminUserId: looseUser,
+			}),
+		).rejects.toThrowError(/administrador/i);
+	});
+
+	test("rejects an admin user who already belongs to a wedding", async () => {
+		const { asSuperadmin, memberA } = await setupWeddingsTest();
+		await expect(
+			asSuperadmin.mutation(api.weddings.create, {
+				...newWedding,
+				adminUserId: memberA,
+			}),
+		).rejects.toThrowError(/já está vinculado/i);
+	});
+
+	test("rejects invalid wedding fields", async () => {
+		const { asSuperadmin, looseUser } = await setupWeddingsTest();
+		await expect(
+			asSuperadmin.mutation(api.weddings.create, {
+				...newWedding,
+				weddingDate: "18/03/2028",
+				adminUserId: looseUser,
+			}),
+		).rejects.toThrowError(/data/i);
+	});
+});
