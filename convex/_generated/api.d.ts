@@ -27,6 +27,7 @@ import type * as payments from "../payments.js";
 import type * as tasks from "../tasks.js";
 import type * as users from "../users.js";
 import type * as vendors from "../vendors.js";
+import type * as verses from "../verses.js";
 import type * as weddings from "../weddings.js";
 
 import type {
@@ -55,6 +56,7 @@ declare const fullApi: ApiFromModules<{
   tasks: typeof tasks;
   users: typeof users;
   vendors: typeof vendors;
+  verses: typeof verses;
   weddings: typeof weddings;
 }>;
 
