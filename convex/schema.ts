@@ -40,6 +40,31 @@ export default defineSchema({
 		termsAcceptedAt: v.optional(v.number()), // epoch ms, set at self-signup
 	}),
 
+	// Motivational Bible verses (marriage, love, perseverance) shown one per
+	// day on the home screen. Global content, not wedding-scoped. Seeded with
+	// a free/public-domain rendering — NOT the copyrighted ARA — so the text is
+	// safe to ship; swap the `text` for a licensed translation if desired.
+	verses: defineTable({
+		reference: v.string(), // e.g. "1 Coríntios 13:4-7"
+		text: v.string(),
+		theme: v.optional(v.string()), // "amor" | "perseveranca" | "uniao"
+	}).index("by_reference", ["reference"]),
+
+	// Feedback from couples ("ouvir as dores dos clientes"): suggestions,
+	// problems and praise the superadmin reads to shape the product.
+	feedback: defineTable({
+		userId: v.id("users"),
+		weddingId: v.optional(v.id("weddings")),
+		email: v.optional(v.string()),
+		kind: v.union(
+			v.literal("sugestao"),
+			v.literal("problema"),
+			v.literal("elogio"),
+		),
+		message: v.string(),
+		createdAt: v.number(), // epoch ms
+	}).index("by_created", ["createdAt"]),
+
 	// Links a user to a wedding. A user belongs to exactly one wedding today;
 	// the superadmin (AUTH_ADMIN_EMAIL) reaches any wedding without one.
 	memberships: defineTable({

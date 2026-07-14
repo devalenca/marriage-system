@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { FeedbackInbox } from "@/components/admin/feedback-inbox";
 import { CurrencyInput } from "@/components/currency-input";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -128,6 +129,7 @@ export function AdminPanel() {
 						)}
 					</CardContent>
 				</Card>
+				<FeedbackInbox />
 			</div>
 		</div>
 	);

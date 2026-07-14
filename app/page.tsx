@@ -4,6 +4,7 @@ import {
 	Heart,
 	Images,
 	ListChecks,
+	MessagesSquare,
 	Users,
 	Wallet,
 } from "lucide-react";
@@ -11,6 +12,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CockpitPreview } from "@/components/marketing/cockpit-preview";
 import { LandingFooter } from "@/components/marketing/landing-footer";
+import { ThemeShowcase } from "@/components/marketing/theme-showcase";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -93,6 +95,9 @@ export default function LandingPage() {
 					<CockpitPreview />
 				</div>
 			</section>
+
+			{/* Customization — the differentiator, shown live */}
+			<ThemeShowcase />
 
 			{/* Como funciona — three steps, connected, not a card grid */}
 			<section className="mt-24" aria-labelledby="como-funciona">
@@ -237,6 +242,31 @@ export default function LandingPage() {
 						</p>
 					</Card>
 				</div>
+			</section>
+
+			{/* Feedback-driven — we listen and adapt */}
+			<section className="mt-24">
+				<Card className="flex flex-col gap-5 p-8 sm:flex-row sm:items-center sm:justify-between sm:p-10">
+					<div className="max-w-xl">
+						<span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-sm font-medium text-secondary-foreground">
+							Feito com casais de verdade
+						</span>
+						<h2 className="mt-4 font-display text-2xl font-semibold text-balance text-foreground sm:text-3xl">
+							Sua opinião molda o app
+						</h2>
+						<p className="mt-3 text-pretty text-muted-foreground">
+							A gente ouve as dores de quem está planejando e transforma cada
+							sugestão em melhoria. Dentro do app, é um toque para falar com a
+							gente — e o que você pede pode virar a próxima novidade.
+						</p>
+					</div>
+					<span
+						aria-hidden
+						className="flex size-20 shrink-0 items-center justify-center rounded-[1.75rem] bg-primary/10 text-primary ring-1 ring-primary/15"
+					>
+						<MessagesSquare className="size-9" />
+					</span>
+				</Card>
 			</section>
 
 			{/* Pricing / trial band */}

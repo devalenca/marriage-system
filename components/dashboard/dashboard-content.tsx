@@ -6,6 +6,7 @@ import { ArrowRight, Check, PartyPopper } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { toast } from "sonner";
+import { DailyVerseCard } from "@/components/dashboard/daily-verse-card";
 import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { BudgetOverviewCard } from "@/components/finance/budget-overview-card";
 import { PaymentListCard } from "@/components/payment-list-card";
@@ -34,6 +35,7 @@ export function DashboardContent() {
 	return (
 		<div className="animate-screen-enter flex flex-col gap-4">
 			<CountdownCard summary={summary} />
+			<DailyVerseCard />
 			<BudgetOverviewCard
 				finance={summary.finance}
 				pending={pending}

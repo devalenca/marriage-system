@@ -12,6 +12,7 @@ import type * as access from "../access.js";
 import type * as attachments from "../attachments.js";
 import type * as auth from "../auth.js";
 import type * as dashboard from "../dashboard.js";
+import type * as feedback from "../feedback.js";
 import type * as finance from "../finance.js";
 import type * as guests from "../guests.js";
 import type * as http from "../http.js";
@@ -26,6 +27,7 @@ import type * as payments from "../payments.js";
 import type * as tasks from "../tasks.js";
 import type * as users from "../users.js";
 import type * as vendors from "../vendors.js";
+import type * as verses from "../verses.js";
 import type * as weddings from "../weddings.js";
 
 import type {
@@ -39,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   attachments: typeof attachments;
   auth: typeof auth;
   dashboard: typeof dashboard;
+  feedback: typeof feedback;
   finance: typeof finance;
   guests: typeof guests;
   http: typeof http;
@@ -53,6 +56,7 @@ declare const fullApi: ApiFromModules<{
   tasks: typeof tasks;
   users: typeof users;
   vendors: typeof vendors;
+  verses: typeof verses;
   weddings: typeof weddings;
 }>;
 
