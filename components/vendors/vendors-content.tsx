@@ -19,6 +19,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useOpenOnCreateParam } from "@/components/use-create-param";
 import { filterVendors } from "@/components/vendors/filter-vendors";
 import { VendorFormDialog } from "@/components/vendors/vendor-form-dialog";
 import { api } from "@/convex/_generated/api";
@@ -47,6 +48,7 @@ export function VendorsContent() {
 	const [category, setCategory] = useState<VendorCategory | "todas">("todas");
 	const [status, setStatus] = useState<VendorStatus | "todos">("todos");
 	const [createOpen, setCreateOpen] = useState(false);
+	useOpenOnCreateParam(setCreateOpen);
 
 	const filtered = vendors
 		? filterVendors(vendors, { search, category, status })

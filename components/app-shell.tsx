@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AppNav } from "@/components/app-nav";
+import { CommandPalette } from "@/components/command-palette";
+import { QuickCreateMenu } from "@/components/quick-create-menu";
 import { SubscriptionBanner } from "@/components/subscription-banner";
+import { useNavShortcuts } from "@/components/use-nav-shortcuts";
 import { WeddingTheme } from "@/components/wedding-theme";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +18,7 @@ const STORAGE_KEY = "nav-collapsed";
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
 	const [collapsed, setCollapsed] = useState(true);
+	useNavShortcuts();
 
 	useEffect(() => {
 		const saved = localStorage.getItem(STORAGE_KEY);
@@ -37,6 +41,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 			)}
 		>
 			<WeddingTheme />
+			<CommandPalette />
+			<QuickCreateMenu />
 			<AppNav collapsed={collapsed} onToggle={toggle} />
 			<main className="mx-auto w-full max-w-5xl px-4 pt-20 pb-12 sm:px-6 md:px-8 md:pt-8 md:pb-14">
 				<SubscriptionBanner />
