@@ -39,11 +39,6 @@ async function seed(t: TestCtx) {
 		const userId = await ctx.db.insert("users", {
 			email: "alguem@example.com",
 		});
-		await ctx.db.insert("settings", {
-			coupleNames: "A & B",
-			weddingDate: "2026-11-21",
-			budgetGoalCents: 0,
-		});
 		return { storageId, vendorId, paymentId, attachmentId, taskId, userId };
 	});
 }
@@ -52,14 +47,24 @@ type SeedIds = Awaited<ReturnType<typeof seed>>;
 type Case = [string, (t: TestCtx, ids: SeedIds) => Promise<unknown>];
 
 const cases: Case[] = [
-	["settings.get", (t) => t.query(api.settings.get, {})],
+	["weddings.getCurrent", (t) => t.query(api.weddings.getCurrent, {})],
 	[
-		"settings.save",
+		"weddings.save",
 		(t) =>
-			t.mutation(api.settings.save, {
+			t.mutation(api.weddings.save, {
 				coupleNames: "A & B",
 				weddingDate: "2026-11-21",
 				budgetGoalCents: 0,
+			}),
+	],
+	[
+		"weddings.create",
+		(t, ids) =>
+			t.mutation(api.weddings.create, {
+				coupleNames: "A & B",
+				weddingDate: "2026-11-21",
+				budgetGoalCents: 0,
+				adminUserId: ids.userId,
 			}),
 	],
 	["vendors.list", (t) => t.query(api.vendors.list, {})],

@@ -8,7 +8,7 @@ import {
 	type VendorWithPayments,
 } from "../lib/domain/finance";
 import type { Doc } from "./_generated/dataModel";
-import { authedQuery as query } from "./lib/auth";
+import { weddingQuery as query } from "./lib/auth";
 import { groupPaymentsByVendor } from "./lib/db";
 
 /** Same wire shape as payments.listPending rows. */
@@ -20,10 +20,19 @@ export const summary = query({
 		if (!isValidISODate(today)) throw new Error("Invalid reference date");
 
 		const [settings, vendors, payments, tasks] = await Promise.all([
-			ctx.db.query("settings").first(),
-			ctx.db.query("vendors").collect(),
-			ctx.db.query("payments").collect(),
-			ctx.db.query("tasks").collect(),
+			ctx.db.get(ctx.weddingId),
+			ctx.db
+				.query("vendors")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
+			ctx.db
+				.query("payments")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
+			ctx.db
+				.query("tasks")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
 		]);
 
 		const paymentsByVendor = groupPaymentsByVendor(payments);

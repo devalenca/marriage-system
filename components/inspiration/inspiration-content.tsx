@@ -15,7 +15,7 @@ import { notifyError } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 
 export function InspirationContent() {
-	const galleries = useQuery(api.inspiration.listGalleries);
+	const galleries = useQuery(api.inspiration.listGalleries, {});
 	const createGallery = useMutation(api.inspiration.createGallery);
 	const renameGallery = useMutation(api.inspiration.renameGallery);
 	const removeGallery = useMutation(api.inspiration.removeGallery);
@@ -91,7 +91,7 @@ export function InspirationContent() {
 		setUploading(true);
 		try {
 			for (const file of Array.from(files)) {
-				const uploadUrl = await generateUploadUrl();
+				const uploadUrl = await generateUploadUrl({});
 				const result = await fetch(uploadUrl, {
 					method: "POST",
 					headers: file.type ? { "Content-Type": file.type } : undefined,

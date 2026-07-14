@@ -1,7 +1,8 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { authedMutation as mutation, authedQuery as query } from "./lib/auth";
+import { weddingMutation as mutation, weddingQuery as query } from "./lib/auth";
+import { getOwned } from "./lib/db";
 import { attachmentKindValidator } from "./lib/validators";
 
 export const generateUploadUrl = mutation({
@@ -26,10 +27,10 @@ export const create = mutation({
 		if ((vendorId === undefined) === (paymentId === undefined)) {
 			throw new Error("Anexe a um fornecedor OU a um pagamento");
 		}
-		if (vendorId && !(await ctx.db.get(vendorId))) {
+		if (vendorId && !(await getOwned(ctx, "vendors", vendorId))) {
 			throw new Error("Fornecedor não encontrado");
 		}
-		if (paymentId && !(await ctx.db.get(paymentId))) {
+		if (paymentId && !(await getOwned(ctx, "payments", paymentId))) {
 			throw new Error("Pagamento não encontrado");
 		}
 		if (args.name.trim().length === 0) {
@@ -37,6 +38,7 @@ export const create = mutation({
 		}
 		return await ctx.db.insert("attachments", {
 			...args,
+			weddingId: ctx.weddingId,
 			name: args.name.trim(),
 			uploadedAt: Date.now(),
 		});
@@ -50,6 +52,8 @@ async function withUrl(ctx: QueryCtx, attachment: Doc<"attachments">) {
 export const listByVendor = query({
 	args: { vendorId: v.id("vendors") },
 	handler: async (ctx, { vendorId }) => {
+		// A vendor of another wedding behaves exactly like a missing one.
+		if (!(await getOwned(ctx, "vendors", vendorId))) return [];
 		const rows = await ctx.db
 			.query("attachments")
 			.withIndex("by_vendor", (q) => q.eq("vendorId", vendorId))
@@ -61,6 +65,8 @@ export const listByVendor = query({
 export const listByPayment = query({
 	args: { paymentId: v.id("payments") },
 	handler: async (ctx, { paymentId }) => {
+		// A payment of another wedding behaves exactly like a missing one.
+		if (!(await getOwned(ctx, "payments", paymentId))) return [];
 		const rows = await ctx.db
 			.query("attachments")
 			.withIndex("by_payment", (q) => q.eq("paymentId", paymentId))
@@ -73,9 +79,18 @@ export const listAll = query({
 	args: {},
 	handler: async (ctx) => {
 		const [attachments, vendors, payments] = await Promise.all([
-			ctx.db.query("attachments").collect(),
-			ctx.db.query("vendors").collect(),
-			ctx.db.query("payments").collect(),
+			ctx.db
+				.query("attachments")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
+			ctx.db
+				.query("vendors")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
+			ctx.db
+				.query("payments")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
 		]);
 		const vendorById = new Map(vendors.map((v) => [v._id, v]));
 		const paymentById = new Map(payments.map((p) => [p._id, p]));
@@ -121,10 +136,11 @@ export const listAll = query({
 export const remove = mutation({
 	args: { id: v.id("attachments") },
 	handler: async (ctx, { id }) => {
-		const attachment = await ctx.db.get(id);
+		// Missing and foreign rows are indistinguishable: both are a no-op.
+		const attachment = await getOwned(ctx, "attachments", id);
 		if (!attachment) return;
 		await ctx.storage.delete(attachment.storageId);
-		await ctx.db.delete(id);
+		await ctx.db.delete(attachment._id);
 	},
 });
 

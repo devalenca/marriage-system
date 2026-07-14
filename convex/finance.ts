@@ -8,7 +8,7 @@ import {
 	vendorFinancials,
 } from "../lib/domain/finance";
 import type { Doc, Id } from "./_generated/dataModel";
-import { authedQuery as query } from "./lib/auth";
+import { weddingQuery as query } from "./lib/auth";
 import { groupPaymentsByVendor } from "./lib/db";
 
 function isActive(vendor: Doc<"vendors">) {
@@ -26,10 +26,19 @@ export const overview = query({
 		if (!isValidISODate(today)) throw new Error("Invalid reference date");
 
 		const [settings, vendors, payments, attachments] = await Promise.all([
-			ctx.db.query("settings").first(),
-			ctx.db.query("vendors").collect(),
-			ctx.db.query("payments").collect(),
-			ctx.db.query("attachments").collect(),
+			ctx.db.get(ctx.weddingId),
+			ctx.db
+				.query("vendors")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
+			ctx.db
+				.query("payments")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
+			ctx.db
+				.query("attachments")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
 		]);
 
 		const byVendor = groupPaymentsByVendor(payments);
@@ -110,8 +119,14 @@ export const exportRows = query({
 	args: {},
 	handler: async (ctx) => {
 		const [vendors, payments] = await Promise.all([
-			ctx.db.query("vendors").collect(),
-			ctx.db.query("payments").collect(),
+			ctx.db
+				.query("vendors")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
+			ctx.db
+				.query("payments")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
 		]);
 		const vendorById = new Map(vendors.map((vendor) => [vendor._id, vendor]));
 

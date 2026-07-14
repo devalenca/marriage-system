@@ -156,6 +156,28 @@ describe("weddings.save", () => {
 		expect(updated?.receptionVenue).toBeUndefined();
 	});
 
+	test("persists optional event details and clears them when omitted", async () => {
+		const { asAdminA } = await setupWeddingsTest();
+		await asAdminA.mutation(api.weddings.save, {
+			...validArgs,
+			ceremonyVenue: "Igreja Matriz",
+			receptionVenue: "Espaço Villa",
+			weddingTime: "16:30",
+		});
+		expect(await asAdminA.query(api.weddings.getCurrent, {})).toMatchObject({
+			ceremonyVenue: "Igreja Matriz",
+			receptionVenue: "Espaço Villa",
+			weddingTime: "16:30",
+		});
+
+		// Replace semantics: optionals omitted on the next save are cleared.
+		await asAdminA.mutation(api.weddings.save, validArgs);
+		const wedding = await asAdminA.query(api.weddings.getCurrent, {});
+		expect(wedding?.ceremonyVenue).toBeUndefined();
+		expect(wedding?.receptionVenue).toBeUndefined();
+		expect(wedding?.weddingTime).toBeUndefined();
+	});
+
 	test("member without the admin role is rejected", async () => {
 		const { asMemberA } = await setupWeddingsTest();
 		await expect(

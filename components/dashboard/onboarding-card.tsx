@@ -14,7 +14,7 @@ import { isValidISODate } from "@/lib/domain/dates";
 import { notifyError } from "@/lib/notify";
 
 export function OnboardingCard() {
-	const saveSettings = useMutation(api.settings.save);
+	const saveWedding = useMutation(api.weddings.save);
 	const generateChecklist = useMutation(api.tasks.generateFromTemplate);
 
 	const [coupleNames, setCoupleNames] = useState("");
@@ -39,7 +39,7 @@ export function OnboardingCard() {
 
 		setSaving(true);
 		try {
-			await saveSettings({
+			await saveWedding({
 				coupleNames: coupleNames.trim(),
 				weddingDate,
 				budgetGoalCents: budgetCents,

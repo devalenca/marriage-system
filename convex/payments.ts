@@ -8,8 +8,8 @@ import {
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { deleteAttachmentsFor } from "./attachments";
-import { authedMutation as mutation, authedQuery as query } from "./lib/auth";
-import { paymentsOf } from "./lib/db";
+import { weddingMutation as mutation, weddingQuery as query } from "./lib/auth";
+import { getOwned, paymentsOf } from "./lib/db";
 
 function validatePayment(args: { amountCents?: number; dueDate?: string }) {
 	if (args.amountCents !== undefined && args.amountCents <= 0) {
@@ -41,7 +41,9 @@ async function recomputeVendorStatus(
 export const listByVendor = query({
 	args: { vendorId: v.id("vendors") },
 	handler: async (ctx, { vendorId }) => {
-		const payments = await paymentsOf(ctx, vendorId);
+		const vendor = await getOwned(ctx, "vendors", vendorId);
+		if (!vendor) return [];
+		const payments = await paymentsOf(ctx, vendor._id);
 		return payments.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 	},
 });
@@ -50,17 +52,21 @@ export const listByVendor = query({
 export const listPending = query({
 	args: {},
 	handler: async (ctx) => {
-		const [pending, vendors] = await Promise.all([
+		const [payments, vendors] = await Promise.all([
 			ctx.db
 				.query("payments")
-				.withIndex("by_status_dueDate", (q) => q.eq("status", "pendente"))
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
 				.collect(),
-			ctx.db.query("vendors").collect(),
+			ctx.db
+				.query("vendors")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
 		]);
 		const vendorById = new Map(vendors.map((vendor) => [vendor._id, vendor]));
 
 		const result = [];
-		for (const payment of pending) {
+		for (const payment of payments) {
+			if (payment.status !== "pendente") continue;
 			const vendor = vendorById.get(payment.vendorId);
 			if (!vendor || vendor.status === "cancelado") continue;
 			result.push({ ...payment, vendorName: vendor.name });
@@ -79,13 +85,17 @@ export const create = mutation({
 		paymentMethod: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const vendor = await ctx.db.get(args.vendorId);
+		const vendor = await getOwned(ctx, "vendors", args.vendorId);
 		if (!vendor) throw new Error("Fornecedor não encontrado");
 		validatePayment(args);
 		if (args.description.trim().length === 0) {
 			throw new Error("Informe a descrição do pagamento");
 		}
-		return await ctx.db.insert("payments", { ...args, status: "pendente" });
+		return await ctx.db.insert("payments", {
+			...args,
+			status: "pendente",
+			weddingId: ctx.weddingId,
+		});
 	},
 });
 
@@ -104,7 +114,7 @@ export const createSchedule = mutation({
 		paymentMethod: v.optional(v.string()),
 	},
 	handler: async (ctx, { vendorId, paymentMethod, ...plan }) => {
-		const vendor = await ctx.db.get(vendorId);
+		const vendor = await getOwned(ctx, "vendors", vendorId);
 		if (!vendor) throw new Error("Fornecedor não encontrado");
 		if (
 			plan.downPaymentDate !== undefined &&
@@ -121,7 +131,7 @@ export const createSchedule = mutation({
 
 		const planned = generateInstallments(plan);
 
-		const existing = await paymentsOf(ctx, vendorId);
+		const existing = await paymentsOf(ctx, vendor._id);
 		for (const payment of existing) {
 			if (payment.status === "pendente") {
 				await deleteAttachmentsFor(ctx, { paymentId: payment._id });
@@ -131,17 +141,18 @@ export const createSchedule = mutation({
 
 		for (const payment of planned) {
 			await ctx.db.insert("payments", {
-				vendorId,
+				vendorId: vendor._id,
 				description: payment.description,
 				amountCents: payment.amountCents,
 				dueDate: payment.dueDate,
 				isDownPayment: payment.isDownPayment,
 				status: "pendente",
 				paymentMethod,
+				weddingId: ctx.weddingId,
 			});
 		}
 
-		await recomputeVendorStatus(ctx, vendorId);
+		await recomputeVendorStatus(ctx, vendor._id);
 	},
 });
 
@@ -154,10 +165,10 @@ export const update = mutation({
 		paymentMethod: v.optional(v.string()),
 	},
 	handler: async (ctx, { id, ...patch }) => {
-		const payment = await ctx.db.get(id);
+		const payment = await getOwned(ctx, "payments", id);
 		if (!payment) throw new Error("Pagamento não encontrado");
 		validatePayment(patch);
-		await ctx.db.patch(id, patch);
+		await ctx.db.patch(payment._id, patch);
 		await recomputeVendorStatus(ctx, payment.vendorId);
 	},
 });
@@ -169,12 +180,12 @@ export const markPaid = mutation({
 		paymentMethod: v.optional(v.string()),
 	},
 	handler: async (ctx, { id, paidDate, paymentMethod }) => {
-		const payment = await ctx.db.get(id);
+		const payment = await getOwned(ctx, "payments", id);
 		if (!payment) throw new Error("Pagamento não encontrado");
 		const date = paidDate ?? todayInSaoPaulo();
 		if (!isValidISODate(date)) throw new Error("Data de pagamento inválida");
 
-		await ctx.db.patch(id, {
+		await ctx.db.patch(payment._id, {
 			status: "pago",
 			paidDate: date,
 			...(paymentMethod ? { paymentMethod } : {}),
@@ -186,10 +197,13 @@ export const markPaid = mutation({
 export const markPending = mutation({
 	args: { id: v.id("payments") },
 	handler: async (ctx, { id }) => {
-		const payment = await ctx.db.get(id);
+		const payment = await getOwned(ctx, "payments", id);
 		if (!payment) throw new Error("Pagamento não encontrado");
 
-		await ctx.db.patch(id, { status: "pendente", paidDate: undefined });
+		await ctx.db.patch(payment._id, {
+			status: "pendente",
+			paidDate: undefined,
+		});
 		await recomputeVendorStatus(ctx, payment.vendorId);
 	},
 });
@@ -197,10 +211,10 @@ export const markPending = mutation({
 export const remove = mutation({
 	args: { id: v.id("payments") },
 	handler: async (ctx, { id }) => {
-		const payment = await ctx.db.get(id);
+		const payment = await getOwned(ctx, "payments", id);
 		if (!payment) throw new Error("Pagamento não encontrado");
-		await deleteAttachmentsFor(ctx, { paymentId: id });
-		await ctx.db.delete(id);
+		await deleteAttachmentsFor(ctx, { paymentId: payment._id });
+		await ctx.db.delete(payment._id);
 		await recomputeVendorStatus(ctx, payment.vendorId);
 	},
 });
