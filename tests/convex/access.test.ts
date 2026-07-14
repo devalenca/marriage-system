@@ -79,7 +79,10 @@ describe("access.provision", () => {
 
 	test("superadmin creates the account, wedding, trial and admin membership", async () => {
 		const { asSuperadmin, t } = await setupAccessTest();
-		const weddingId = await asSuperadmin.action(api.access.provision, newCouple);
+		const weddingId = await asSuperadmin.action(
+			api.access.provision,
+			newCouple,
+		);
 
 		const rows = await t.run(async (ctx) => {
 			const user = (await ctx.db.query("users").collect()).find(
@@ -169,7 +172,10 @@ describe("access.listMembers", () => {
 });
 
 describe("access.createMember", () => {
-	const newMember = { email: "planner@example.com", password: "senha-forte-123" };
+	const newMember = {
+		email: "planner@example.com",
+		password: "senha-forte-123",
+	};
 
 	test("wedding admin adds a member to their own wedding", async () => {
 		const { asAdminA, weddingA, t } = await setupAccessTest();

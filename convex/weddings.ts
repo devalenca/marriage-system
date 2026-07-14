@@ -1,10 +1,10 @@
 import { ConvexError, v } from "convex/values";
 import { isValidISODate, todayInSaoPaulo } from "../lib/domain/dates";
-import { normalizeWeddingFields } from "../lib/domain/wedding";
 import {
 	subscriptionStatus as computeStatus,
 	trialUntil,
 } from "../lib/domain/subscription";
+import { normalizeWeddingFields } from "../lib/domain/wedding";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import {
@@ -119,10 +119,7 @@ export const listAll = superadminQuery({
 					memberCount: memberships.length,
 					adminUserId: admin?.userId ?? null,
 					adminEmail: adminUser?.email ?? null,
-					subscription: computeStatus(
-						wedding.subscriptionActiveUntil,
-						today,
-					),
+					subscription: computeStatus(wedding.subscriptionActiveUntil, today),
 				};
 			}),
 		);

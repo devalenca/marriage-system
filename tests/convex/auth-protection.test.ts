@@ -206,7 +206,10 @@ const cases: Case[] = [
 				password: "senha-forte-123",
 			}),
 	],
-	["weddings.subscriptionStatus", (t) => t.query(api.weddings.subscriptionStatus, {})],
+	[
+		"weddings.subscriptionStatus",
+		(t) => t.query(api.weddings.subscriptionStatus, {}),
+	],
 	["weddings.listAll", (t) => t.query(api.weddings.listAll, {})],
 	[
 		"weddings.setSubscription",

@@ -16,7 +16,11 @@ describe("canCreateUser", () => {
 
 	test("superadmin caller can create any account", () => {
 		expect(
-			canCreateUser({ ...base, callerIsSuperadmin: true, email: "nova@example.com" }),
+			canCreateUser({
+				...base,
+				callerIsSuperadmin: true,
+				email: "nova@example.com",
+			}),
 		).toBe(true);
 	});
 

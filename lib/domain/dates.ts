@@ -2,12 +2,7 @@
 // America/Sao_Paulo (see AGENTS.md). All math here is pure calendar
 // arithmetic on the date parts — no Date timezone surprises.
 
-import {
-	addDays,
-	addMonths,
-	differenceInCalendarDays,
-	format,
-} from "date-fns";
+import { addDays, addMonths, differenceInCalendarDays, format } from "date-fns";
 
 const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const ISO_TIME_RE = /^(\d{2}):(\d{2})$/;

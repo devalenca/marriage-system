@@ -292,7 +292,9 @@ describe("weddings.create", () => {
 describe("subscription read-only enforcement", () => {
 	async function withSubscription(activeUntil: string) {
 		const ctx = await setupWeddingsTest();
-		await ctx.t.run((db) => db.db.patch(ctx.weddingA, { subscriptionActiveUntil: activeUntil }));
+		await ctx.t.run((db) =>
+			db.db.patch(ctx.weddingA, { subscriptionActiveUntil: activeUntil }),
+		);
 		return ctx;
 	}
 
@@ -343,7 +345,9 @@ describe("superadmin subscription management", () => {
 			adminUserId: looseUser,
 		});
 		const wedding = await t.run((ctx) => ctx.db.get(weddingId));
-		expect(wedding?.subscriptionActiveUntil).toBe(trialUntil(todayInSaoPaulo()));
+		expect(wedding?.subscriptionActiveUntil).toBe(
+			trialUntil(todayInSaoPaulo()),
+		);
 	});
 
 	test("listAll returns every wedding with status, member count and admin", async () => {

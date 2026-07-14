@@ -66,7 +66,10 @@ export const memberEmailInWedding = internalQuery({
 });
 
 export const insertWeddingAdmin = internalMutation({
-	args: { adminUserId: v.id("users"), fields: v.object(weddingFieldValidators) },
+	args: {
+		adminUserId: v.id("users"),
+		fields: v.object(weddingFieldValidators),
+	},
 	handler: async (ctx, { adminUserId, fields }) => {
 		return await createWeddingWithAdmin(ctx, adminUserId, fields);
 	},
