@@ -19,11 +19,13 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_db from "../lib/db.js";
 import type * as lib_userCreation from "../lib/userCreation.js";
 import type * as lib_validators from "../lib/validators.js";
+import type * as migrations from "../migrations.js";
 import type * as payments from "../payments.js";
 import type * as settings from "../settings.js";
 import type * as tasks from "../tasks.js";
 import type * as users from "../users.js";
 import type * as vendors from "../vendors.js";
+import type * as weddings from "../weddings.js";
 
 import type {
   ApiFromModules,
@@ -43,11 +45,13 @@ declare const fullApi: ApiFromModules<{
   "lib/db": typeof lib_db;
   "lib/userCreation": typeof lib_userCreation;
   "lib/validators": typeof lib_validators;
+  migrations: typeof migrations;
   payments: typeof payments;
   settings: typeof settings;
   tasks: typeof tasks;
   users: typeof users;
   vendors: typeof vendors;
+  weddings: typeof weddings;
 }>;
 
 /**

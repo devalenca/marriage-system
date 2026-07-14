@@ -19,6 +19,23 @@ function literalUnion<T extends string>(
 	return (v.union as (...args: any[]) => any)(...literals);
 }
 
+/** Role of a user inside a wedding: admin manages accesses, member uses it. */
+export const membershipRoleValidator = literalUnion([
+	"admin",
+	"member",
+] as const);
+
+// A wedding's editable fields — the single source shared by the weddings
+// table definition and the weddings mutations (schema and args can't drift).
+export const weddingFieldValidators = {
+	coupleNames: v.string(),
+	weddingDate: v.string(), // ISO yyyy-MM-dd (America/Sao_Paulo)
+	budgetGoalCents: v.number(),
+	ceremonyVenue: v.optional(v.string()),
+	receptionVenue: v.optional(v.string()),
+	weddingTime: v.optional(v.string()), // ISO HH:mm (24h), America/Sao_Paulo
+};
+
 export const vendorCategoryValidator = literalUnion(VENDOR_CATEGORIES);
 export const vendorStatusValidator = literalUnion(VENDOR_STATUSES);
 export const taskPriorityValidator = literalUnion(TASK_PRIORITIES);

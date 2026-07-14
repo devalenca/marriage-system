@@ -1,6 +1,9 @@
-import { v } from "convex/values";
-import { isValidISODate, isValidISOTime } from "../lib/domain/dates";
+import { normalizeWeddingFields } from "../lib/domain/wedding";
 import { authedMutation as mutation, authedQuery as query } from "./lib/auth";
+import { weddingFieldValidators } from "./lib/validators";
+
+// Legacy singleton, superseded by the weddings module. Dies once the UI is
+// rewired to weddings.getCurrent/save in the multi-tenant rollout.
 
 export const get = query({
 	args: {},
@@ -10,40 +13,9 @@ export const get = query({
 });
 
 export const save = mutation({
-	args: {
-		coupleNames: v.string(),
-		weddingDate: v.string(),
-		budgetGoalCents: v.number(),
-		ceremonyVenue: v.optional(v.string()),
-		receptionVenue: v.optional(v.string()),
-		weddingTime: v.optional(v.string()),
-	},
+	args: weddingFieldValidators,
 	handler: async (ctx, args) => {
-		if (!isValidISODate(args.weddingDate)) {
-			throw new Error("Data do casamento inválida");
-		}
-		if (args.budgetGoalCents < 0) {
-			throw new Error("A meta de orçamento não pode ser negativa");
-		}
-		if (args.coupleNames.trim().length === 0) {
-			throw new Error("Informe os nomes do casal");
-		}
-
-		const ceremonyVenue = args.ceremonyVenue?.trim();
-		const receptionVenue = args.receptionVenue?.trim();
-		const weddingTime = args.weddingTime?.trim();
-		if (weddingTime && !isValidISOTime(weddingTime)) {
-			throw new Error("Horário inválido");
-		}
-
-		const doc = {
-			coupleNames: args.coupleNames.trim(),
-			weddingDate: args.weddingDate,
-			budgetGoalCents: args.budgetGoalCents,
-			ceremonyVenue: ceremonyVenue || undefined,
-			receptionVenue: receptionVenue || undefined,
-			weddingTime: weddingTime || undefined,
-		};
+		const doc = normalizeWeddingFields(args);
 
 		const existing = await ctx.db.query("settings").first();
 		if (existing) {
