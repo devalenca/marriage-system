@@ -1,70 +1,71 @@
 import { describe, expect, test } from "vitest";
 import { canCreateUser } from "../../convex/lib/userCreation";
 
-// Account creation policy: the authenticated admin can always create
-// accounts; otherwise only the very first account (bootstrap) is allowed,
-// and only for the admin e-mail. Everything else is rejected.
+// Account creation policy: the superadmin (provisioning tenants) and a wedding
+// admin (adding members) can create accounts; otherwise only the very first
+// account (bootstrap) is allowed, and only for the superadmin e-mail.
 
 describe("canCreateUser", () => {
 	const adminEmail = "admin@example.com";
+	const base = {
+		callerIsSuperadmin: false,
+		callerIsWeddingAdmin: false,
+		anyUserExists: true,
+		adminEmail,
+	};
 
-	test("admin caller can create any account", () => {
+	test("superadmin caller can create any account", () => {
 		expect(
 			canCreateUser({
-				callerIsAdmin: true,
-				anyUserExists: true,
+				...base,
+				callerIsSuperadmin: true,
 				email: "nova@example.com",
-				adminEmail,
 			}),
 		).toBe(true);
 	});
 
-	test("bootstrap: first account allowed only for the admin e-mail", () => {
+	test("wedding admin caller can create any account", () => {
 		expect(
 			canCreateUser({
-				callerIsAdmin: false,
+				...base,
+				callerIsWeddingAdmin: true,
+				email: "membro@example.com",
+			}),
+		).toBe(true);
+	});
+
+	test("bootstrap: first account allowed only for the superadmin e-mail", () => {
+		expect(
+			canCreateUser({
+				...base,
 				anyUserExists: false,
 				email: "ADMIN@example.com ",
-				adminEmail,
 			}),
 		).toBe(true);
 		expect(
 			canCreateUser({
-				callerIsAdmin: false,
+				...base,
 				anyUserExists: false,
 				email: "intruso@example.com",
-				adminEmail,
 			}),
 		).toBe(false);
 	});
 
 	test("self sign-up is rejected once any user exists", () => {
-		expect(
-			canCreateUser({
-				callerIsAdmin: false,
-				anyUserExists: true,
-				email: adminEmail,
-				adminEmail,
-			}),
-		).toBe(false);
+		expect(canCreateUser({ ...base, email: adminEmail })).toBe(false);
 	});
 
-	test("fails closed without a configured admin e-mail or empty e-mail", () => {
+	test("fails closed without a configured superadmin e-mail or empty e-mail", () => {
 		expect(
 			canCreateUser({
-				callerIsAdmin: false,
+				...base,
 				anyUserExists: false,
 				email: "x@example.com",
 				adminEmail: "",
 			}),
 		).toBe(false);
 		expect(
-			canCreateUser({
-				callerIsAdmin: true,
-				anyUserExists: true,
-				email: "  ",
-				adminEmail,
-			}),
+			canCreateUser({ ...base, callerIsSuperadmin: true, email: "  " }),
 		).toBe(false);
 	});
 });

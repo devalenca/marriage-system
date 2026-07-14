@@ -27,49 +27,73 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { notifyError } from "@/lib/notify";
 
-type AccessUser = { _id: Id<"users">; email: string; isAdmin: boolean };
+type Member = {
+	userId: Id<"users">;
+	email: string;
+	role: "admin" | "member";
+	isSelf: boolean;
+};
 
-/** Admin-only: create, remove and reset the password of access accounts. */
+/** Lets the wedding admin manage who can help plan this wedding. */
 export function AccessCard() {
-	const viewer = useQuery(api.users.viewer, {});
-	const users = useQuery(api.users.list, viewer?.isAdmin ? {} : "skip");
+	const members = useQuery(api.access.listMembers, {});
 
-	if (!viewer?.isAdmin) return null;
+	// Only people who belong to a wedding see the card at all.
+	if (!members || members.length === 0) return null;
+
+	const isAdmin = members.some(
+		(member) => member.isSelf && member.role === "admin",
+	);
 
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle className="font-display text-lg">Acessos</CardTitle>
 				<CardDescription>
-					Somente você cria e remove acessos. Sem convite seu, ninguém entra.
+					Quem tem acesso a este casamento. Sem convite do administrador,
+					ninguém entra.
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-5">
 				<ul className="flex flex-col gap-2">
-					{(users ?? []).map((user) => (
-						<AccessRow key={user._id} user={user} />
+					{members.map((member) => (
+						<AccessRow
+							key={member.userId}
+							member={member}
+							canManage={isAdmin}
+						/>
 					))}
 				</ul>
-				<CreateAccessForm />
+				{isAdmin ? <CreateMemberForm /> : null}
 			</CardContent>
 		</Card>
 	);
 }
 
-function AccessRow({ user }: { user: AccessUser }) {
-	const removeUser = useMutation(api.users.remove);
-	const resetPassword = useAction(api.users.resetPassword);
+function AccessRow({
+	member,
+	canManage,
+}: {
+	member: Member;
+	canManage: boolean;
+}) {
+	const removeMember = useMutation(api.access.removeMember);
+	const resetPassword = useAction(api.access.resetMemberPassword);
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [resetOpen, setResetOpen] = useState(false);
 	const [newPassword, setNewPassword] = useState("");
 	const [busy, setBusy] = useState(false);
 
+	// Only the admin manages accounts, and only 'member' rows can be touched —
+	// the admin's own account can't be removed or reset here.
+	const showControls = canManage && member.role === "member";
+
 	async function handleRemove() {
 		setBusy(true);
 		try {
-			await removeUser({ id: user._id });
+			await removeMember({ userId: member.userId });
 			setConfirmOpen(false);
-			toast.success(`Acesso de ${user.email} removido`);
+			toast.success(`Acesso de ${member.email} removido`);
 		} catch (error) {
 			notifyError(error, "Não foi possível remover o acesso");
 		} finally {
@@ -81,10 +105,10 @@ function AccessRow({ user }: { user: AccessUser }) {
 		event.preventDefault();
 		setBusy(true);
 		try {
-			await resetPassword({ id: user._id, password: newPassword });
+			await resetPassword({ userId: member.userId, password: newPassword });
 			setResetOpen(false);
 			setNewPassword("");
-			toast.success(`Senha de ${user.email} redefinida`);
+			toast.success(`Senha de ${member.email} redefinida`);
 		} catch (error) {
 			notifyError(error, "Não foi possível redefinir a senha");
 		} finally {
@@ -95,17 +119,18 @@ function AccessRow({ user }: { user: AccessUser }) {
 	return (
 		<li className="flex min-h-11 flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/55 px-3.5 py-2">
 			<span className="min-w-0 flex-1 truncate text-sm font-medium">
-				{user.email}
+				{member.email}
 			</span>
-			{user.isAdmin ? (
-				<Badge variant="secondary">Administrador</Badge>
-			) : (
+			<Badge variant="secondary">
+				{member.role === "admin" ? "Administrador" : "Membro"}
+			</Badge>
+			{showControls ? (
 				<span className="flex items-center gap-1.5">
 					<Button
 						variant="ghost"
 						size="sm"
 						onClick={() => setResetOpen(true)}
-						aria-label={`Redefinir senha de ${user.email}`}
+						aria-label={`Redefinir senha de ${member.email}`}
 					>
 						<KeyRound data-icon="inline-start" aria-hidden />
 						Redefinir senha
@@ -114,20 +139,20 @@ function AccessRow({ user }: { user: AccessUser }) {
 						variant="destructive"
 						size="sm"
 						onClick={() => setConfirmOpen(true)}
-						aria-label={`Remover ${user.email}`}
+						aria-label={`Remover ${member.email}`}
 					>
 						<Trash2 data-icon="inline-start" aria-hidden />
 						Remover
 					</Button>
 				</span>
-			)}
+			) : null}
 
 			<Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle className="font-display">Remover acesso?</DialogTitle>
 						<DialogDescription>
-							{user.email} perde o acesso imediatamente. Os dados do casamento
+							{member.email} perde o acesso imediatamente. Os dados do casamento
 							não são afetados.
 						</DialogDescription>
 					</DialogHeader>
@@ -150,7 +175,7 @@ function AccessRow({ user }: { user: AccessUser }) {
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle className="font-display">
-							Redefinir senha de {user.email}
+							Redefinir senha de {member.email}
 						</DialogTitle>
 						<DialogDescription>
 							A pessoa é desconectada de todos os dispositivos e passa a usar a
@@ -159,9 +184,11 @@ function AccessRow({ user }: { user: AccessUser }) {
 					</DialogHeader>
 					<form onSubmit={handleReset} className="flex flex-col gap-4">
 						<div className="flex flex-col gap-1.5">
-							<Label htmlFor={`reset-password-${user._id}`}>Nova senha</Label>
+							<Label htmlFor={`reset-password-${member.userId}`}>
+								Nova senha
+							</Label>
 							<Input
-								id={`reset-password-${user._id}`}
+								id={`reset-password-${member.userId}`}
 								type="password"
 								autoComplete="new-password"
 								minLength={8}
@@ -189,8 +216,8 @@ function AccessRow({ user }: { user: AccessUser }) {
 	);
 }
 
-function CreateAccessForm() {
-	const createAccess = useAction(api.users.create);
+function CreateMemberForm() {
+	const createMember = useAction(api.access.createMember);
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [creating, setCreating] = useState(false);
@@ -199,7 +226,7 @@ function CreateAccessForm() {
 		event.preventDefault();
 		setCreating(true);
 		try {
-			await createAccess({ email: email.trim(), password });
+			await createMember({ email: email.trim(), password });
 			toast.success(`Acesso criado para ${email.trim()}`);
 			setEmail("");
 			setPassword("");
@@ -225,7 +252,7 @@ function CreateAccessForm() {
 						required
 						value={email}
 						onChange={(e) => setEmail(e.target.value)}
-						placeholder="noiva@exemplo.com"
+						placeholder="convidado@exemplo.com"
 					/>
 				</div>
 				<div className="flex flex-col gap-1.5">

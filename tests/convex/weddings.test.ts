@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { api } from "../../convex/_generated/api";
+import { todayInSaoPaulo } from "../../lib/domain/dates";
+import { trialUntil } from "../../lib/domain/subscription";
 import { setupUnauthenticatedTest } from "./helpers";
 
 // Multi-tenant foundation: every user reaches exactly one wedding through a
@@ -284,5 +286,137 @@ describe("weddings.create", () => {
 				adminUserId: looseUser,
 			}),
 		).rejects.toThrowError(/data/i);
+	});
+});
+
+describe("subscription read-only enforcement", () => {
+	async function withSubscription(activeUntil: string) {
+		const ctx = await setupWeddingsTest();
+		await ctx.t.run((db) =>
+			db.db.patch(ctx.weddingA, { subscriptionActiveUntil: activeUntil }),
+		);
+		return ctx;
+	}
+
+	const editArgs = {
+		coupleNames: "Ana & Bruno",
+		weddingDate: "2027-06-12",
+		budgetGoalCents: 5_000_000,
+	};
+
+	test("blocks a wedding-admin write when the subscription has expired", async () => {
+		const { asAdminA } = await withSubscription("2020-01-01");
+		await expect(
+			asAdminA.mutation(api.weddings.save, editArgs),
+		).rejects.toThrowError(/assinatura|somente leitura/i);
+	});
+
+	test("still allows reads when the subscription has expired", async () => {
+		const { asMemberA } = await withSubscription("2020-01-01");
+		const wedding = await asMemberA.query(api.weddings.getCurrent, {});
+		expect(wedding?.coupleNames).toBe("Ana & Bruno");
+	});
+
+	test("allows writes while the subscription is active", async () => {
+		const { asAdminA } = await withSubscription("2999-01-01");
+		await expect(
+			asAdminA.mutation(api.weddings.save, editArgs),
+		).resolves.toBeDefined();
+	});
+
+	test("lets the superadmin write even when the subscription has expired", async () => {
+		const { asSuperadmin, weddingA } = await withSubscription("2020-01-01");
+		await expect(
+			asSuperadmin.mutation(api.weddings.save, {
+				...editArgs,
+				weddingId: weddingA,
+			}),
+		).resolves.toBeDefined();
+	});
+});
+
+describe("superadmin subscription management", () => {
+	test("create starts a 14-day trial", async () => {
+		const { asSuperadmin, looseUser, t } = await setupWeddingsTest();
+		const weddingId = await asSuperadmin.mutation(api.weddings.create, {
+			coupleNames: "Elisa & Fábio",
+			weddingDate: "2028-03-18",
+			budgetGoalCents: 4_000_000,
+			adminUserId: looseUser,
+		});
+		const wedding = await t.run((ctx) => ctx.db.get(weddingId));
+		expect(wedding?.subscriptionActiveUntil).toBe(
+			trialUntil(todayInSaoPaulo()),
+		);
+	});
+
+	test("listAll returns every wedding with status, member count and admin", async () => {
+		const { asSuperadmin } = await setupWeddingsTest();
+		const rows = await asSuperadmin.query(api.weddings.listAll, {});
+		expect(rows).toHaveLength(2);
+		const a = rows.find((r) => r.coupleNames === "Ana & Bruno");
+		expect(a?.memberCount).toBe(2);
+		expect(a?.adminEmail).toBe(ADMIN_A_EMAIL);
+		expect(a?.subscription.active).toBe(true); // no date = unlimited
+	});
+
+	test("listAll is superadmin-only", async () => {
+		const { asAdminA } = await setupWeddingsTest();
+		await expect(asAdminA.query(api.weddings.listAll, {})).rejects.toThrowError(
+			/administrador/i,
+		);
+	});
+
+	test("setSubscription extends and clears a wedding's validity", async () => {
+		const { asSuperadmin, weddingA, t } = await setupWeddingsTest();
+		await asSuperadmin.mutation(api.weddings.setSubscription, {
+			weddingId: weddingA,
+			activeUntil: "2027-01-31",
+		});
+		expect(
+			(await t.run((ctx) => ctx.db.get(weddingA)))?.subscriptionActiveUntil,
+		).toBe("2027-01-31");
+
+		await asSuperadmin.mutation(api.weddings.setSubscription, {
+			weddingId: weddingA,
+			activeUntil: null,
+		});
+		expect(
+			(await t.run((ctx) => ctx.db.get(weddingA)))?.subscriptionActiveUntil,
+		).toBeUndefined();
+	});
+
+	test("setSubscription rejects an invalid date", async () => {
+		const { asSuperadmin, weddingA } = await setupWeddingsTest();
+		await expect(
+			asSuperadmin.mutation(api.weddings.setSubscription, {
+				weddingId: weddingA,
+				activeUntil: "31/01/2027",
+			}),
+		).rejects.toThrowError(/data/i);
+	});
+
+	test("setSubscription is superadmin-only", async () => {
+		const { asAdminA, weddingA } = await setupWeddingsTest();
+		await expect(
+			asAdminA.mutation(api.weddings.setSubscription, {
+				weddingId: weddingA,
+				activeUntil: "2027-01-31",
+			}),
+		).rejects.toThrowError(/administrador/i);
+	});
+
+	test("subscriptionStatus reports the caller wedding state", async () => {
+		const { asAdminA, weddingA, t } = await setupWeddingsTest();
+		await t.run((ctx) =>
+			ctx.db.patch(weddingA, { subscriptionActiveUntil: "2020-01-01" }),
+		);
+		const status = await asAdminA.query(api.weddings.subscriptionStatus, {});
+		expect(status).toMatchObject({
+			active: false,
+			activeUntil: "2020-01-01",
+			isAdmin: true,
+			isSuperadmin: false,
+		});
 	});
 });

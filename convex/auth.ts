@@ -2,7 +2,7 @@ import { Password } from "@convex-dev/auth/providers/Password";
 import { convexAuth } from "@convex-dev/auth/server";
 import { ConvexError } from "convex/values";
 import type { MutationCtx } from "./_generated/server";
-import { viewerIsSuperadmin } from "./lib/auth";
+import { viewerIsSuperadmin, viewerIsWeddingAdmin } from "./lib/auth";
 import { canCreateUser } from "./lib/userCreation";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -38,7 +38,8 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 				.trim()
 				.toLowerCase();
 			const allowed = canCreateUser({
-				callerIsAdmin: await viewerIsSuperadmin(mutationCtx),
+				callerIsSuperadmin: await viewerIsSuperadmin(mutationCtx),
+				callerIsWeddingAdmin: await viewerIsWeddingAdmin(mutationCtx),
 				anyUserExists: (await mutationCtx.db.query("users").first()) !== null,
 				email,
 				adminEmail: process.env.AUTH_ADMIN_EMAIL ?? "",

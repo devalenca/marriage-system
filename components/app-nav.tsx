@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "convex/react";
 import {
 	House,
 	Images,
@@ -10,6 +11,7 @@ import {
 	PanelLeftOpen,
 	Paperclip,
 	Settings,
+	ShieldCheck,
 	Store,
 	Users,
 	Wallet,
@@ -31,6 +33,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
@@ -61,6 +64,13 @@ const SETTINGS_ITEM: NavItem = {
 	href: "/configuracoes",
 	label: "Ajustes",
 	icon: Settings,
+};
+
+// Only rendered for the platform superadmin (gated in AppNav).
+const ADMIN_ITEM: NavItem = {
+	href: "/admin",
+	label: "Administração",
+	icon: ShieldCheck,
 };
 
 function isActive(pathname: string, href: string) {
@@ -108,9 +118,11 @@ function NavLink({
 function NavList({
 	pathname,
 	onNavigate,
+	showAdmin,
 }: {
 	pathname: string;
 	onNavigate?: () => void;
+	showAdmin: boolean;
 }) {
 	return (
 		<nav aria-label="Navegação principal" className="flex flex-1 flex-col">
@@ -136,7 +148,14 @@ function NavList({
 					</div>
 				))}
 			</div>
-			<div className="mt-auto border-t border-sidebar-border pt-3">
+			<div className="mt-auto flex flex-col gap-1 border-t border-sidebar-border pt-3">
+				{showAdmin ? (
+					<NavLink
+						item={ADMIN_ITEM}
+						pathname={pathname}
+						onNavigate={onNavigate}
+					/>
+				) : null}
 				<NavLink
 					item={SETTINGS_ITEM}
 					pathname={pathname}
@@ -228,9 +247,11 @@ function RailLink({
 function RailNav({
 	pathname,
 	collapsed,
+	showAdmin,
 }: {
 	pathname: string;
 	collapsed: boolean;
+	showAdmin: boolean;
 }) {
 	return (
 		<nav
@@ -256,8 +277,15 @@ function RailNav({
 					))}
 				</Fragment>
 			))}
-			<div className="mt-auto">
+			<div className="mt-auto flex flex-col gap-1">
 				<div className="mx-2 my-1.5 h-px bg-sidebar-border/70" />
+				{showAdmin ? (
+					<RailLink
+						item={ADMIN_ITEM}
+						pathname={pathname}
+						collapsed={collapsed}
+					/>
+				) : null}
 				<RailLink
 					item={SETTINGS_ITEM}
 					pathname={pathname}
@@ -277,6 +305,8 @@ export function AppNav({
 }) {
 	const pathname = usePathname();
 	const [open, setOpen] = useState(false);
+	const viewer = useQuery(api.users.viewer, {});
+	const showAdmin = viewer?.isSuperadmin ?? false;
 
 	// Close the mobile drawer whenever the route changes.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: pathname is the trigger, not a body dep
@@ -310,7 +340,11 @@ export function AppNav({
 						<div className="mb-5 px-1">
 							<BrandMark />
 						</div>
-						<NavList pathname={pathname} onNavigate={() => setOpen(false)} />
+						<NavList
+							pathname={pathname}
+							onNavigate={() => setOpen(false)}
+							showAdmin={showAdmin}
+						/>
 					</SheetContent>
 				</Sheet>
 			</header>
@@ -350,7 +384,11 @@ export function AppNav({
 						)}
 					</Button>
 				</div>
-				<RailNav pathname={pathname} collapsed={collapsed} />
+				<RailNav
+					pathname={pathname}
+					collapsed={collapsed}
+					showAdmin={showAdmin}
+				/>
 			</aside>
 		</TooltipProvider>
 	);

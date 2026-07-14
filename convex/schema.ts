@@ -31,7 +31,12 @@ export default defineSchema({
 	// One tenant: a couple's wedding. Every data row below carries weddingId
 	// (optional only during the expand/backfill window — PR 2 makes it
 	// required once migrations.toMultiTenant has run on every deployment).
-	weddings: defineTable(weddingFieldValidators),
+	// subscriptionActiveUntil is set by the superadmin only (never via
+	// weddings.save); missing = unlimited (grandfathered/comped).
+	weddings: defineTable({
+		...weddingFieldValidators,
+		subscriptionActiveUntil: v.optional(v.string()), // ISO yyyy-MM-dd
+	}),
 
 	// Links a user to a wedding. A user belongs to exactly one wedding today;
 	// the superadmin (AUTH_ADMIN_EMAIL) reaches any wedding without one.

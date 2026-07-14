@@ -12,7 +12,7 @@ vi.mock("convex/react", async () => {
 	return {
 		useQuery: (...args: unknown[]) => useQueryMock(...args),
 		useAction: (ref: never) =>
-			getFunctionName(ref) === "users:create" ? createMock : resetMock,
+			getFunctionName(ref) === "access:createMember" ? createMock : resetMock,
 		useMutation: () => removeMock,
 	};
 });
@@ -24,20 +24,26 @@ vi.mock("sonner", () => ({
 import { getFunctionName } from "convex/server";
 import { AccessCard } from "@/components/settings/access-card";
 
-const ADMIN = { _id: "u1", email: "admin@example.com", isAdmin: true };
-const MEMBER = { _id: "u2", email: "noiva@example.com", isAdmin: false };
+const ADMIN = {
+	userId: "u1",
+	email: "admin@example.com",
+	role: "admin",
+	isSelf: true,
+};
+const MEMBER = {
+	userId: "u2",
+	email: "membro@example.com",
+	role: "member",
+	isSelf: false,
+};
 
-function mockViewer(isAdmin: boolean) {
-	useQueryMock.mockImplementation((ref: never) => {
-		const name = getFunctionName(ref);
-		if (name === "users:viewer") {
-			return { email: ADMIN.email, isAdmin };
-		}
-		if (name === "users:list") {
-			return isAdmin ? [ADMIN, MEMBER] : undefined;
-		}
-		return undefined;
-	});
+/** Mocks listMembers from the perspective of `viewerRole`. */
+function mockMembers(viewerRole: "admin" | "member") {
+	const admin = { ...ADMIN, isSelf: viewerRole === "admin" };
+	const member = { ...MEMBER, isSelf: viewerRole === "member" };
+	useQueryMock.mockImplementation((ref: never) =>
+		getFunctionName(ref) === "access:listMembers" ? [admin, member] : undefined,
+	);
 }
 
 describe("AccessCard", () => {
@@ -48,22 +54,34 @@ describe("AccessCard", () => {
 		removeMock.mockReset();
 	});
 
-	it("renders nothing for a non-admin", () => {
-		mockViewer(false);
+	it("renders nothing while the member list is loading", () => {
+		useQueryMock.mockReturnValue(undefined);
 		const { container } = render(<AccessCard />);
 		expect(container).toBeEmptyDOMElement();
 	});
 
-	it("lists accesses for the admin", () => {
-		mockViewer(true);
+	it("lists members with role badges", () => {
+		mockMembers("admin");
 		render(<AccessCard />);
 		expect(screen.getByText("admin@example.com")).toBeInTheDocument();
-		expect(screen.getByText("noiva@example.com")).toBeInTheDocument();
-		expect(screen.getByText(/administrador/i)).toBeInTheDocument();
+		expect(screen.getByText("membro@example.com")).toBeInTheDocument();
+		expect(screen.getByText("Administrador")).toBeInTheDocument();
+		expect(screen.getByText("Membro")).toBeInTheDocument();
 	});
 
-	it("creates a new access", async () => {
-		mockViewer(true);
+	it("hides management controls from a plain member", () => {
+		mockMembers("member");
+		render(<AccessCard />);
+		expect(
+			screen.queryByRole("button", { name: /criar acesso/i }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: /remover/i }),
+		).not.toBeInTheDocument();
+	});
+
+	it("lets the admin create a member", async () => {
+		mockMembers("admin");
 		createMock.mockResolvedValue(null);
 		render(<AccessCard />);
 
@@ -80,8 +98,8 @@ describe("AccessCard", () => {
 		);
 	});
 
-	it("removes an access after confirmation", async () => {
-		mockViewer(true);
+	it("removes a member after confirmation", async () => {
+		mockMembers("admin");
 		removeMock.mockResolvedValue(null);
 		render(<AccessCard />);
 
@@ -92,7 +110,7 @@ describe("AccessCard", () => {
 		);
 
 		await waitFor(() =>
-			expect(removeMock).toHaveBeenCalledWith({ id: MEMBER._id }),
+			expect(removeMock).toHaveBeenCalledWith({ userId: MEMBER.userId }),
 		);
 	});
 });

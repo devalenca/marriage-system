@@ -2,7 +2,7 @@
 // America/Sao_Paulo (see AGENTS.md). All math here is pure calendar
 // arithmetic on the date parts — no Date timezone surprises.
 
-import { addMonths, differenceInCalendarDays, format } from "date-fns";
+import { addDays, addMonths, differenceInCalendarDays, format } from "date-fns";
 
 const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const ISO_TIME_RE = /^(\d{2}):(\d{2})$/;
@@ -48,6 +48,11 @@ export function daysBetween(fromISO: string, toISO: string): number {
 /** Adds months, clamping the day at shorter months (Jan 31 + 1 → Feb 28). */
 export function addMonthsISO(iso: string, months: number): string {
 	return format(addMonths(toLocalDate(iso), months), "yyyy-MM-dd");
+}
+
+/** Adds calendar days, returning an ISO `yyyy-MM-dd` string. */
+export function addDaysISO(iso: string, days: number): string {
+	return format(addDays(toLocalDate(iso), days), "yyyy-MM-dd");
 }
 
 // Intl formatter construction is expensive; build it once per module load.
