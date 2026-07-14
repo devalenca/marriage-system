@@ -1,7 +1,8 @@
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
-import { authedMutation as mutation, authedQuery as query } from "./lib/auth";
+import { weddingMutation as mutation, weddingQuery as query } from "./lib/auth";
+import { getOwned } from "./lib/db";
 
 export const generateUploadUrl = mutation({
 	args: {},
@@ -16,14 +17,17 @@ export const createGallery = mutation({
 		if (name.trim().length === 0) {
 			throw new Error("Informe o nome da galeria");
 		}
-		return await ctx.db.insert("galleries", { name: name.trim() });
+		return await ctx.db.insert("galleries", {
+			name: name.trim(),
+			weddingId: ctx.weddingId,
+		});
 	},
 });
 
 export const renameGallery = mutation({
 	args: { id: v.id("galleries"), name: v.string() },
 	handler: async (ctx, { id, name }) => {
-		if (!(await ctx.db.get(id))) {
+		if (!(await getOwned(ctx, "galleries", id))) {
 			throw new Error("Galeria não encontrada");
 		}
 		if (name.trim().length === 0) {
@@ -36,7 +40,7 @@ export const renameGallery = mutation({
 export const removeGallery = mutation({
 	args: { id: v.id("galleries") },
 	handler: async (ctx, { id }) => {
-		if (!(await ctx.db.get(id))) return;
+		if (!(await getOwned(ctx, "galleries", id))) return;
 		const images = await ctx.db
 			.query("inspirationImages")
 			.withIndex("by_gallery", (q) => q.eq("galleryId", id))
@@ -56,7 +60,7 @@ export const addImage = mutation({
 		caption: v.optional(v.string()),
 	},
 	handler: async (ctx, { galleryId, storageId, caption }) => {
-		if (!(await ctx.db.get(galleryId))) {
+		if (!(await getOwned(ctx, "galleries", galleryId))) {
 			throw new Error("Galeria não encontrada");
 		}
 		return await ctx.db.insert("inspirationImages", {
@@ -64,6 +68,7 @@ export const addImage = mutation({
 			storageId,
 			caption: caption?.trim() || undefined,
 			uploadedAt: Date.now(),
+			weddingId: ctx.weddingId,
 		});
 	},
 });
@@ -71,7 +76,7 @@ export const addImage = mutation({
 export const removeImage = mutation({
 	args: { id: v.id("inspirationImages") },
 	handler: async (ctx, { id }) => {
-		const image = await ctx.db.get(id);
+		const image = await getOwned(ctx, "inspirationImages", id);
 		if (!image) return;
 		await ctx.storage.delete(image.storageId);
 		await ctx.db.delete(id);
@@ -85,7 +90,10 @@ async function imageWithUrl(ctx: QueryCtx, image: Doc<"inspirationImages">) {
 export const listGalleries = query({
 	args: {},
 	handler: async (ctx) => {
-		const galleries = await ctx.db.query("galleries").collect();
+		const galleries = await ctx.db
+			.query("galleries")
+			.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+			.collect();
 		return Promise.all(
 			galleries.map(async (gallery) => {
 				const images = await ctx.db

@@ -7,8 +7,8 @@ import { isValidISODate } from "../lib/domain/dates";
 import { vendorFinancials } from "../lib/domain/finance";
 import type { Doc } from "./_generated/dataModel";
 import { deleteAttachmentsFor } from "./attachments";
-import { authedMutation as mutation, authedQuery as query } from "./lib/auth";
-import { groupPaymentsByVendor, paymentsOf } from "./lib/db";
+import { weddingMutation as mutation, weddingQuery as query } from "./lib/auth";
+import { getOwned, groupPaymentsByVendor, paymentsOf } from "./lib/db";
 import {
 	vendorCategoryValidator,
 	vendorStatusValidator,
@@ -71,8 +71,14 @@ export const list = query({
 	args: {},
 	handler: async (ctx) => {
 		const [vendors, allPayments] = await Promise.all([
-			ctx.db.query("vendors").collect(),
-			ctx.db.query("payments").collect(),
+			ctx.db
+				.query("vendors")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
+			ctx.db
+				.query("payments")
+				.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+				.collect(),
 		]);
 		const byVendor = groupPaymentsByVendor(allPayments);
 		return vendors.map((vendor) =>
@@ -84,7 +90,7 @@ export const list = query({
 export const get = query({
 	args: { id: v.id("vendors") },
 	handler: async (ctx, { id }) => {
-		const vendor = await ctx.db.get(id);
+		const vendor = await getOwned(ctx, "vendors", id);
 		if (!vendor) return null;
 		return withFinancials(vendor, await paymentsOf(ctx, id));
 	},
@@ -100,7 +106,10 @@ export const create = mutation({
 	handler: async (ctx, args) => {
 		validateVendorFields(args);
 		validateContractInvariant(args);
-		return await ctx.db.insert("vendors", args);
+		return await ctx.db.insert("vendors", {
+			...args,
+			weddingId: ctx.weddingId,
+		});
 	},
 });
 
@@ -113,7 +122,7 @@ export const update = mutation({
 		...optionalFields,
 	},
 	handler: async (ctx, { id, ...patch }) => {
-		const vendor = await ctx.db.get(id);
+		const vendor = await getOwned(ctx, "vendors", id);
 		if (!vendor) throw new Error("Fornecedor não encontrado");
 		validateVendorFields(patch);
 		validateContractInvariant({
@@ -127,6 +136,8 @@ export const update = mutation({
 export const remove = mutation({
 	args: { id: v.id("vendors") },
 	handler: async (ctx, { id }) => {
+		const vendor = await getOwned(ctx, "vendors", id);
+		if (!vendor) throw new Error("Fornecedor não encontrado");
 		const payments = await paymentsOf(ctx, id);
 		for (const payment of payments) {
 			await deleteAttachmentsFor(ctx, { paymentId: payment._id });

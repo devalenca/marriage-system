@@ -33,9 +33,9 @@ import { isValidISODate, isValidISOTime } from "@/lib/domain/dates";
 import { notifyError } from "@/lib/notify";
 
 export function SettingsContent() {
-	const settings = useQuery(api.settings.get, {});
+	const wedding = useQuery(api.weddings.getCurrent, {});
 
-	if (settings === undefined) {
+	if (wedding === undefined) {
 		return (
 			<div className="animate-screen-enter" aria-busy>
 				<PageHeader title="Configurações" />
@@ -51,12 +51,12 @@ export function SettingsContent() {
 		<div className="animate-screen-enter">
 			<PageHeader title="Configurações" />
 			<div className="flex flex-col gap-3">
-				{/* Keyed so the form state re-seeds if the settings row changes. */}
+				{/* Keyed so the form state re-seeds if the wedding doc changes. */}
 				<SettingsForm
-					key={settings?._id ?? "new"}
-					initial={settings ?? undefined}
+					key={wedding?._id ?? "new"}
+					initial={wedding ?? undefined}
 				/>
-				<ChecklistCard hasSettings={settings !== null} />
+				<ChecklistCard hasWedding={wedding !== null} />
 				<AccessCard />
 				<Card>
 					<CardHeader>
@@ -86,8 +86,8 @@ export function SettingsContent() {
 	);
 }
 
-function SettingsForm({ initial }: { initial?: Doc<"settings"> }) {
-	const saveSettings = useMutation(api.settings.save);
+function SettingsForm({ initial }: { initial?: Doc<"weddings"> }) {
+	const saveWedding = useMutation(api.weddings.save);
 	const [coupleNames, setCoupleNames] = useState(initial?.coupleNames ?? "");
 	const [weddingDate, setWeddingDate] = useState(initial?.weddingDate ?? "");
 	const [budgetCents, setBudgetCents] = useState<number | null>(
@@ -123,7 +123,7 @@ function SettingsForm({ initial }: { initial?: Doc<"settings"> }) {
 
 		setSaving(true);
 		try {
-			await saveSettings({
+			await saveWedding({
 				coupleNames: coupleNames.trim(),
 				weddingDate,
 				budgetGoalCents: budgetCents,
@@ -210,7 +210,7 @@ function SettingsForm({ initial }: { initial?: Doc<"settings"> }) {
 	);
 }
 
-function ChecklistCard({ hasSettings }: { hasSettings: boolean }) {
+function ChecklistCard({ hasWedding }: { hasWedding: boolean }) {
 	const generateChecklist = useMutation(api.tasks.generateFromTemplate);
 	const [regenOpen, setRegenOpen] = useState(false);
 
@@ -237,7 +237,7 @@ function ChecklistCard({ hasSettings }: { hasSettings: boolean }) {
 				<Button
 					variant="outline"
 					onClick={() => setRegenOpen(true)}
-					disabled={!hasSettings}
+					disabled={!hasWedding}
 				>
 					<ListChecks data-icon="inline-start" aria-hidden />
 					Regenerar checklist

@@ -1,7 +1,8 @@
 import { v } from "convex/values";
 import { generateChecklist } from "../lib/domain/checklist";
 import { isValidISODate } from "../lib/domain/dates";
-import { authedMutation as mutation, authedQuery as query } from "./lib/auth";
+import { weddingMutation as mutation, weddingQuery as query } from "./lib/auth";
+import { getOwned } from "./lib/db";
 import {
 	vendorCategoryValidator as categoryValidator,
 	taskPriorityValidator as priorityValidator,
@@ -20,7 +21,10 @@ function validateTaskFields(args: { title?: string; dueDate?: string }) {
 export const list = query({
 	args: {},
 	handler: async (ctx) => {
-		const tasks = await ctx.db.query("tasks").collect();
+		const tasks = await ctx.db
+			.query("tasks")
+			.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+			.collect();
 		// Due-dated tasks first (soonest on top), undated ones at the end.
 		return tasks.sort((a, b) => {
 			if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
@@ -46,6 +50,7 @@ export const create = mutation({
 			...args,
 			status: "pendente",
 			isGenerated: false,
+			weddingId: ctx.weddingId,
 		});
 	},
 });
@@ -62,7 +67,7 @@ export const update = mutation({
 		category: v.optional(categoryValidator),
 	},
 	handler: async (ctx, { id, ...patch }) => {
-		const task = await ctx.db.get(id);
+		const task = await getOwned(ctx, "tasks", id);
 		if (!task) throw new Error("Tarefa não encontrada");
 		validateTaskFields(patch);
 		await ctx.db.patch(id, patch);
@@ -72,26 +77,31 @@ export const update = mutation({
 export const remove = mutation({
 	args: { id: v.id("tasks") },
 	handler: async (ctx, { id }) => {
+		const task = await getOwned(ctx, "tasks", id);
+		if (!task) throw new Error("Tarefa não encontrada");
 		await ctx.db.delete(id);
 	},
 });
 
 /**
- * Instantiates the month-by-month checklist template against the wedding
- * date. Idempotent by default; `regenerate` replaces pending generated
- * tasks (completed and manual tasks are always preserved).
+ * Instantiates the month-by-month checklist template against the caller
+ * wedding's date. Idempotent by default; `regenerate` replaces pending
+ * generated tasks (completed and manual tasks are always preserved).
  */
 export const generateFromTemplate = mutation({
 	args: { regenerate: v.optional(v.boolean()) },
 	handler: async (ctx, { regenerate }) => {
-		const settings = await ctx.db.query("settings").first();
-		if (!settings) {
+		const wedding = await ctx.db.get(ctx.weddingId);
+		if (!wedding) {
 			throw new Error(
 				"Configure a data do casamento antes de gerar o checklist",
 			);
 		}
 
-		const existing = await ctx.db.query("tasks").collect();
+		const existing = await ctx.db
+			.query("tasks")
+			.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+			.collect();
 		const generated = existing.filter((task) => task.isGenerated);
 
 		if (generated.length > 0 && !regenerate) {
@@ -104,7 +114,7 @@ export const generateFromTemplate = mutation({
 			}
 		}
 
-		const checklist = generateChecklist(settings.weddingDate);
+		const checklist = generateChecklist(wedding.weddingDate);
 		for (const task of checklist) {
 			await ctx.db.insert("tasks", {
 				title: task.title,
@@ -114,6 +124,7 @@ export const generateFromTemplate = mutation({
 				category: task.category,
 				status: "pendente",
 				isGenerated: true,
+				weddingId: ctx.weddingId,
 			});
 		}
 

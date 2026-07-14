@@ -56,7 +56,7 @@ export function FileUpload({
 		setUploading(true);
 		try {
 			for (const file of Array.from(files)) {
-				const uploadUrl = await generateUploadUrl();
+				const uploadUrl = await generateUploadUrl({});
 				const result = await fetch(uploadUrl, {
 					method: "POST",
 					headers: file.type ? { "Content-Type": file.type } : undefined,

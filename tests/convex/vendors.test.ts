@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { api } from "../../convex/_generated/api";
-import { setupTest } from "./helpers";
+import { setupWeddingScopedTest } from "./helpers";
 
 describe("vendors.create / get / list", () => {
 	it("creates a vendor and reads it back with financials", async () => {
-		const t = setupTest();
-		const id = await t.mutation(api.vendors.create, {
+		const { asCoupleA } = await setupWeddingScopedTest();
+		const id = await asCoupleA.mutation(api.vendors.create, {
 			name: "Espaço Jardim das Flores",
 			category: "espaco",
 			status: "pesquisando",
@@ -13,7 +13,7 @@ describe("vendors.create / get / list", () => {
 			instagram: "@jardimdasflores",
 		});
 
-		const vendor = await t.query(api.vendors.get, { id });
+		const vendor = await asCoupleA.query(api.vendors.get, { id });
 		expect(vendor).toMatchObject({
 			name: "Espaço Jardim das Flores",
 			category: "espaco",
@@ -29,10 +29,21 @@ describe("vendors.create / get / list", () => {
 		});
 	});
 
+	it("stamps the caller's wedding on created vendors", async () => {
+		const { asCoupleA, weddingA } = await setupWeddingScopedTest();
+		const id = await asCoupleA.mutation(api.vendors.create, {
+			name: "Buffet Sabor & Festa",
+			category: "buffet",
+			status: "pesquisando",
+		});
+		const vendor = await asCoupleA.query(api.vendors.get, { id });
+		expect(vendor?.weddingId).toBe(weddingA);
+	});
+
 	it("rejects an empty name", async () => {
-		const t = setupTest();
+		const { asCoupleA } = await setupWeddingScopedTest();
 		await expect(
-			t.mutation(api.vendors.create, {
+			asCoupleA.mutation(api.vendors.create, {
 				name: "   ",
 				category: "buffet",
 				status: "pesquisando",
@@ -41,20 +52,20 @@ describe("vendors.create / get / list", () => {
 	});
 
 	it("lists vendors with their financials", async () => {
-		const t = setupTest();
-		await t.mutation(api.vendors.create, {
+		const { asCoupleA } = await setupWeddingScopedTest();
+		await asCoupleA.mutation(api.vendors.create, {
 			name: "Buffet Sabor & Festa",
 			category: "buffet",
 			status: "cotado",
 			estimateCents: 3000000,
 		});
-		await t.mutation(api.vendors.create, {
+		await asCoupleA.mutation(api.vendors.create, {
 			name: "Foto Luz Estúdio",
 			category: "fotografia",
 			status: "pesquisando",
 		});
 
-		const list = await t.query(api.vendors.list, {});
+		const list = await asCoupleA.query(api.vendors.list, {});
 		expect(list).toHaveLength(2);
 		expect(list.map((v) => v.name).sort()).toEqual([
 			"Buffet Sabor & Festa",
@@ -66,15 +77,15 @@ describe("vendors.create / get / list", () => {
 
 describe("vendors.update", () => {
 	it("updates contract fields when closing a deal", async () => {
-		const t = setupTest();
-		const id = await t.mutation(api.vendors.create, {
+		const { asCoupleA } = await setupWeddingScopedTest();
+		const id = await asCoupleA.mutation(api.vendors.create, {
 			name: "DJ Brilho",
 			category: "dj_banda",
 			status: "negociando",
 			estimateCents: 500000,
 		});
 
-		await t.mutation(api.vendors.update, {
+		await asCoupleA.mutation(api.vendors.update, {
 			id,
 			status: "fechado",
 			contractedCents: 450000,
@@ -82,26 +93,26 @@ describe("vendors.update", () => {
 			paymentMethod: "PIX — entrada + 2x",
 		});
 
-		const vendor = await t.query(api.vendors.get, { id });
+		const vendor = await asCoupleA.query(api.vendors.get, { id });
 		expect(vendor?.status).toBe("fechado");
 		expect(vendor?.contractedCents).toBe(450000);
 		expect(vendor?.closedDate).toBe("2026-06-09");
 	});
 
 	it("rejects a contracted status without a contracted value", async () => {
-		const t = setupTest();
-		const id = await t.mutation(api.vendors.create, {
+		const { asCoupleA } = await setupWeddingScopedTest();
+		const id = await asCoupleA.mutation(api.vendors.create, {
 			name: "DJ Brilho",
 			category: "dj_banda",
 			status: "negociando",
 		});
 
 		await expect(
-			t.mutation(api.vendors.update, { id, status: "fechado" }),
+			asCoupleA.mutation(api.vendors.update, { id, status: "fechado" }),
 		).rejects.toThrow();
 
 		await expect(
-			t.mutation(api.vendors.create, {
+			asCoupleA.mutation(api.vendors.create, {
 				name: "Buffet Sem Valor",
 				category: "buffet",
 				status: "fechado",
@@ -110,38 +121,43 @@ describe("vendors.update", () => {
 	});
 
 	it("rejects an invalid closing date", async () => {
-		const t = setupTest();
-		const id = await t.mutation(api.vendors.create, {
+		const { asCoupleA } = await setupWeddingScopedTest();
+		const id = await asCoupleA.mutation(api.vendors.create, {
 			name: "DJ Brilho",
 			category: "dj_banda",
 			status: "negociando",
 		});
 
 		await expect(
-			t.mutation(api.vendors.update, { id, closedDate: "09/06/2026" }),
+			asCoupleA.mutation(api.vendors.update, { id, closedDate: "09/06/2026" }),
 		).rejects.toThrow();
 	});
 });
 
 describe("vendors.remove", () => {
 	it("removes the vendor and its payments", async () => {
-		const t = setupTest();
-		const id = await t.mutation(api.vendors.create, {
+		const { t, asCoupleA, weddingA } = await setupWeddingScopedTest();
+		const id = await asCoupleA.mutation(api.vendors.create, {
 			name: "Doces da Vó",
 			category: "doces_bolo",
 			status: "fechado",
 			contractedCents: 200000,
 		});
-		await t.mutation(api.payments.create, {
-			vendorId: id,
-			description: "Entrada",
-			amountCents: 100000,
-			dueDate: "2026-07-01",
+		// Seeded directly to keep this test independent of the payments module.
+		await t.run(async (ctx) => {
+			await ctx.db.insert("payments", {
+				weddingId: weddingA,
+				vendorId: id,
+				description: "Entrada",
+				amountCents: 100000,
+				dueDate: "2026-07-01",
+				status: "pendente",
+			});
 		});
 
-		await t.mutation(api.vendors.remove, { id });
+		await asCoupleA.mutation(api.vendors.remove, { id });
 
-		expect(await t.query(api.vendors.get, { id })).toBeNull();
+		expect(await asCoupleA.query(api.vendors.get, { id })).toBeNull();
 		const orphans = await t.run(async (ctx) =>
 			ctx.db
 				.query("payments")
@@ -149,5 +165,77 @@ describe("vendors.remove", () => {
 				.collect(),
 		);
 		expect(orphans).toHaveLength(0);
+	});
+});
+
+describe("wedding isolation", () => {
+	async function seedBothWeddings() {
+		const setup = await setupWeddingScopedTest();
+		const vendorA = await setup.asCoupleA.mutation(api.vendors.create, {
+			name: "Buffet da Ana",
+			category: "buffet",
+			status: "pesquisando",
+		});
+		const vendorB = await setup.asCoupleB.mutation(api.vendors.create, {
+			name: "Buffet da Carla",
+			category: "buffet",
+			status: "pesquisando",
+		});
+		return { ...setup, vendorA, vendorB };
+	}
+
+	it("list only returns the caller's wedding vendors", async () => {
+		const { asCoupleA, asCoupleB } = await seedBothWeddings();
+
+		const listA = await asCoupleA.query(api.vendors.list, {});
+		expect(listA.map((v) => v.name)).toEqual(["Buffet da Ana"]);
+
+		const listB = await asCoupleB.query(api.vendors.list, {});
+		expect(listB.map((v) => v.name)).toEqual(["Buffet da Carla"]);
+	});
+
+	it("get returns null for another wedding's vendor, like a missing row", async () => {
+		const { asCoupleA, vendorA, vendorB } = await seedBothWeddings();
+
+		expect(await asCoupleA.query(api.vendors.get, { id: vendorB })).toBeNull();
+
+		// Same behavior as a genuinely missing row.
+		await asCoupleA.mutation(api.vendors.remove, { id: vendorA });
+		expect(await asCoupleA.query(api.vendors.get, { id: vendorA })).toBeNull();
+	});
+
+	it("update rejects another wedding's vendor exactly like a missing row", async () => {
+		const { asCoupleA, asCoupleB, vendorA, vendorB } = await seedBothWeddings();
+
+		await expect(
+			asCoupleA.mutation(api.vendors.update, { id: vendorB, name: "Hackeado" }),
+		).rejects.toThrow("Fornecedor não encontrado");
+
+		await asCoupleA.mutation(api.vendors.remove, { id: vendorA });
+		await expect(
+			asCoupleA.mutation(api.vendors.update, { id: vendorA, name: "Sumido" }),
+		).rejects.toThrow("Fornecedor não encontrado");
+
+		// The foreign vendor is untouched.
+		const vendor = await asCoupleB.query(api.vendors.get, { id: vendorB });
+		expect(vendor?.name).toBe("Buffet da Carla");
+	});
+
+	it("remove rejects another wedding's vendor exactly like a missing row", async () => {
+		const { asCoupleA, asCoupleB, vendorA, vendorB } = await seedBothWeddings();
+
+		await expect(
+			asCoupleA.mutation(api.vendors.remove, { id: vendorB }),
+		).rejects.toThrow("Fornecedor não encontrado");
+
+		await asCoupleA.mutation(api.vendors.remove, { id: vendorA });
+		await expect(
+			asCoupleA.mutation(api.vendors.remove, { id: vendorA }),
+		).rejects.toThrow("Fornecedor não encontrado");
+
+		// The foreign vendor is untouched.
+		expect(
+			await asCoupleB.query(api.vendors.get, { id: vendorB }),
+		).not.toBeNull();
 	});
 });
