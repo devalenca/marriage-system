@@ -3,6 +3,7 @@ import { convexAuth } from "@convex-dev/auth/server";
 import { ConvexError } from "convex/values";
 import type { MutationCtx } from "./_generated/server";
 import {
+	isSelfSignupEnabled,
 	superadminEmails,
 	viewerIsSuperadmin,
 	viewerIsWeddingAdmin,
@@ -44,6 +45,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 			const allowed = canCreateUser({
 				callerIsSuperadmin: await viewerIsSuperadmin(mutationCtx),
 				callerIsWeddingAdmin: await viewerIsWeddingAdmin(mutationCtx),
+				selfSignupEnabled: isSelfSignupEnabled(),
 				anyUserExists: (await mutationCtx.db.query("users").first()) !== null,
 				email,
 				superadminEmails: superadminEmails(),

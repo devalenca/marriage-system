@@ -1,18 +1,36 @@
 import { describe, expect, test } from "vitest";
 import { canCreateUser } from "../../convex/lib/userCreation";
 
-// Account creation policy: the superadmin (provisioning tenants) and a wedding
-// admin (adding members) can create accounts; otherwise only the very first
-// account (bootstrap) is allowed, and only for a configured superadmin e-mail.
+// Account creation policy: the superadmin (provisioning tenants), a wedding
+// admin (adding members) and anyone (when public self-signup is on) can create
+// accounts; otherwise only the very first account (bootstrap), for a configured
+// superadmin e-mail.
 
 describe("canCreateUser", () => {
 	const superadminEmails = ["admin@example.com", "second@example.com"];
 	const base = {
 		callerIsSuperadmin: false,
 		callerIsWeddingAdmin: false,
+		selfSignupEnabled: false,
 		anyUserExists: true,
 		superadminEmails,
 	};
+
+	test("anyone can create an account when self-signup is enabled", () => {
+		expect(
+			canCreateUser({
+				...base,
+				selfSignupEnabled: true,
+				email: "estranho@example.com",
+			}),
+		).toBe(true);
+	});
+
+	test("a stranger is rejected when self-signup is disabled", () => {
+		expect(canCreateUser({ ...base, email: "estranho@example.com" })).toBe(
+			false,
+		);
+	});
 
 	test("superadmin caller can create any account", () => {
 		expect(

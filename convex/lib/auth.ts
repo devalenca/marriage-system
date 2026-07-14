@@ -44,6 +44,17 @@ export function isSuperadminEmail(email: string | undefined): boolean {
 	return target.length > 0 && superadminEmails().includes(target);
 }
 
+/**
+ * Public self-signup is on by default (the product's front door) and can be
+ * shut with AUTH_SIGNUP_DISABLED=true — e.g. to pause new couples without a
+ * deploy. Drives both the account-creation policy and the signup UI.
+ */
+export function isSelfSignupEnabled(): boolean {
+	return (
+		(process.env.AUTH_SIGNUP_DISABLED ?? "").trim().toLowerCase() !== "true"
+	);
+}
+
 /** The signed-in user's document, or null when there is none. */
 export async function getViewer(ctx: QueryCtx | MutationCtx) {
 	const userId = await getAuthUserId(ctx);

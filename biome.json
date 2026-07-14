@@ -45,6 +45,7 @@
 		"includes": [
 			"**",
 			"!node_modules",
+			"!.claude/worktrees",
 			"!exports",
 			"!.next",
 			"!.convex",
