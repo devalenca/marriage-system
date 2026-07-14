@@ -10,6 +10,7 @@ import {
 	taskStatusValidator,
 	vendorCategoryValidator,
 	vendorStatusValidator,
+	weddingFieldValidators,
 } from "./lib/validators";
 
 export default defineSchema({
@@ -27,15 +28,10 @@ export default defineSchema({
 		weddingTime: v.optional(v.string()), // ISO HH:mm (24h), America/Sao_Paulo
 	}),
 
-	// One tenant: a couple's wedding. Every data row below carries weddingId.
-	weddings: defineTable({
-		coupleNames: v.string(),
-		weddingDate: v.string(), // ISO yyyy-MM-dd (America/Sao_Paulo)
-		budgetGoalCents: v.number(),
-		ceremonyVenue: v.optional(v.string()),
-		receptionVenue: v.optional(v.string()),
-		weddingTime: v.optional(v.string()), // ISO HH:mm (24h), America/Sao_Paulo
-	}),
+	// One tenant: a couple's wedding. Every data row below carries weddingId
+	// (optional only during the expand/backfill window — PR 2 makes it
+	// required once migrations.toMultiTenant has run on every deployment).
+	weddings: defineTable(weddingFieldValidators),
 
 	// Links a user to a wedding. A user belongs to exactly one wedding today;
 	// the superadmin (AUTH_ADMIN_EMAIL) reaches any wedding without one.

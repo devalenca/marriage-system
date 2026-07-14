@@ -19,15 +19,13 @@ const TENANT_TABLES = [
 export const toMultiTenant = internalMutation({
 	args: {},
 	handler: async (ctx) => {
-		let wedding = await ctx.db.query("weddings").first();
-		if (wedding === null) {
+		let weddingId = (await ctx.db.query("weddings").first())?._id;
+		if (weddingId === undefined) {
 			const settings = await ctx.db.query("settings").first();
 			if (settings === null) return null; // fresh deployment — nothing to migrate
 			const { _id, _creationTime, ...fields } = settings;
-			wedding = await ctx.db.get(await ctx.db.insert("weddings", fields));
-			if (wedding === null) return null;
+			weddingId = await ctx.db.insert("weddings", fields);
 		}
-		const weddingId = wedding._id;
 
 		for (const table of TENANT_TABLES) {
 			for (const row of await ctx.db.query(table).collect()) {

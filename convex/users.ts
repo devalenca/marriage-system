@@ -13,12 +13,12 @@ import {
 	query,
 } from "./_generated/server";
 import {
-	adminMutation,
-	adminQuery,
 	authedQuery,
 	getViewer,
-	isAdminEmail,
-	requireAdmin,
+	isSuperadminEmail,
+	requireSuperadmin,
+	superadminMutation,
+	superadminQuery,
 } from "./lib/auth";
 
 const PASSWORD_PROVIDER = "password";
@@ -85,12 +85,12 @@ export const viewer = authedQuery({
 		const user = await getViewer(ctx);
 		return {
 			email: user?.email ?? null,
-			isAdmin: isAdminEmail(user?.email),
+			isAdmin: isSuperadminEmail(user?.email),
 		};
 	},
 });
 
-export const list = adminQuery({
+export const list = superadminQuery({
 	args: {},
 	handler: async (ctx) => {
 		const users = await ctx.db.query("users").collect();
@@ -98,7 +98,7 @@ export const list = adminQuery({
 			.map((user) => ({
 				_id: user._id,
 				email: user.email ?? "",
-				isAdmin: isAdminEmail(user.email),
+				isAdmin: isSuperadminEmail(user.email),
 			}))
 			.sort((a, b) => a.email.localeCompare(b.email));
 	},
@@ -129,12 +129,12 @@ async function purgeAuthRows(ctx: MutationCtx, userId: Id<"users">) {
 	}
 }
 
-export const remove = adminMutation({
+export const remove = superadminMutation({
 	args: { id: v.id("users") },
 	handler: async (ctx, { id }) => {
 		const user = await ctx.db.get(id);
 		if (!user) return;
-		if (isAdminEmail(user.email)) {
+		if (isSuperadminEmail(user.email)) {
 			throw new ConvexError("A conta do administrador não pode ser removida");
 		}
 		await purgeAuthRows(ctx, id);
@@ -148,7 +148,7 @@ export const remove = adminMutation({
 export const assertAdmin = internalQuery({
 	args: {},
 	handler: async (ctx) => {
-		await requireAdmin(ctx);
+		await requireSuperadmin(ctx);
 	},
 });
 
