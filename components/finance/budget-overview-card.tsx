@@ -2,6 +2,12 @@
 
 import type { FunctionReturnType } from "convex/server";
 import type { PayablePayment } from "@/components/payment-list-card";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { api } from "@/convex/_generated/api";
 import { formatBRL } from "@/lib/domain/money";
 import { cn } from "@/lib/utils";
@@ -116,59 +122,74 @@ export function BudgetOverviewCard({
 				<div className="mb-3.5 text-xs font-bold tracking-[0.06em] text-muted-foreground uppercase">
 					Previsão dos próximos meses
 				</div>
-				<div
-					className={cn(
-						"flex items-end gap-3.5",
-						// Standalone (dashboard): fixed height so the % bars resolve.
-						// In the Financeiro grid (!showBudget): fill so the card matches
-						// its taller sibling instead of leaving dead space below.
-						showBudget ? "h-28" : "min-h-28 flex-1",
-					)}
-					role="img"
-					aria-label="Previsão de pagamentos por mês"
-				>
-					{forecast.map((month) => {
-						const heightPct =
-							month.amountCents > 0
-								? Math.max(Math.round((month.amountCents / maxMonth) * 100), 8)
-								: 4;
-						const isCurrent = month.month === today.slice(0, 7);
-						return (
-							<div
-								key={month.month}
-								title={`${month.shortLabel}: ${formatBRL(month.amountCents)}`}
-								className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
-							>
-								<span
-									className={cn(
-										"text-[10.5px] font-semibold tabular-nums",
-										month.amountCents > 0
-											? "text-foreground/70"
-											: "text-muted-foreground/50",
-									)}
-								>
-									{month.amountCents > 0
-										? compactReais(month.amountCents)
-										: "—"}
-								</span>
-								<div
-									className={cn(
-										"grow-y w-full max-w-[38px] rounded-t-lg",
-										month.amountCents > 0
-											? isCurrent
-												? "bg-primary"
-												: "bg-primary/55"
-											: "bg-muted",
-									)}
-									style={{ height: `${heightPct}%` }}
-								/>
-								<span className="text-[11px] text-muted-foreground">
-									{month.shortLabel}
-								</span>
-							</div>
-						);
-					})}
-				</div>
+				{/* The tooltips replace a native `title`, which rendered as the
+				    browser's own grey box — out of place on the chart. */}
+				<TooltipProvider delay={120}>
+					<div
+						className={cn(
+							"flex items-end gap-3.5",
+							// Standalone (dashboard): fixed height so the % bars resolve.
+							// In the Financeiro grid (!showBudget): fill so the card matches
+							// its taller sibling instead of leaving dead space below.
+							showBudget ? "h-28" : "min-h-28 flex-1",
+						)}
+						role="img"
+						aria-label="Previsão de pagamentos por mês"
+					>
+						{forecast.map((month) => {
+							const heightPct =
+								month.amountCents > 0
+									? Math.max(
+											Math.round((month.amountCents / maxMonth) * 100),
+											8,
+										)
+									: 4;
+							const isCurrent = month.month === today.slice(0, 7);
+							return (
+								<Tooltip key={month.month}>
+									<TooltipTrigger
+										render={
+											<div className="flex h-full flex-1 cursor-default flex-col items-center justify-end gap-1.5" />
+										}
+									>
+										<span
+											className={cn(
+												"text-[10.5px] font-semibold tabular-nums",
+												month.amountCents > 0
+													? "text-foreground/70"
+													: "text-muted-foreground/50",
+											)}
+										>
+											{month.amountCents > 0
+												? compactReais(month.amountCents)
+												: "—"}
+										</span>
+										<div
+											className={cn(
+												"grow-y w-full max-w-[38px] rounded-t-lg",
+												month.amountCents > 0
+													? isCurrent
+														? "bg-primary"
+														: "bg-primary/55"
+													: "bg-muted",
+											)}
+											style={{ height: `${heightPct}%` }}
+										/>
+										<span className="text-[11px] text-muted-foreground">
+											{month.shortLabel}
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										{month.shortLabel} ·{" "}
+										<span className="font-semibold tabular-nums">
+											{formatBRL(month.amountCents)}
+										</span>
+									</TooltipContent>
+								</Tooltip>
+							);
+						})}
+					</div>
+				</TooltipProvider>
 			</div>
 		</section>
 	);

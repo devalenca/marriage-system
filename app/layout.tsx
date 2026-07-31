@@ -3,6 +3,7 @@ import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppThemeProvider } from "@/components/app-theme-provider";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
+import { ScrollLockGutter } from "@/components/scroll-lock-gutter";
 import { ThemeBootstrap } from "@/components/theme-bootstrap";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -46,6 +47,7 @@ export default function RootLayout({
 		>
 			<body className="min-h-full flex flex-col">
 				<ThemeBootstrap />
+				<ScrollLockGutter />
 				<AppThemeProvider>
 					<ConvexClientProvider>{children}</ConvexClientProvider>
 					<Toaster position="top-center" richColors />

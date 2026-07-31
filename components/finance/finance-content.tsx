@@ -13,6 +13,12 @@ import { PaymentListCard } from "@/components/payment-list-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { api } from "@/convex/_generated/api";
 import { CATEGORY_LABELS } from "@/lib/domain/categories";
 import { formatDateBR, todayInSaoPaulo } from "@/lib/domain/dates";
@@ -250,60 +256,70 @@ function InstallmentsCard({ rows }: { rows: Overview["installments"] }) {
 
 function PaidHistoryCard({ paid }: { paid: Overview["paid"] }) {
 	return (
-		<Card className="animate-card-enter">
-			<CardHeader>
-				<CardTitle className="font-display text-lg">
-					Pagamentos realizados
-				</CardTitle>
-			</CardHeader>
-			<CardContent>
-				{paid.length === 0 ? (
-					<p className="py-2 text-sm text-muted-foreground">
-						Nenhum pagamento registrado ainda. Ao marcar uma parcela como paga,
-						ela aparece aqui — anexe o comprovante para manter tudo guardado.
-					</p>
-				) : (
-					<ul className="flex max-h-[22rem] flex-col divide-y overflow-y-auto pr-1">
-						{paid.map((payment) => (
-							<li
-								key={payment._id}
-								className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
-							>
-								<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
-									<Check className="size-4" aria-hidden />
-								</span>
-								<Link
-									href={`/fornecedores/${payment.vendorId}`}
-									className="min-w-0 flex-1"
+		<TooltipProvider delay={120}>
+			<Card className="animate-card-enter">
+				<CardHeader>
+					<CardTitle className="font-display text-lg">
+						Pagamentos realizados
+					</CardTitle>
+				</CardHeader>
+				<CardContent>
+					{paid.length === 0 ? (
+						<p className="py-2 text-sm text-muted-foreground">
+							Nenhum pagamento registrado ainda. Ao marcar uma parcela como
+							paga, ela aparece aqui — anexe o comprovante para manter tudo
+							guardado.
+						</p>
+					) : (
+						<ul className="flex max-h-[22rem] flex-col divide-y overflow-y-auto pr-1">
+							{paid.map((payment) => (
+								<li
+									key={payment._id}
+									className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
 								>
-									<p className="truncate text-sm font-medium">
-										{payment.vendorName}
-									</p>
-									<p className="text-xs text-muted-foreground">
-										{payment.description}
-										{payment.paidDate
-											? ` · ${formatDateBR(payment.paidDate)}`
-											: ""}
-										{payment.paymentMethod ? ` · ${payment.paymentMethod}` : ""}
-									</p>
-								</Link>
-								{payment.hasReceipt ? (
-									<span className="text-success" title="Comprovante anexado">
-										<Paperclip
-											className="size-4"
-											aria-label="Comprovante anexado"
-										/>
+									<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
+										<Check className="size-4" aria-hidden />
 									</span>
-								) : null}
-								<span className="text-sm font-semibold text-success tabular-nums">
-									{formatBRL(payment.amountCents)}
-								</span>
-							</li>
-						))}
-					</ul>
-				)}
-			</CardContent>
-		</Card>
+									<Link
+										href={`/fornecedores/${payment.vendorId}`}
+										className="min-w-0 flex-1"
+									>
+										<p className="truncate text-sm font-medium">
+											{payment.vendorName}
+										</p>
+										<p className="text-xs text-muted-foreground">
+											{payment.description}
+											{payment.paidDate
+												? ` · ${formatDateBR(payment.paidDate)}`
+												: ""}
+											{payment.paymentMethod
+												? ` · ${payment.paymentMethod}`
+												: ""}
+										</p>
+									</Link>
+									{payment.hasReceipt ? (
+										<Tooltip>
+											<TooltipTrigger
+												render={<span className="text-success" />}
+											>
+												<Paperclip
+													className="size-4"
+													aria-label="Comprovante anexado"
+												/>
+											</TooltipTrigger>
+											<TooltipContent>Comprovante anexado</TooltipContent>
+										</Tooltip>
+									) : null}
+									<span className="text-sm font-semibold text-success tabular-nums">
+										{formatBRL(payment.amountCents)}
+									</span>
+								</li>
+							))}
+						</ul>
+					)}
+				</CardContent>
+			</Card>
+		</TooltipProvider>
 	);
 }
 

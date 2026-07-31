@@ -205,6 +205,48 @@
 
 	html {
 		@apply font-sans;
+		/* Reserve the scrollbar's lane permanently. Base UI locks body scroll
+		   while a select or dialog is open and does not compensate for the
+		   scrollbar it removes, so without this the whole page slid sideways
+		   every time a filter opened. */
+		scrollbar-gutter: stable;
+	}
+
+	/* The scrollbar belongs to the interface, not to the OS: slim, rounded and
+	   tinted with the couple's accent, in every scrollable area. */
+	::-webkit-scrollbar {
+		width: 12px;
+		height: 12px;
+	}
+
+	::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	::-webkit-scrollbar-thumb {
+		background-color: color-mix(in oklch, var(--primary) 32%, transparent);
+		background-clip: content-box;
+		border: 3.5px solid transparent;
+		border-radius: 9999px;
+	}
+
+	::-webkit-scrollbar-thumb:hover {
+		background-color: color-mix(in oklch, var(--primary) 55%, transparent);
+	}
+
+	::-webkit-scrollbar-corner {
+		background: transparent;
+	}
+
+	/* Firefox has no pseudo-elements for this; its own properties would win
+	   over the rules above in Chrome, so they are scoped to browsers that
+	   lack the pseudo-element. */
+	@supports not selector(::-webkit-scrollbar) {
+		html {
+			scrollbar-width: thin;
+			scrollbar-color: color-mix(in oklch, var(--primary) 40%, transparent)
+				transparent;
+		}
 	}
 
 	/* Consistent keyboard focus ring across every interactive surface. The

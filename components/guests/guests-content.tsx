@@ -521,7 +521,9 @@ function GuestRow({
 					size="sm"
 					aria-label={`Status de ${guest.name}`}
 					className={cn(
-						"w-[8rem] font-medium",
+						// Wide enough for "Confirmado" plus its check and chevron —
+						// at 8rem the longest label was clipped mid-word.
+						"w-[10rem] font-medium",
 						STATUS_STYLES[guest.rsvpStatus],
 					)}
 				>
