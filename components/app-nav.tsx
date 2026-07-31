@@ -414,13 +414,16 @@ export function AppNav({
 									onClick={onToggle}
 									aria-label="Expandir menu"
 									aria-expanded={false}
+									aria-keyshortcuts="Control+B"
 									className="size-11 rounded-xl"
 								/>
 							}
 						>
 							<PanelLeftOpen aria-hidden />
 						</TooltipTrigger>
-						<TooltipContent side="right">Expandir menu</TooltipContent>
+						<TooltipContent side="right">
+							Expandir menu <span className="ml-1 opacity-70">Ctrl B</span>
+						</TooltipContent>
 					</Tooltip>
 				) : (
 					<>
@@ -431,15 +434,25 @@ export function AppNav({
 							>
 								<BrandIcon />
 							</Link>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={onToggle}
-								aria-label="Recolher menu"
-								aria-expanded
-							>
-								<PanelLeftClose aria-hidden />
-							</Button>
+							<Tooltip>
+								<TooltipTrigger
+									render={
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={onToggle}
+											aria-label="Recolher menu"
+											aria-expanded
+											aria-keyshortcuts="Control+B"
+										/>
+									}
+								>
+									<PanelLeftClose aria-hidden />
+								</TooltipTrigger>
+								<TooltipContent side="right">
+									Recolher menu <span className="ml-1 opacity-70">Ctrl B</span>
+								</TooltipContent>
+							</Tooltip>
 						</div>
 						<Link
 							href="/dashboard"

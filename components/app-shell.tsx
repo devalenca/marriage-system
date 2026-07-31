@@ -18,7 +18,6 @@ const STORAGE_KEY = "nav-collapsed";
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
 	const [collapsed, setCollapsed] = useState(true);
-	useNavShortcuts();
 
 	useEffect(() => {
 		const saved = localStorage.getItem(STORAGE_KEY);
@@ -33,11 +32,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 		});
 	}, []);
 
+	useNavShortcuts({ onToggleSidebar: toggle });
+
 	return (
 		<div
 			className={cn(
 				"min-h-screen transition-[padding] duration-200 ease-out",
-				collapsed ? "md:pl-[4.75rem]" : "md:pl-64",
+				// Matches the rail's width in AppNav — keep the two in step.
+				collapsed ? "md:pl-[4.5rem]" : "md:pl-64",
 			)}
 		>
 			<WeddingTheme />
