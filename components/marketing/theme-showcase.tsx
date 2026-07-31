@@ -18,7 +18,7 @@ export function ThemeShowcase() {
 	return (
 		<section className="mt-24" aria-labelledby="personalizacao">
 			<div className="grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
-				<div>
+				<div data-reveal>
 					<span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5 text-sm font-medium text-primary ring-1 ring-primary/15">
 						<Heart className="size-4 text-gold" aria-hidden />
 						Do jeito de vocês
@@ -44,7 +44,7 @@ export function ThemeShowcase() {
 									aria-pressed={selected}
 									onClick={() => setTheme(option.id)}
 									className={cn(
-										"flex min-h-11 items-center gap-2.5 rounded-2xl border px-3.5 text-sm font-medium transition-colors",
+										"flex min-h-11 items-center gap-2.5 rounded-2xl border px-3.5 text-sm font-medium transition-[transform,color,background-color,border-color,box-shadow] duration-200 hover:scale-[1.04] active:scale-[0.97]",
 										selected
 											? "border-foreground/25 bg-card/70 text-foreground shadow-sm"
 											: "border-border text-muted-foreground hover:bg-card/50 hover:text-foreground",
@@ -68,7 +68,9 @@ export function ThemeShowcase() {
 				{/* Live preview: everything inside recolours with the chosen theme. */}
 				<div
 					data-wedding-theme={theme}
-					className="rounded-[2rem] bg-card/70 p-5 shadow-[0_20px_60px_oklch(0.2_0.05_130_/_0.16)] ring-1 ring-border backdrop-blur-2xl sm:p-6"
+					data-reveal
+					data-parallax="4"
+					className="landing-glass rounded-[2rem] bg-card/70 p-5 ring-1 ring-border backdrop-blur-2xl sm:p-6"
 				>
 					<div className="flex items-center gap-3">
 						<span className="flex size-10 items-center justify-center rounded-[1.1rem] bg-primary/12 text-primary ring-1 ring-primary/15">

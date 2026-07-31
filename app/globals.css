@@ -605,6 +605,182 @@
 		}
 	}
 
+	/* ---------- Landing page (marketing) ---------- */
+
+	/* Frosted hero/preview panels share one soft elevated shadow. */
+	.landing-glass {
+		box-shadow: 0 20px 60px oklch(0.2 0.05 var(--theme-hue) / 0.16);
+	}
+
+	/* Hero ambient backdrop: three radial-gradient blobs in the brand tones
+	   (olive / champagne gold / accent) glowing softly behind the hero glass.
+	   The blur is a STATIC filter on each blob — painted once and cached —
+	   and GSAP animates transform only (desktop, motion allowed), so the
+	   whole effect lives on the compositor. Colours derive from tokens via
+	   color-mix, so the blobs re-tint themselves correctly in dark mode. */
+	.hero-ambient {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		overflow: hidden;
+		pointer-events: none;
+		border-radius: 3rem;
+	}
+
+	.hero-blob {
+		position: absolute;
+		border-radius: 50%;
+		filter: blur(64px);
+		will-change: transform;
+	}
+
+	.hero-blob-olive {
+		top: -14%;
+		left: -8%;
+		width: 34rem;
+		height: 34rem;
+		background: radial-gradient(
+			circle at 35% 35%,
+			color-mix(in oklch, var(--primary) 26%, transparent),
+			transparent 68%
+		);
+	}
+
+	.hero-blob-gold {
+		top: 20%;
+		right: -10%;
+		width: 30rem;
+		height: 30rem;
+		background: radial-gradient(
+			circle at 60% 40%,
+			color-mix(in oklch, var(--gold) 24%, transparent),
+			transparent 70%
+		);
+	}
+
+	.hero-blob-champagne {
+		bottom: -18%;
+		left: 24%;
+		width: 26rem;
+		height: 26rem;
+		background: radial-gradient(
+			circle at 50% 50%,
+			color-mix(in oklch, var(--accent) 42%, transparent),
+			transparent 70%
+		);
+	}
+
+	/* CTA micro-interaction: lift + subtle brightness, snappy press.
+	   Transform/filter only, so it stays compositor-friendly. */
+	.cta-button {
+		transition:
+			transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			filter 200ms ease,
+			box-shadow 200ms ease,
+			background-color 200ms ease;
+		will-change: transform;
+	}
+
+	.cta-button:hover {
+		transform: translateY(-1px) scale(1.03);
+		filter: brightness(1.06) saturate(1.04);
+		box-shadow: 0 14px 30px oklch(0.34 0.07 var(--theme-hue) / 0.2);
+	}
+
+	.cta-button:active {
+		transform: translateY(0) scale(0.98);
+	}
+
+	/* Landing cards: slightly richer hover than app cards (scale + glow). */
+	.landing-card {
+		transition:
+			transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			box-shadow 220ms ease,
+			filter 220ms ease;
+	}
+
+	[data-slot="card"].landing-card:hover {
+		transform: translateY(-4px) scale(1.012);
+		filter: brightness(1.025);
+		box-shadow:
+			inset 0 1px 0 oklch(1 0 0 / 0.7),
+			0 1px 2px oklch(0.14 0.04 var(--theme-hue) / 0.08),
+			0 36px 90px oklch(0.18 0.06 var(--theme-hue) / 0.24);
+	}
+
+	/* Landing tiles: the quieter sibling of .landing-card for non-Card glass
+	   rows (pain points). Same easing family, roughly half the amplitude. */
+	.landing-tile {
+		transition:
+			transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			filter 220ms ease,
+			box-shadow 220ms ease;
+	}
+
+	.landing-tile:hover {
+		transform: translateY(-2px) scale(1.008);
+		filter: brightness(1.03);
+		box-shadow: 0 18px 44px oklch(0.18 0.06 var(--theme-hue) / 0.16);
+	}
+
+	/* Floating mobile CTA: hidden until the landing GSAP layer reveals it
+	   after the hero scrolls away. Reduced-motion users get it always on
+	   (no scroll listener runs for them). */
+	.floating-cta {
+		opacity: 0;
+		visibility: hidden;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.floating-cta {
+			opacity: 1;
+			visibility: visible;
+		}
+	}
+
+	/* ---------- Dark mode: landing-specific surfaces. The app-wide dark
+	   treatment (body scrims, card/input glass) lives with the theme system
+	   further up; these only cover the landing's own classes. ---------- */
+
+	.dark .landing-glass {
+		box-shadow: 0 20px 60px oklch(0 0 0 / 0.45);
+	}
+
+	/* In dark the tokens flip to lighter accents, so the blobs read as glow;
+	   ease their intensity down so they stay ambient, never spotlight. */
+	.dark .hero-blob {
+		opacity: 0.6;
+	}
+
+	.dark .landing-tile:hover {
+		box-shadow: 0 18px 44px oklch(0 0 0 / 0.4);
+	}
+
+	.dark [data-slot="card"]:hover {
+		box-shadow:
+			inset 0 1px 0 oklch(1 0 0 / 0.08),
+			0 1px 2px oklch(0 0 0 / 0.3),
+			0 34px 84px oklch(0 0 0 / 0.52);
+	}
+
+	.dark [data-slot="card"].landing-card:hover {
+		box-shadow:
+			inset 0 1px 0 oklch(1 0 0 / 0.08),
+			0 1px 2px oklch(0 0 0 / 0.3),
+			0 36px 90px oklch(0 0 0 / 0.55);
+	}
+
+	/* The primary button gradient derives from the light-mode lightness, so
+	   in dark it must lift with the dark --primary (L 0.74) to keep the dark
+	   ink (primary-foreground) readable on it. */
+	.dark [data-slot="button"][class*="bg-primary"] {
+		background-image: linear-gradient(
+			135deg,
+			oklch(0.77 calc(var(--theme-chroma) * 0.8) var(--theme-hue)),
+			oklch(0.68 calc(var(--theme-chroma) * 0.8) var(--theme-hue))
+		);
+	}
+
 	.pergola-scene {
 		position: absolute;
 		inset: 0;

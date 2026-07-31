@@ -17,11 +17,8 @@ export function CockpitPreview() {
 	];
 
 	return (
-		<Card
-			aria-hidden
-			className="animate-card-enter w-full max-w-md gap-0 p-5 sm:p-6"
-			style={{ animationDelay: "160ms" }}
-		>
+		// Entrance is owned by the landing GSAP timeline (data-hero-visual).
+		<Card aria-hidden className="landing-card w-full max-w-md gap-0 p-5 sm:p-6">
 			<div className="flex items-center justify-between">
 				<span className="font-display text-lg font-semibold text-primary">
 					Nosso Casamento
