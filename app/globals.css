@@ -160,25 +160,28 @@
    still follows their theme, so Terracota stays Terracota at night. */
 .dark,
 .dark [data-wedding-theme] {
-	--background: oklch(0.22 0.008 70);
+	/* The dark neutrals carry the couple's hue at very low chroma. Left on a
+	   fixed warm grey they read as brown panels floating on a green ground —
+	   the exact dissonance that made dark mode look dirty. */
+	--background: oklch(0.19 0.014 var(--theme-hue));
 	--foreground: oklch(0.94 0.008 85);
-	--card: oklch(0.26 0.009 70);
+	--card: oklch(0.235 0.016 var(--theme-hue));
 	--card-foreground: oklch(0.94 0.008 85);
-	--popover: oklch(0.26 0.009 70);
+	--popover: oklch(0.235 0.016 var(--theme-hue));
 	--popover-foreground: oklch(0.94 0.008 85);
 	/* Lifted lightness and softened chroma so the accent reads on dark. */
 	--primary: oklch(0.74 calc(var(--theme-chroma) * 0.8) var(--theme-hue));
 	--primary-foreground: oklch(0.22 0.008 70);
 	--secondary: oklch(0.31 calc(var(--theme-chroma) * 0.25) var(--theme-hue));
 	--secondary-foreground: oklch(0.94 0.008 85);
-	--muted: oklch(0.31 0.012 80);
-	--muted-foreground: oklch(0.7 0.015 80);
+	--muted: oklch(0.29 0.016 var(--theme-hue));
+	--muted-foreground: oklch(0.72 0.018 var(--theme-hue));
 	--accent: oklch(0.33 calc(var(--theme-chroma) * 0.35) var(--theme-hue));
 	--accent-foreground: oklch(0.9 0.03 85);
 	--destructive: oklch(0.62 0.14 35);
 	--border: oklch(1 0 0 / 12%);
 	--input: oklch(1 0 0 / 16%);
-	--field: oklch(0.29 0.012 80 / 0.95);
+	--field: oklch(0.27 0.018 var(--theme-hue) / 0.95);
 	--ring: var(--primary);
 	--gold: oklch(0.74 0.09 80);
 	--success: oklch(0.68 0.08 150);
@@ -188,7 +191,7 @@
 	--chart-3: oklch(0.62 0.14 35);
 	--chart-4: oklch(0.55 0.05 var(--theme-hue));
 	--chart-5: oklch(0.85 0.02 90);
-	--sidebar: oklch(0.26 0.009 70 / 0.92);
+	--sidebar: oklch(0.235 0.016 var(--theme-hue) / 0.92);
 	--sidebar-foreground: oklch(0.94 0.008 85);
 	--sidebar-primary: var(--primary);
 	--sidebar-primary-foreground: oklch(0.22 0.008 70);
@@ -335,20 +338,20 @@
 	   ambience, and the photo still appears where it is meant to be looked at
 	   (the closing band and the in-app preview). */
 	.dark body {
-		background: oklch(0.17 0.018 var(--theme-hue));
+		background: oklch(0.165 0.014 var(--theme-hue));
 	}
 
 	.dark body::before {
 		background-image:
 			radial-gradient(
-				78% 52% at 12% -5%,
-				oklch(0.34 0.055 var(--theme-hue) / 0.5),
-				transparent 62%
+				85% 55% at 10% -8%,
+				oklch(0.3 0.035 var(--theme-hue) / 0.34),
+				transparent 64%
 			),
 			radial-gradient(
-				64% 48% at 105% 12%,
-				oklch(0.3 0.05 var(--theme-hue) / 0.32),
-				transparent 66%
+				70% 50% at 108% 10%,
+				oklch(0.27 0.03 var(--theme-hue) / 0.2),
+				transparent 68%
 			);
 		filter: none;
 		transform: none;
@@ -761,6 +764,34 @@
 
 	.dark .landing-glass {
 		box-shadow: 0 20px 60px oklch(0 0 0 / 0.45);
+	}
+
+	/* The finance surface is a deliberately dark, glowing card designed to pop
+	   against a light page. On a dark page that same glow turns it into the
+	   loudest thing on screen, so dark mode keeps it only one step above the
+	   surrounding surface and dims the sheen. */
+	.dark .finance-glow-card {
+		background:
+			radial-gradient(
+				90% 70% at 8% 0%,
+				oklch(0.6 0.09 var(--theme-hue) / 0.22),
+				transparent 60%
+			),
+			radial-gradient(
+				80% 90% at 100% 96%,
+				oklch(0.7 0.08 86 / 0.18),
+				transparent 62%
+			),
+			linear-gradient(
+				135deg,
+				oklch(0.27 0.035 var(--theme-hue)) 0%,
+				oklch(0.32 0.045 var(--theme-hue)) 52%,
+				oklch(0.24 0.03 var(--theme-hue)) 100%
+			);
+	}
+
+	.dark .finance-glow-card::before {
+		opacity: 0.45;
 	}
 
 	/* In dark the tokens flip to lighter accents, so the blobs read as glow;
