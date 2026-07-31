@@ -24,6 +24,12 @@ export function isEmailEnabled(): boolean {
 	return Boolean(process.env.RESEND_API_KEY?.trim());
 }
 
+/** Where e-mailed links point to (SITE_URL on the deployment). */
+export function appBaseUrl(): string {
+	const configured = process.env.SITE_URL?.trim();
+	return (configured ? configured : "http://localhost:3000").replace(/\/$/, "");
+}
+
 /**
  * Sends one email through Resend. Returns "skipped" (without touching the
  * network) when the deployment has no API key, so callers never need to

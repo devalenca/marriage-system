@@ -74,6 +74,20 @@ export default defineSchema({
 		expiresAt: v.number(), // epoch ms
 	}).index("by_user", ["userId"]),
 
+	// A pending invitation to join a wedding as a member. The e-mailed link
+	// carries the raw token; only its hash is stored. Accepting creates the
+	// account (invited person picks their own password) and burns the row.
+	invitations: defineTable({
+		weddingId: v.id("weddings"),
+		email: v.string(),
+		tokenHash: v.string(), // sha-256 hex of the link token
+		invitedByUserId: v.id("users"),
+		expiresAt: v.number(), // epoch ms
+	})
+		.index("by_wedding", ["weddingId"])
+		.index("by_email", ["email"])
+		.index("by_tokenHash", ["tokenHash"]),
+
 	// Links a user to a wedding. A user belongs to exactly one wedding today;
 	// the superadmin (AUTH_ADMIN_EMAIL) reaches any wedding without one.
 	memberships: defineTable({

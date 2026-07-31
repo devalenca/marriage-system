@@ -1,7 +1,7 @@
 "use client";
 
 import { useAction, useMutation, useQuery } from "convex/react";
-import { KeyRound, Trash2, UserPlus } from "lucide-react";
+import { KeyRound, MailPlus, RotateCcw, Trash2, UserPlus, X } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { formatDateBR } from "@/lib/domain/dates";
 import { notifyError } from "@/lib/notify";
 
 type Member = {
@@ -64,7 +65,20 @@ export function AccessCard() {
 						/>
 					))}
 				</ul>
-				{isAdmin ? <CreateMemberForm /> : null}
+				{isAdmin ? (
+					<>
+						<PendingInvitations />
+						<InviteForm />
+						<details className="group">
+							<summary className="cursor-pointer text-sm text-muted-foreground select-none">
+								Prefere criar o acesso manualmente (sem e-mail)?
+							</summary>
+							<div className="mt-3">
+								<CreateMemberForm />
+							</div>
+						</details>
+					</>
+				) : null}
 			</CardContent>
 		</Card>
 	);
@@ -213,6 +227,133 @@ function AccessRow({
 				</DialogContent>
 			</Dialog>
 		</li>
+	);
+}
+
+/** Primary path: invite by e-mail — the invited person picks their own password. */
+function InviteForm() {
+	const inviteMember = useAction(api.access.inviteMember);
+	const [email, setEmail] = useState("");
+	const [sending, setSending] = useState(false);
+
+	async function handleInvite(event: FormEvent) {
+		event.preventDefault();
+		setSending(true);
+		try {
+			await inviteMember({ email: email.trim() });
+			toast.success(`Convite enviado para ${email.trim()}`);
+			setEmail("");
+		} catch (error) {
+			notifyError(error, "Não foi possível enviar o convite");
+		} finally {
+			setSending(false);
+		}
+	}
+
+	return (
+		<form
+			onSubmit={handleInvite}
+			className="flex flex-col gap-3 rounded-2xl border border-dashed border-border p-4"
+		>
+			<p className="text-sm font-semibold">Convidar por e-mail</p>
+			<p className="text-xs text-muted-foreground">
+				A pessoa recebe um link para criar a própria senha. O convite vale por 7
+				dias.
+			</p>
+			<div className="flex flex-col gap-2 sm:flex-row">
+				<Input
+					type="email"
+					required
+					value={email}
+					onChange={(e) => setEmail(e.target.value)}
+					placeholder="convidado@exemplo.com"
+					aria-label="E-mail do convidado"
+					className="flex-1"
+				/>
+				<Button type="submit" disabled={sending}>
+					<MailPlus data-icon="inline-start" aria-hidden />
+					{sending ? "Enviando..." : "Convidar"}
+				</Button>
+			</div>
+		</form>
+	);
+}
+
+/** Invitations waiting to be accepted, with resend + revoke. */
+function PendingInvitations() {
+	const invitations = useQuery(api.access.listInvitations, {});
+	const inviteMember = useAction(api.access.inviteMember);
+	const revokeInvitation = useMutation(api.access.revokeInvitation);
+	const [busyId, setBusyId] = useState<string | null>(null);
+
+	if (!invitations || invitations.length === 0) return null;
+
+	async function handleResend(email: string, id: string) {
+		setBusyId(id);
+		try {
+			await inviteMember({ email });
+			toast.success(`Convite reenviado para ${email}`);
+		} catch (error) {
+			notifyError(error, "Não foi possível reenviar o convite");
+		} finally {
+			setBusyId(null);
+		}
+	}
+
+	async function handleRevoke(id: Id<"invitations">, email: string) {
+		setBusyId(id);
+		try {
+			await revokeInvitation({ invitationId: id });
+			toast.success(`Convite de ${email} cancelado`);
+		} catch (error) {
+			notifyError(error, "Não foi possível cancelar o convite");
+		} finally {
+			setBusyId(null);
+		}
+	}
+
+	return (
+		<div className="flex flex-col gap-2">
+			<p className="text-sm font-semibold">Convites pendentes</p>
+			<ul className="flex flex-col gap-2">
+				{invitations.map((invitation) => (
+					<li
+						key={invitation.id}
+						className="flex min-h-11 flex-wrap items-center gap-2 rounded-2xl border border-dashed border-border px-3.5 py-2"
+					>
+						<span className="min-w-0 flex-1 truncate text-sm">
+							{invitation.email}
+						</span>
+						<span className="text-xs text-muted-foreground">
+							expira em{" "}
+							{formatDateBR(
+								new Date(invitation.expiresAt).toISOString().slice(0, 10),
+							)}
+						</span>
+						<Button
+							variant="ghost"
+							size="sm"
+							disabled={busyId === invitation.id}
+							onClick={() => handleResend(invitation.email, invitation.id)}
+							aria-label={`Reenviar convite para ${invitation.email}`}
+						>
+							<RotateCcw data-icon="inline-start" aria-hidden />
+							Reenviar
+						</Button>
+						<Button
+							variant="ghost"
+							size="sm"
+							disabled={busyId === invitation.id}
+							onClick={() => handleRevoke(invitation.id, invitation.email)}
+							aria-label={`Cancelar convite de ${invitation.email}`}
+						>
+							<X data-icon="inline-start" aria-hidden />
+							Cancelar
+						</Button>
+					</li>
+				))}
+			</ul>
+		</div>
 	);
 }
 

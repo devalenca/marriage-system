@@ -7,6 +7,13 @@ export function generateNumericCode(length: number): string {
 	return Array.from(digits, (byte) => String(byte % 10)).join("");
 }
 
+/** URL-safe random token for e-mailed links (invitations). */
+export function generateUrlToken(): string {
+	const bytes = new Uint8Array(32);
+	crypto.getRandomValues(bytes);
+	return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 /** Hex sha-256 — codes are stored hashed, never in the clear. */
 export async function sha256Hex(value: string): Promise<string> {
 	const bytes = new TextEncoder().encode(value);

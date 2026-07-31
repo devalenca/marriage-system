@@ -45,10 +45,17 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 			const email = String(args.profile.email ?? "")
 				.trim()
 				.toLowerCase();
+			// A live invitation lets the invited person create their account even
+			// when public self-signup is disabled.
+			const invitation = await mutationCtx.db
+				.query("invitations")
+				.withIndex("by_email", (q) => q.eq("email", email))
+				.first();
 			const allowed = canCreateUser({
 				callerIsSuperadmin: await viewerIsSuperadmin(mutationCtx),
 				callerIsWeddingAdmin: await viewerIsWeddingAdmin(mutationCtx),
 				selfSignupEnabled: isSelfSignupEnabled(),
+				hasInvitation: invitation !== null && invitation.expiresAt > Date.now(),
 				anyUserExists: (await mutationCtx.db.query("users").first()) !== null,
 				email,
 				superadminEmails: superadminEmails(),

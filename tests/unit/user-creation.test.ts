@@ -12,6 +12,7 @@ describe("canCreateUser", () => {
 		callerIsSuperadmin: false,
 		callerIsWeddingAdmin: false,
 		selfSignupEnabled: false,
+		hasInvitation: false,
 		anyUserExists: true,
 		superadminEmails,
 	};
@@ -74,6 +75,16 @@ describe("canCreateUser", () => {
 				email: "intruso@example.com",
 			}),
 		).toBe(false);
+	});
+
+	test("an invited e-mail can create its account even with self-signup off", () => {
+		expect(
+			canCreateUser({
+				...base,
+				hasInvitation: true,
+				email: "convidado@example.com",
+			}),
+		).toBe(true);
 	});
 
 	test("self sign-up is rejected once any user exists", () => {
