@@ -69,6 +69,21 @@ describe("AppNav", () => {
 		).toBeInTheDocument();
 	});
 
+	it("keeps the rail's content at a fixed width in both states", () => {
+		// The rail's width is the only thing that animates. If the content
+		// column stretched to it instead, `flex-1` children would re-lay-out
+		// on every frame and run their own (faster) transition — the search
+		// button visibly finished before the sidebar did.
+		for (const collapsed of [true, false]) {
+			const { unmount } = renderNav(collapsed);
+			const rail = screen.getByRole("complementary", { hidden: true });
+			expect(rail.className).toContain("overflow-hidden");
+			const column = rail.firstElementChild;
+			expect(column?.className).toContain(collapsed ? "w-11" : "w-[14.5rem]");
+			unmount();
+		}
+	});
+
 	it("hides the admin entry from non-superadmins", () => {
 		renderNav(true);
 		expect(

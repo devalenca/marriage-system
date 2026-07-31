@@ -398,78 +398,95 @@ export function AppNav({
 			{/* Desktop: collapsible sidebar. */}
 			<aside
 				className={cn(
-					"fixed inset-y-0 left-0 z-50 hidden flex-col gap-3 border-r border-sidebar-border bg-sidebar/85 shadow-[18px_0_60px_oklch(0.32_0.07_var(--theme-hue)_/_0.12)] backdrop-blur-2xl transition-[width] duration-200 ease-out md:flex",
+					"fixed inset-y-0 left-0 z-50 hidden flex-col overflow-hidden border-r border-sidebar-border bg-sidebar/85 shadow-[18px_0_60px_oklch(0.32_0.07_var(--theme-hue)_/_0.12)] backdrop-blur-2xl transition-[width] duration-200 ease-out md:flex",
 					collapsed ? "w-[4.5rem] items-center px-1.5 py-3" : "w-64 p-3",
 				)}
 			>
-				{/* Collapsed, the rail leads with the toggle: the brand mark would
-				    only echo the "Início" house right below it. */}
-				{collapsed ? (
-					<Tooltip>
-						<TooltipTrigger
-							render={
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={onToggle}
-									aria-label="Expandir menu"
-									aria-expanded={false}
-									aria-keyshortcuts="Control+B"
-									className="size-11 rounded-xl"
-								/>
-							}
-						>
-							<PanelLeftOpen aria-hidden />
-						</TooltipTrigger>
-						<TooltipContent side="right">
-							Expandir menu <span className="ml-1 opacity-70">Ctrl B</span>
-						</TooltipContent>
-					</Tooltip>
-				) : (
-					<>
-						<div className="flex items-center justify-between gap-2">
+				{/*
+				 * The column keeps the width its state calls for (w-11 of icons, or
+				 * the rail's 16rem minus padding) instead of stretching to the rail.
+				 * Only the rail's width animates, so nothing inside re-lays-out
+				 * mid-flight — the search button used to be `flex-1` with the
+				 * Button's own `transition-all`, so it re-animated its width on
+				 * every frame and finished ahead of the rail. The overflow-hidden
+				 * above turns the widening into a clean reveal.
+				 */}
+				<div
+					className={cn(
+						"flex min-h-0 flex-1 flex-col gap-3",
+						collapsed ? "w-11 items-center" : "w-[14.5rem]",
+					)}
+				>
+					{/* Collapsed, the rail leads with the toggle: the brand mark would
+					    only echo the "Início" house right below it. */}
+					{collapsed ? (
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={onToggle}
+										aria-label="Expandir menu"
+										aria-expanded={false}
+										aria-keyshortcuts="Control+B"
+										className="size-11 rounded-xl"
+									/>
+								}
+							>
+								<PanelLeftOpen aria-hidden />
+							</TooltipTrigger>
+							<TooltipContent side="right">
+								Expandir menu <span className="ml-1 opacity-70">Ctrl B</span>
+							</TooltipContent>
+						</Tooltip>
+					) : (
+						<>
+							<div className="flex items-center justify-between gap-2">
+								<Link
+									href="/dashboard"
+									className="rounded-2xl p-1 transition-colors hover:bg-card/55"
+								>
+									<BrandIcon />
+								</Link>
+								<Tooltip>
+									<TooltipTrigger
+										render={
+											<Button
+												variant="ghost"
+												size="icon"
+												onClick={onToggle}
+												aria-label="Recolher menu"
+												aria-expanded
+												aria-keyshortcuts="Control+B"
+											/>
+										}
+									>
+										<PanelLeftClose aria-hidden />
+									</TooltipTrigger>
+									<TooltipContent side="right">
+										Recolher menu{" "}
+										<span className="ml-1 opacity-70">Ctrl B</span>
+									</TooltipContent>
+								</Tooltip>
+							</div>
 							<Link
 								href="/dashboard"
-								className="rounded-2xl p-1 transition-colors hover:bg-card/55"
+								className="rounded-2xl px-1 transition-colors hover:bg-card/40"
 							>
-								<BrandIcon />
+								<BrandIdentity identity={identity} />
 							</Link>
-							<Tooltip>
-								<TooltipTrigger
-									render={
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={onToggle}
-											aria-label="Recolher menu"
-											aria-expanded
-											aria-keyshortcuts="Control+B"
-										/>
-									}
-								>
-									<PanelLeftClose aria-hidden />
-								</TooltipTrigger>
-								<TooltipContent side="right">
-									Recolher menu <span className="ml-1 opacity-70">Ctrl B</span>
-								</TooltipContent>
-							</Tooltip>
-						</div>
-						<Link
-							href="/dashboard"
-							className="rounded-2xl px-1 transition-colors hover:bg-card/40"
-						>
-							<BrandIdentity identity={identity} />
-						</Link>
-					</>
-				)}
+						</>
+					)}
 
-				<NavToolbar collapsed={collapsed} />
+					<NavToolbar collapsed={collapsed} />
 
-				<NavItems
-					pathname={pathname}
-					collapsed={collapsed}
-					showAdmin={showAdmin}
-				/>
+					<NavItems
+						pathname={pathname}
+						collapsed={collapsed}
+						showAdmin={showAdmin}
+					/>
+				</div>
 			</aside>
 		</TooltipProvider>
 	);
