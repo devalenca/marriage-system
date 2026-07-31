@@ -6,6 +6,7 @@ import {
 } from "../lib/domain/subscription";
 import { isWeddingTheme } from "../lib/domain/themes";
 import { normalizeWeddingFields } from "../lib/domain/wedding";
+import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { purgeAuthRows } from "./lib/accounts";
@@ -57,6 +58,12 @@ export async function createWeddingWithAdmin(
 		userId: adminUserId,
 		role: "admin",
 	});
+	if (adminUser.email) {
+		await ctx.scheduler.runAfter(0, internal.emails.sendWelcome, {
+			email: adminUser.email,
+			coupleNames: doc.coupleNames,
+		});
+	}
 	return weddingId;
 }
 
