@@ -74,6 +74,13 @@ export default defineSchema({
 		expiresAt: v.number(), // epoch ms
 	}).index("by_user", ["userId"]),
 
+	// Per-user opt-outs for the daily reminder e-mails. Missing row = all on.
+	notificationPrefs: defineTable({
+		userId: v.id("users"),
+		paymentReminders: v.boolean(),
+		subscriptionReminders: v.boolean(),
+	}).index("by_user", ["userId"]),
+
 	// A pending invitation to join a wedding as a member. The e-mailed link
 	// carries the raw token; only its hash is stored. Accepting creates the
 	// account (invited person picks their own password) and burns the row.

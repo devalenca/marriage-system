@@ -13,8 +13,21 @@ import { formatDateBR } from "@/lib/domain/dates";
  */
 export function SubscriptionBanner() {
 	const status = useQuery(api.weddings.subscriptionStatus, {});
+	const supportEmail = useQuery(api.users.supportContact, {});
 
 	if (status === undefined) return null;
+
+	const contact =
+		typeof supportEmail === "string" && supportEmail.length > 0 ? (
+			<a
+				className="font-medium underline underline-offset-2"
+				href={`mailto:${supportEmail}?subject=${encodeURIComponent(
+					"Renovação — Nosso Casamento",
+				)}`}
+			>
+				{supportEmail}
+			</a>
+		) : null;
 
 	if (!status.active) {
 		return (
@@ -31,7 +44,11 @@ export function SubscriptionBanner() {
 						{status.activeUntil
 							? `Sua assinatura venceu em ${formatDateBR(status.activeUntil)}. `
 							: ""}
-						Fale com quem administra o app para renovar e voltar a editar.
+						{contact ? (
+							<>Para renovar e voltar a editar, escreva para {contact}.</>
+						) : (
+							"Fale com quem administra o app para renovar e voltar a editar."
+						)}
 					</p>
 				</div>
 			</div>

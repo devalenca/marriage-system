@@ -74,6 +74,15 @@ export const viewer = authedQuery({
 	},
 });
 
+/**
+ * Who to contact for renewals/support — the first configured superadmin.
+ * Surfaced on the subscription banner so an expired couple has a way out.
+ */
+export const supportContact = authedQuery({
+	args: {},
+	handler: async () => superadminEmails()[0] ?? null,
+});
+
 // Actions run without direct db access, so the superadmin gate and lookups go
 // through internal queries; account writes go through Convex Auth helpers.
 
