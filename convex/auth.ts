@@ -9,6 +9,7 @@ import {
 	viewerIsWeddingAdmin,
 } from "./lib/auth";
 import { canCreateUser } from "./lib/userCreation";
+import { ResendOTPPasswordReset } from "./passwordReset";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -22,6 +23,8 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 						.toLowerCase(),
 				};
 			},
+			// Self-service "esqueci minha senha": an 8-digit code by email.
+			reset: ResendOTPPasswordReset,
 		}),
 	],
 	// Persistent login: the session survives up to a year, as long as the
