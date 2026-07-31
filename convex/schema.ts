@@ -65,6 +65,15 @@ export default defineSchema({
 		createdAt: v.number(), // epoch ms
 	}).index("by_created", ["createdAt"]),
 
+	// A pending self-service e-mail change: the code is emailed to the NEW
+	// address and must come back before anything is touched. One per user.
+	emailChangeRequests: defineTable({
+		userId: v.id("users"),
+		newEmail: v.string(),
+		codeHash: v.string(), // sha-256 hex of the 8-digit code
+		expiresAt: v.number(), // epoch ms
+	}).index("by_user", ["userId"]),
+
 	// Links a user to a wedding. A user belongs to exactly one wedding today;
 	// the superadmin (AUTH_ADMIN_EMAIL) reaches any wedding without one.
 	memberships: defineTable({
