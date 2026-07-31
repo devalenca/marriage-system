@@ -1,4 +1,5 @@
 import { ConvexError, v } from "convex/values";
+import { internal } from "./_generated/api";
 import { authedMutation, getViewer, superadminQuery } from "./lib/auth";
 
 const kindValidator = v.union(
@@ -33,6 +34,16 @@ export const submit = authedMutation({
 			kind,
 			message: text,
 			createdAt: Date.now(),
+		});
+		const wedding = membership?.weddingId
+			? await ctx.db.get(membership.weddingId)
+			: null;
+		// Heads-up to the superadmin, fire-and-forget.
+		await ctx.scheduler.runAfter(0, internal.emails.sendFeedbackAlert, {
+			kind,
+			message: text,
+			fromEmail: viewer.email,
+			coupleNames: wedding?.coupleNames,
 		});
 		return null;
 	},

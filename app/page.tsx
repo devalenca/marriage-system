@@ -15,7 +15,7 @@ import {
 	Wallet,
 } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ButtonLink } from "@/components/button-link";
 import { CockpitPreview } from "@/components/marketing/cockpit-preview";
 import { FaqSection } from "@/components/marketing/faq-section";
 import { LandingFooter } from "@/components/marketing/landing-footer";
@@ -26,7 +26,6 @@ import {
 } from "@/components/marketing/testimonials";
 import { ThemeShowcase } from "@/components/marketing/theme-showcase";
 import { ThemeToggle } from "@/components/marketing/theme-toggle";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export const metadata: Metadata = {
@@ -72,22 +71,16 @@ export default function LandingPage() {
 				</span>
 				<div className="flex items-center gap-1.5">
 					<ThemeToggle />
-					<Button
-						variant="ghost"
-						className="h-10 px-4"
-						nativeButton={false}
-						render={<Link href="/login" />}
-					>
+					<ButtonLink variant="ghost" className="h-10 px-4" href="/login">
 						Entrar
-					</Button>
-					<Button
+					</ButtonLink>
+					<ButtonLink
 						size="lg"
 						className="cta-button h-10 px-5"
-						nativeButton={false}
-						render={<Link href="/cadastro" />}
+						href="/cadastro"
 					>
 						Testar grátis
-					</Button>
+					</ButtonLink>
 				</div>
 			</header>
 
@@ -141,24 +134,22 @@ export default function LandingPage() {
 						data-hero-item
 						className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
 					>
-						<Button
+						<ButtonLink
 							size="lg"
 							className="cta-button h-12 px-6 text-base"
-							nativeButton={false}
-							render={<Link href="/cadastro" />}
+							href="/cadastro"
 						>
 							Começar 14 dias grátis
 							<ArrowRight className="size-4" />
-						</Button>
-						<Button
+						</ButtonLink>
+						<ButtonLink
 							variant="outline"
 							size="lg"
 							className="cta-button h-12 px-6 text-base"
-							nativeButton={false}
-							render={<Link href="/login" />}
+							href="/login"
 						>
 							Entrar
-						</Button>
+						</ButtonLink>
 					</div>
 					<div data-hero-item className="mt-5 flex flex-col gap-2">
 						<SocialProofInline />
@@ -441,24 +432,22 @@ export default function LandingPage() {
 							poucos minutos, o orçamento inteiro de vocês está num lugar só.
 						</p>
 						<div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-							<Button
+							<ButtonLink
 								size="lg"
 								className="cta-button h-12 px-7 text-base"
-								nativeButton={false}
-								render={<Link href="/cadastro" />}
+								href="/cadastro"
 							>
 								Começar 14 dias grátis
 								<ArrowRight className="size-4" />
-							</Button>
-							<Button
+							</ButtonLink>
+							<ButtonLink
 								variant="ghost"
 								size="lg"
 								className="cta-button h-12 px-6 text-base text-white hover:bg-white/15 hover:text-white"
-								nativeButton={false}
-								render={<Link href="/login" />}
+								href="/login"
 							>
 								Já tenho conta
-							</Button>
+							</ButtonLink>
 						</div>
 					</div>
 				</Card>
@@ -471,15 +460,14 @@ export default function LandingPage() {
 				data-floating-cta
 				className="floating-cta fixed inset-x-0 bottom-4 z-50 flex justify-center px-5 sm:hidden"
 			>
-				<Button
+				<ButtonLink
 					size="lg"
 					className="cta-button h-12 w-full max-w-sm px-6 text-base shadow-[0_18px_44px_oklch(0.2_0.06_132_/_0.35)]"
-					nativeButton={false}
-					render={<Link href="/cadastro" />}
+					href="/cadastro"
 				>
 					Começar 14 dias grátis
 					<ArrowRight className="size-4" />
-				</Button>
+				</ButtonLink>
 			</div>
 		</main>
 	);

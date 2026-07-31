@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "next-themes";
+import { AppThemeProvider } from "@/components/app-theme-provider";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -37,25 +37,17 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		// suppressHydrationWarning: next-themes stamps the `dark` class on <html>
-		// before hydration, which React would otherwise flag as a mismatch.
 		<html
 			lang="pt-BR"
+			// next-themes writes `class` and `style` on <html> before paint.
 			suppressHydrationWarning
 			className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
 		>
 			<body className="min-h-full flex flex-col">
-				{/* Light is canonical (DESIGN.md); dark is opt-in via the landing
-				    toggle and persisted by next-themes. */}
-				<ThemeProvider
-					attribute="class"
-					defaultTheme="light"
-					enableSystem={false}
-					disableTransitionOnChange
-				>
+				<AppThemeProvider>
 					<ConvexClientProvider>{children}</ConvexClientProvider>
 					<Toaster position="top-center" richColors />
-				</ThemeProvider>
+				</AppThemeProvider>
 			</body>
 		</html>
 	);

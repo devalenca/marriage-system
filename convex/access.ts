@@ -6,8 +6,14 @@ import {
 import { ConvexError, v } from "convex/values";
 import { normalizeWeddingFields } from "../lib/domain/wedding";
 import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
-import { action, internalMutation, internalQuery } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
+import {
+	action,
+	internalMutation,
+	internalQuery,
+	type QueryCtx,
+	query,
+} from "./_generated/server";
 import {
 	assertValidEmail,
 	assertValidPassword,
@@ -20,6 +26,8 @@ import {
 	weddingAdminMutation,
 	weddingQuery,
 } from "./lib/auth";
+import { appBaseUrl, escapeHtml, renderEmail, sendEmail } from "./lib/email";
+import { generateUrlToken, sha256Hex } from "./lib/otp";
 import { weddingFieldValidators } from "./lib/validators";
 import { createWeddingWithAdmin } from "./weddings";
 
@@ -91,8 +99,8 @@ export const insertMember = internalMutation({
 
 /**
  * Superadmin-only: provisions a whole tenant — creates the couple's account
- * and their wedding with a fresh trial, linking them as its admin. This is
- * the product's onboarding path (there is no public self-signup yet).
+ * and their wedding with a fresh trial, linking them as its admin. Used to
+ * onboard a couple by hand; the self-service path is /cadastro.
  */
 export const provision = action({
 	args: { ...weddingFieldValidators, email: v.string(), password: v.string() },
@@ -170,6 +178,212 @@ export const createMember = action({
 		}
 		await ctx.runMutation(internal.access.insertMember, { weddingId, userId });
 		return null;
+	},
+});
+
+// ---------------------------------------------------------------------------
+// Invitations: the admin types only an e-mail; the invited person receives a
+// link and picks their own password on /convite. The link token is stored
+// hashed and expires after 7 days.
+
+const INVITATION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Everything `inviteMember` needs, behind one wedding-admin check. */
+export const adminInviteContext = internalQuery({
+	args: {},
+	handler: async (ctx) => {
+		const { weddingId, viewerId } = await requireWeddingAdmin(ctx);
+		return {
+			weddingId,
+			viewerId,
+			coupleNames: (await ctx.db.get(weddingId))?.coupleNames ?? "",
+		};
+	},
+});
+
+export const storeInvitation = internalMutation({
+	args: {
+		weddingId: v.id("weddings"),
+		email: v.string(),
+		tokenHash: v.string(),
+		invitedByUserId: v.id("users"),
+		expiresAt: v.number(),
+	},
+	handler: async (ctx, args) => {
+		// Re-inviting the same e-mail replaces the previous invitation, so at
+		// most one link per address is ever live.
+		const existing = await ctx.db
+			.query("invitations")
+			.withIndex("by_email", (q) => q.eq("email", args.email))
+			.collect();
+		for (const row of existing) {
+			await ctx.db.delete(row._id);
+		}
+		await ctx.db.insert("invitations", args);
+	},
+});
+
+/** Wedding-admin only: e-mails an invitation link to a future member. */
+export const inviteMember = action({
+	args: { email: v.string() },
+	handler: async (ctx, { email: rawEmail }): Promise<null> => {
+		const { weddingId, viewerId, coupleNames } = await ctx.runQuery(
+			internal.access.adminInviteContext,
+			{},
+		);
+		const email = normalizeEmail(rawEmail);
+		assertValidEmail(email);
+		if (await ctx.runQuery(internal.access.emailTaken, { email })) {
+			throw new ConvexError("Já existe um acesso com esse e-mail");
+		}
+		const token = generateUrlToken();
+		await ctx.runMutation(internal.access.storeInvitation, {
+			weddingId,
+			email,
+			tokenHash: await sha256Hex(token),
+			invitedByUserId: viewerId,
+			expiresAt: Date.now() + INVITATION_MAX_AGE_MS,
+		});
+		const link = `${appBaseUrl()}/convite?token=${token}`;
+		await sendEmail({
+			to: email,
+			subject: `Convite para o casamento de ${coupleNames} — Nosso Casamento`,
+			html: renderEmail({
+				heading: "Você foi convidado(a)!",
+				bodyHtml: `<p>Você recebeu um convite para acompanhar o planejamento do casamento de <b>${escapeHtml(coupleNames)}</b> no Nosso Casamento.</p>
+					<p>Clique no botão abaixo para criar sua senha e entrar. O convite vale por 7 dias.</p>`,
+				ctaLabel: "Criar minha senha",
+				ctaUrl: link,
+			}),
+		});
+		return null;
+	},
+});
+
+/** Pending invitations of the caller's wedding, for the Acessos card. */
+export const listInvitations = weddingQuery({
+	args: {},
+	handler: async (ctx) => {
+		const rows = await ctx.db
+			.query("invitations")
+			.withIndex("by_wedding", (q) => q.eq("weddingId", ctx.weddingId))
+			.collect();
+		return rows
+			.filter((row) => row.expiresAt > Date.now())
+			.map((row) => ({
+				id: row._id,
+				email: row.email,
+				expiresAt: row.expiresAt,
+			}))
+			.sort((a, b) => a.email.localeCompare(b.email));
+	},
+});
+
+/** Wedding-admin only: cancels a pending invitation (kills the link). */
+export const revokeInvitation = weddingAdminMutation({
+	args: { invitationId: v.id("invitations") },
+	handler: async (
+		ctx,
+		{ invitationId }: { invitationId: Id<"invitations"> },
+	) => {
+		const row = await ctx.db.get(invitationId);
+		if (row === null || row.weddingId !== ctx.weddingId) {
+			throw new ConvexError("Convite não encontrado");
+		}
+		await ctx.db.delete(row._id);
+	},
+});
+
+/** The single definition of "this link is still good". */
+async function liveInvitation(
+	db: QueryCtx["db"],
+	tokenHash: string,
+): Promise<Doc<"invitations"> | null> {
+	const row = await db
+		.query("invitations")
+		.withIndex("by_tokenHash", (q) => q.eq("tokenHash", tokenHash))
+		.unique();
+	return row !== null && row.expiresAt > Date.now() ? row : null;
+}
+
+export const invitationByTokenHash = internalQuery({
+	args: { tokenHash: v.string() },
+	handler: async (ctx, { tokenHash }) => {
+		const row = await liveInvitation(ctx.db, tokenHash);
+		if (row === null) return null;
+		return { id: row._id, weddingId: row.weddingId, email: row.email };
+	},
+});
+
+export const deleteInvitation = internalMutation({
+	args: { invitationId: v.id("invitations") },
+	handler: async (ctx, { invitationId }) => {
+		const row = await ctx.db.get(invitationId);
+		if (row !== null) await ctx.db.delete(row._id);
+	},
+});
+
+/**
+ * Public (token-gated): what the /convite page shows before the invited
+ * person creates their password. Returns null for dead links.
+ */
+export const invitationByToken = query({
+	args: { token: v.string() },
+	handler: async (ctx, { token }) => {
+		const row = await liveInvitation(ctx.db, await sha256Hex(token));
+		if (row === null) return null;
+		const coupleNames = (await ctx.db.get(row.weddingId))?.coupleNames ?? "";
+		return { email: row.email, coupleNames };
+	},
+});
+
+/**
+ * Public (token-gated): the invited person sets their own password. Creates
+ * the account + membership and burns the invitation.
+ */
+export const acceptInvitation = action({
+	args: { token: v.string(), password: v.string() },
+	handler: async (ctx, { token, password }): Promise<{ email: string }> => {
+		const invitation = await ctx.runQuery(
+			internal.access.invitationByTokenHash,
+			{ tokenHash: await sha256Hex(token) },
+		);
+		if (invitation === null) {
+			throw new ConvexError("Convite inválido ou expirado");
+		}
+		assertValidPassword(password);
+		if (
+			await ctx.runQuery(internal.access.emailTaken, {
+				email: invitation.email,
+			})
+		) {
+			throw new ConvexError("Já existe um acesso com esse e-mail");
+		}
+		await createAccount(ctx, {
+			provider: PASSWORD_PROVIDER,
+			account: { id: invitation.email, secret: password },
+			// `viaInvitation` is the proof-of-token the account-creation gate
+			// reads (convex/auth.ts). It never reaches the database — the
+			// callback stores only the e-mail — so it is not a `users` field,
+			// which is why the profile shape needs the cast.
+			profile: { email: invitation.email, viaInvitation: true } as {
+				email: string;
+			},
+		});
+		const userId = await ctx.runQuery(internal.access.userIdByEmail, {
+			email: invitation.email,
+		});
+		if (userId === null) {
+			throw new ConvexError("Falha ao criar o acesso");
+		}
+		await ctx.runMutation(internal.access.insertMember, {
+			weddingId: invitation.weddingId,
+			userId,
+		});
+		await ctx.runMutation(internal.access.deleteInvitation, {
+			invitationId: invitation.id,
+		});
+		return { email: invitation.email };
 	},
 });
 

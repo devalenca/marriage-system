@@ -8,7 +8,9 @@ import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
 import { PageHeader } from "@/components/page-header";
 import { AccessCard } from "@/components/settings/access-card";
+import { AccountCard } from "@/components/settings/account-card";
 import { FeedbackCard } from "@/components/settings/feedback-card";
+import { NotificationsCard } from "@/components/settings/notifications-card";
 import { ThemeCard } from "@/components/settings/theme-card";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Button } from "@/components/ui/button";
@@ -64,7 +66,9 @@ export function SettingsContent() {
 				{wedding !== null ? (
 					<ThemeCard current={resolveTheme(wedding.theme ?? undefined)} />
 				) : null}
+				<AccountCard />
 				<AccessCard />
+				<NotificationsCard />
 				<FeedbackCard />
 				<Card>
 					<CardHeader>

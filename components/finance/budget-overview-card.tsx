@@ -58,42 +58,48 @@ export function BudgetOverviewCard({
 	const maxMonth = Math.max(...forecast.map((m) => m.amountCents), 1);
 
 	return (
-		<section className="animate-card-enter flex flex-col rounded-[22px] border border-[#ece2d2] bg-[#fffefb] px-6 py-6 shadow-[0_1px_2px_rgba(46,38,32,0.05),0_22px_50px_-26px_rgba(46,38,32,0.28)] sm:px-7">
+		<section className="animate-card-enter flex flex-col rounded-[22px] border border-border bg-card px-6 py-6 shadow-[0_1px_2px_oklch(0.2_0.02_75_/_0.05),0_22px_50px_-26px_oklch(0.2_0.02_75_/_0.28)] sm:px-7">
 			{showBudget ? (
 				<>
 					<div className="flex items-baseline justify-between gap-3">
-						<h2 className="font-display text-[22px] font-semibold text-[#2e2620]">
+						<h2 className="font-display text-[22px] font-semibold text-foreground">
 							Orçamento
 						</h2>
 						<span
-							className={`text-[13px] font-bold ${overBudget ? "text-destructive" : "text-[#9a7a3e]"}`}
+							className={cn(
+								"text-[13px] font-bold",
+								overBudget ? "text-destructive" : "text-gold",
+							)}
 						>
 							{committedPercent}% comprometido
 						</span>
 					</div>
 
-					<div className="mt-4 mb-2 flex h-3.5 overflow-hidden rounded-full bg-[#eee4d4]">
+					<div className="mt-4 mb-2 flex h-3.5 overflow-hidden rounded-full bg-muted">
 						<div
-							className="grow-x bg-[#b8924f] [animation-delay:.2s]"
+							className="grow-x bg-gold [animation-delay:.2s]"
 							style={{ width: `${paidPct}%` }}
 						/>
 						<div
-							className="grow-x bg-[#7a9078] [animation-delay:.35s]"
+							className="grow-x bg-primary/70 [animation-delay:.35s]"
 							style={{ width: `${contractedPct}%` }}
 						/>
 					</div>
 
-					<div className="flex flex-wrap items-center gap-x-[18px] gap-y-1 text-xs text-[#7a6e62]">
+					<div className="flex flex-wrap items-center gap-x-[18px] gap-y-1 text-xs text-muted-foreground">
 						<LegendDot
-							color="#b8924f"
+							className="bg-gold"
 							label={`Pago ${formatBRL(finance.paidCents)}`}
 						/>
 						<LegendDot
-							color="#7a9078"
+							className="bg-primary/70"
 							label={`Fechado ${formatBRL(finance.contractedCents)}`}
 						/>
 						<span
-							className={`ml-auto font-bold ${overBudget ? "text-destructive" : "text-[#3c5741]"}`}
+							className={cn(
+								"ml-auto font-bold",
+								overBudget ? "text-destructive" : "text-primary",
+							)}
 						>
 							Saldo {formatBRL(finance.remainingCents)}
 						</span>
@@ -104,10 +110,10 @@ export function BudgetOverviewCard({
 			<div
 				className={cn(
 					"flex flex-1 flex-col",
-					showBudget && "mt-5 border-t border-[#eee4d4] pt-[18px]",
+					showBudget && "mt-5 border-t border-border pt-[18px]",
 				)}
 			>
-				<div className="mb-3.5 text-xs font-bold tracking-[0.06em] text-[#7a6e62] uppercase">
+				<div className="mb-3.5 text-xs font-bold tracking-[0.06em] text-muted-foreground uppercase">
 					Previsão dos próximos meses
 				</div>
 				<div
@@ -134,25 +140,29 @@ export function BudgetOverviewCard({
 								className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
 							>
 								<span
-									className={`text-[10.5px] font-semibold tabular-nums ${
-										month.amountCents > 0 ? "text-[#6b5f54]" : "text-[#cdbfa8]"
-									}`}
+									className={cn(
+										"text-[10.5px] font-semibold tabular-nums",
+										month.amountCents > 0
+											? "text-foreground/70"
+											: "text-muted-foreground/50",
+									)}
 								>
 									{month.amountCents > 0
 										? compactReais(month.amountCents)
 										: "—"}
 								</span>
 								<div
-									className={`grow-y w-full max-w-[38px] rounded-t-lg ${
+									className={cn(
+										"grow-y w-full max-w-[38px] rounded-t-lg",
 										month.amountCents > 0
 											? isCurrent
-												? "bg-[#4b6b4f]"
-												: "bg-[#8aa07f]"
-											: "bg-[#e0d6c4]"
-									}`}
+												? "bg-primary"
+												: "bg-primary/55"
+											: "bg-muted",
+									)}
 									style={{ height: `${heightPct}%` }}
 								/>
-								<span className="text-[11px] text-[#8a7d6f]">
+								<span className="text-[11px] text-muted-foreground">
 									{month.shortLabel}
 								</span>
 							</div>
@@ -164,13 +174,10 @@ export function BudgetOverviewCard({
 	);
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+function LegendDot({ className, label }: { className: string; label: string }) {
 	return (
 		<span className="flex items-center gap-1.5">
-			<span
-				className="size-[9px] rounded-[3px]"
-				style={{ backgroundColor: color }}
-			/>
+			<span className={cn("size-[9px] rounded-[3px]", className)} />
 			{label}
 		</span>
 	);

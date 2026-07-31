@@ -1,8 +1,9 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { Check } from "lucide-react";
-import { useState } from "react";
+import { Check, Monitor, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import {
 	Card,
 	CardContent,
@@ -10,6 +11,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { api } from "@/convex/_generated/api";
 import { WEDDING_THEMES } from "@/lib/domain/themes";
 import { notifyError } from "@/lib/notify";
@@ -42,37 +44,80 @@ export function ThemeCard({ current }: { current: string }) {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<div className="flex flex-wrap gap-2.5">
-					{WEDDING_THEMES.map((theme) => {
-						const selected = theme.id === current;
-						return (
-							<button
-								key={theme.id}
-								type="button"
-								onClick={() => choose(theme.id)}
-								aria-pressed={selected}
-								disabled={pending !== null}
-								className={cn(
-									"flex min-h-11 items-center gap-2.5 rounded-2xl border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-70",
-									selected
-										? "border-primary bg-card/70 text-foreground ring-1 ring-primary/25"
-										: "border-border text-muted-foreground hover:bg-card/50 hover:text-foreground",
-								)}
-							>
-								<span
-									className="flex size-6 items-center justify-center rounded-full ring-1 ring-black/10"
-									style={{ backgroundColor: theme.swatch }}
+				<div className="flex flex-col gap-5">
+					<div className="flex flex-wrap gap-2.5">
+						{WEDDING_THEMES.map((theme) => {
+							const selected = theme.id === current;
+							return (
+								<button
+									key={theme.id}
+									type="button"
+									onClick={() => choose(theme.id)}
+									aria-pressed={selected}
+									disabled={pending !== null}
+									className={cn(
+										"flex min-h-11 items-center gap-2.5 rounded-2xl border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-70",
+										selected
+											? "border-primary bg-card/70 text-foreground ring-1 ring-primary/25"
+											: "border-border text-muted-foreground hover:bg-card/50 hover:text-foreground",
+									)}
 								>
-									{selected ? (
-										<Check className="size-4 text-white" aria-hidden />
-									) : null}
-								</span>
-								{theme.label}
-							</button>
-						);
-					})}
+									<span
+										data-wedding-theme={theme.id}
+										className="flex size-6 items-center justify-center rounded-full bg-primary ring-1 ring-black/10"
+									>
+										{selected ? (
+											<Check className="size-4 text-white" aria-hidden />
+										) : null}
+									</span>
+									{theme.label}
+								</button>
+							);
+						})}
+					</div>
+					<ModeSelector />
 				</div>
 			</CardContent>
 		</Card>
+	);
+}
+
+const MODES = [
+	{ id: "light", label: "Claro", icon: Sun },
+	{ id: "dark", label: "Escuro", icon: Moon },
+	{ id: "system", label: "Sistema", icon: Monitor },
+] as const;
+
+/** Light / dark / follow-the-system, independent of the accent colour. */
+function ModeSelector() {
+	const { theme, setTheme } = useTheme();
+	const [mounted, setMounted] = useState(false);
+
+	// The stored mode is only known on the client; render the row inert until
+	// then so the server markup and the first paint agree.
+	useEffect(() => setMounted(true), []);
+
+	return (
+		<fieldset className="flex flex-col gap-2">
+			<legend className="mb-2 text-sm font-medium">Aparência</legend>
+			<ToggleGroup
+				variant="outline"
+				value={[mounted ? (theme ?? "light") : "light"]}
+				onValueChange={(next) => {
+					const mode = next[0];
+					if (mode) setTheme(mode);
+				}}
+			>
+				{MODES.map((mode) => {
+					const Icon = mode.icon;
+					return (
+						<ToggleGroupItem key={mode.id} value={mode.id} className="min-h-11">
+							<Icon data-icon="inline-start" aria-hidden />
+							{mode.label}
+						</ToggleGroupItem>
+					);
+				})}
+			</ToggleGroup>
+		</fieldset>
 	);
 }

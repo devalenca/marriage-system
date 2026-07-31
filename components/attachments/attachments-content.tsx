@@ -1,10 +1,12 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { Download, FileText, Paperclip, Search } from "lucide-react";
+import { useMutation, useQuery } from "convex/react";
+import { Download, FileText, Paperclip, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type * as React from "react";
 import { useState } from "react";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,12 +21,14 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { filterAttachments } from "@/lib/domain/attachments-filter";
 import {
 	ATTACHMENT_KIND_LABELS,
 	ATTACHMENT_KINDS,
 	type AttachmentKind,
 } from "@/lib/domain/categories";
+import { notifyError } from "@/lib/notify";
 
 const KIND_FILTER_ITEMS: Record<string, React.ReactNode> = {
 	todos: "Todos os tipos",
@@ -49,10 +53,27 @@ function formatBytes(bytes: number | undefined): string {
 
 export function AttachmentsContent() {
 	const files = useQuery(api.attachments.listAll, {});
+	const removeAttachment = useMutation(api.attachments.remove);
 	const [search, setSearch] = useState("");
 	const [kind, setKind] = useState<AttachmentKind | "todos">("todos");
+	const [pendingDelete, setPendingDelete] = useState<{
+		id: Id<"attachments">;
+		name: string;
+	} | null>(null);
 
 	const filtered = files ? filterAttachments(files, { search, kind }) : [];
+
+	async function handleDelete() {
+		if (pendingDelete === null) return;
+		try {
+			await removeAttachment({ id: pendingDelete.id });
+			toast.success(`${pendingDelete.name} excluído`);
+		} catch (error) {
+			notifyError(error, "Não foi possível excluir o anexo");
+		} finally {
+			setPendingDelete(null);
+		}
+	}
 
 	return (
 		<div className="animate-screen-enter">
@@ -183,11 +204,22 @@ export function AttachmentsContent() {
 												target="_blank"
 												rel="noreferrer"
 												aria-label={`Abrir ${file.name}`}
-												className="-mr-1 flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent/40 hover:text-primary sm:size-9"
+												className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent/40 hover:text-primary sm:size-9"
 											>
 												<Download className="size-4" aria-hidden />
 											</a>
 										) : null}
+										<Button
+											variant="ghost"
+											size="icon"
+											aria-label={`Excluir ${file.name}`}
+											onClick={() =>
+												setPendingDelete({ id: file._id, name: file.name })
+											}
+											className="-mr-1 size-11 shrink-0 rounded-full text-muted-foreground hover:text-destructive sm:size-9"
+										>
+											<Trash2 aria-hidden />
+										</Button>
 									</CardContent>
 								</Card>
 							</li>
@@ -195,6 +227,16 @@ export function AttachmentsContent() {
 					})}
 				</ul>
 			)}
+
+			<ConfirmDialog
+				open={pendingDelete !== null}
+				onOpenChange={(open) => {
+					if (!open) setPendingDelete(null);
+				}}
+				title="Excluir anexo?"
+				description={`${pendingDelete?.name ?? "O arquivo"} será apagado em definitivo. O fornecedor e o pagamento continuam como estão.`}
+				onConfirm={handleDelete}
+			/>
 		</div>
 	);
 }

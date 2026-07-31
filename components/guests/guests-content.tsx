@@ -14,9 +14,10 @@ import {
 	UserPlus,
 	X,
 } from "lucide-react";
-import Link from "next/link";
 import type * as React from "react";
 import { useMemo, useState } from "react";
+import { ButtonLink } from "@/components/button-link";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { GuestExportButton } from "@/components/guests/guest-export-button";
 import { GuestFormDialog } from "@/components/guests/guest-form-dialog";
 import { GuestPrintSheet } from "@/components/guests/guest-print-sheet";
@@ -138,14 +139,11 @@ export function GuestsContent() {
 				action={
 					<div className="flex flex-wrap items-center justify-end gap-2">
 						{hasAny ? <GuestExportButton invites={invites} /> : null}
-						<Button
-							variant="outline"
-							render={<Link href="/convidados/check-in" />}
-						>
+						<ButtonLink variant="outline" href="/convidados/check-in">
 							<CalendarCheck data-icon="inline-start" aria-hidden />
 							<span className="hidden sm:inline">Check-in do dia</span>
 							<span className="sm:hidden">Check-in</span>
-						</Button>
+						</ButtonLink>
 						<Button onClick={() => setCreateInviteOpen(true)}>
 							<Plus data-icon="inline-start" aria-hidden />
 							Novo convite
@@ -361,6 +359,7 @@ function InviteCard({
 	onEditGuest: (guest: Guest) => void;
 }) {
 	const removeInvite = useMutation(api.guests.removeInvite);
+	const [confirmOpen, setConfirmOpen] = useState(false);
 
 	const meta = [
 		invite.group?.trim(),
@@ -369,12 +368,6 @@ function InviteCard({
 	].filter(Boolean);
 
 	async function handleRemove() {
-		if (
-			!confirm(
-				`Excluir o convite "${invite.title}" e seus ${invite.counts.total} convidado(s)?`,
-			)
-		)
-			return;
 		try {
 			await removeInvite({ id: invite._id });
 		} catch (error) {
@@ -417,11 +410,18 @@ function InviteCard({
 							variant="ghost"
 							size="icon"
 							aria-label="Excluir convite"
-							onClick={handleRemove}
+							onClick={() => setConfirmOpen(true)}
 							className="size-9 sm:size-8"
 						>
 							<Trash2 aria-hidden />
 						</Button>
+						<ConfirmDialog
+							open={confirmOpen}
+							onOpenChange={setConfirmOpen}
+							title="Excluir convite?"
+							description={`"${invite.title}" e seus ${invite.counts.total} convidado(s) serão apagados.`}
+							onConfirm={handleRemove}
+						/>
 					</div>
 				</div>
 
@@ -469,6 +469,7 @@ function GuestRow({
 }) {
 	const updateGuest = useMutation(api.guests.updateGuest);
 	const removeGuest = useMutation(api.guests.removeGuest);
+	const [confirmOpen, setConfirmOpen] = useState(false);
 
 	async function handleStatus(value: string | null) {
 		if (!value) return;
@@ -480,7 +481,6 @@ function GuestRow({
 	}
 
 	async function handleRemove() {
-		if (!confirm(`Remover ${guest.name}?`)) return;
 		try {
 			await removeGuest({ id: guest._id });
 		} catch (error) {
@@ -548,11 +548,19 @@ function GuestRow({
 				variant="ghost"
 				size="icon"
 				aria-label={`Remover ${guest.name}`}
-				onClick={handleRemove}
+				onClick={() => setConfirmOpen(true)}
 				className="size-9 sm:size-8"
 			>
 				<Trash2 aria-hidden />
 			</Button>
+			<ConfirmDialog
+				open={confirmOpen}
+				onOpenChange={setConfirmOpen}
+				title={`Remover ${guest.name}?`}
+				description="O convidado sai da lista. O convite continua com os demais."
+				confirmLabel="Remover"
+				onConfirm={handleRemove}
+			/>
 		</Tag>
 	);
 }

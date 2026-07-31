@@ -12,6 +12,7 @@ describe("canCreateUser", () => {
 		callerIsSuperadmin: false,
 		callerIsWeddingAdmin: false,
 		selfSignupEnabled: false,
+		viaInvitation: false,
 		anyUserExists: true,
 		superadminEmails,
 	};
@@ -74,6 +75,24 @@ describe("canCreateUser", () => {
 				email: "intruso@example.com",
 			}),
 		).toBe(false);
+	});
+
+	test("the invitation-accept flow can create its account with self-signup off", () => {
+		expect(
+			canCreateUser({
+				...base,
+				viaInvitation: true,
+				email: "convidado@example.com",
+			}),
+		).toBe(true);
+	});
+
+	test("merely being an invited address is not enough without the token", () => {
+		// The gate must never infer permission from the address alone — that
+		// would let anyone squat an invited e-mail when signup is disabled.
+		expect(canCreateUser({ ...base, email: "convidado@example.com" })).toBe(
+			false,
+		);
 	});
 
 	test("self sign-up is rejected once any user exists", () => {

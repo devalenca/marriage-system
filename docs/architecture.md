@@ -1,86 +1,82 @@
 # Arquitetura do Produto — marriage-system
 
-Cockpit privado de gestão do casamento. pt-BR, BRL, dd/MM/yyyy, America/Sao_Paulo. Mobile-first.
+Cockpit de planejamento do casamento, vendido como assinatura para casais.
+pt-BR, BRL, dd/MM/yyyy, America/Sao_Paulo. Mobile-first.
 
 ## 1. Estrutura de telas
 
 | Rota | Tela | Pergunta que responde |
 |---|---|---|
-| `/` | Redireciona para `/dashboard` (ou onboarding se não configurado) | — |
-| `/dashboard` | **Início** — countdown, barra de orçamento, KPIs (meta, previsto, fechado, pago, pendente, saldo), próximos vencimentos, atrasados, tarefas do mês, resumo por categoria | "Como estamos?" |
-| `/fornecedores` | Lista com busca + filtros por categoria e status | "Quem são nossos fornecedores?" |
-| `/fornecedores/[id]` | Página do fornecedor: contato, valores, contrato, cronograma de pagamentos (entrada + parcelas), anexos (links) | "O que falta pagar/decidir aqui?" |
-| `/financeiro` | Meta vs. gasto, breakdown por categoria (previsto/fechado/pago), vencimentos próximos e atrasados, parcelas restantes | "Para onde vai o dinheiro?" |
-| `/checklist` | Cronograma mês a mês (lista) + visão calendário; tarefas com prazo, prioridade, responsável, status | "O que fazer agora?" |
-| `/configuracoes` | Nomes do casal, data do casamento, meta de orçamento; regeneração do checklist | — |
+| `/` | Landing pública (proposta, personalização ao vivo, 14 dias grátis) | "Vale a pena?" |
+| `/cadastro` · `/login` · `/convite` | Criar conta, entrar (com "esqueci minha senha") e aceitar convite definindo a própria senha | — |
+| `/dashboard` | **Início** — countdown, versículo do dia, resumo do orçamento, próximos vencimentos, atrasados, tarefas do mês, convidados, resumo por categoria | "Como estamos?" |
+| `/fornecedores` · `/fornecedores/[id]` | Lista com busca e filtros; página do fornecedor com contato, valores, cronograma de pagamentos e anexos | "Quem são e o que falta pagar?" |
+| `/financeiro` | Meta vs. gasto, por categoria e por forma de pagamento, previsão de 6 meses, atrasados/próximos, histórico e exportação CSV | "Para onde vai o dinheiro?" |
+| `/checklist` | Cronograma mês a mês em lista, quadro e calendário | "O que fazer agora?" |
+| `/convidados` · `/convidados/check-in` | Convites e convidados com RSVP manual; modo check-in do dia com busca | "Quem vem?" |
+| `/inspiracoes` · `/anexos` | Moodboards de referências; índice único dos arquivos do casamento | — |
+| `/configuracoes` | Dados do casamento, tema do casal, minha conta, acessos, notificações, feedback, exclusão da conta | — |
+| `/admin` | Painel do superadmin: provisionar casais, assinatura, feedback | — |
 
-Navegação: bottom tab bar no mobile (Início, Fornecedores, Financeiro, Checklist, Ajustes); sidebar no desktop. Tudo dentro do route group `app/(app)/` com shell compartilhado.
+Navegação: barra superior + drawer no mobile; sidebar recolhível no desktop
+(atalhos 1–8 e paleta ⌘K/Ctrl+K). Tudo dentro do route group `app/(app)/`
+com shell compartilhado e `components/auth-gate.tsx` na frente.
 
-## 2. Modelo de dados (Convex)
+## 2. Multi-tenancy e autenticação
 
-Dinheiro sempre em **centavos inteiros**. Datas de domínio como string ISO `yyyy-MM-dd` (interpretada em America/Sao_Paulo).
+- O tenant é uma linha de **`weddings`**; usuários chegam nele por **`memberships`**
+  (`admin` | `member`), uma por usuário.
+- `convex/lib/auth.ts` é o único módulo que toca `ctx.auth` e exporta os builders
+  `authedQuery/Mutation`, `weddingQuery/Mutation`, `weddingAdminMutation` e
+  `superadminQuery/Mutation`. Toda função de feature usa um deles.
+- Assinatura vencida deixa o app em **somente leitura** (`assertWritable` lança
+  `SUBSCRIPTION_EXPIRED`); queries continuam funcionando e a exclusão LGPD também.
+- Detalhes de contas, convites e e-mail: ver `AGENTS.md`.
 
-### `settings` (singleton)
-- `coupleNames: string` — ex.: "Gabriel & Fulana"
-- `weddingDate: string` — ISO date
-- `budgetGoalCents: number` — meta total (ex.: R$ 55.000,00 → 5500000)
+## 3. Modelo de dados (Convex)
 
-### `vendors`
-- `name: string`
-- `category:` `espaco | buffet | decoracao | dj_banda | fotografia | filmagem | assessoria | celebrante | vestido_traje | beleza | doces_bolo | iluminacao | open_bar | mobiliario | convites | transporte | outros`
-- `status:` `pesquisando | cotado | negociando | fechado | parcialmente_pago | pago | cancelado`
-- `contactName? phone? instagram? website? notes?: string`
-- `estimateCents?: number` — orçamento inicial
-- `contractedCents?: number` — valor fechado
-- `closedDate?: string` — data de fechamento (ISO)
-- `paymentMethod?: string` — ex.: "PIX — entrada 30% + 6x"
-- `links?: { label: string; url: string }[]` — contrato/anexos como links (upload de arquivos fica fora do MVP)
-- Índice: `by_category`, `by_status`
+Dinheiro sempre em **centavos inteiros**. Datas de domínio como string ISO
+`yyyy-MM-dd` (interpretada em America/Sao_Paulo); carimbos usam epoch ms.
 
-### `payments`
-- `vendorId: Id<"vendors">`
-- `description: string` — "Entrada", "Parcela 2/6"…
-- `amountCents: number`
-- `dueDate: string` — ISO
-- `isDownPayment?: boolean`
-- `status:` `pendente | pago`
-- `paidDate?: string` — data real do pagamento (ISO)
-- Índices: `by_vendor`, `by_status_dueDate`
-- "Atrasado" é **derivado** (pendente && dueDate < hoje), nunca armazenado.
+| Tabela | Conteúdo |
+|---|---|
+| `weddings` | Nomes do casal, data, meta, locais, horário, tema, `subscriptionActiveUntil`, aceite dos termos |
+| `memberships` | Vínculo usuário ↔ casamento com papel |
+| `invitations` · `emailChangeRequests` | Convites e trocas de e-mail pendentes (token/código **hasheado**, com expiração) |
+| `notificationPrefs` | Opt-outs por usuário dos lembretes diários |
+| `vendors` | Fornecedor: categoria (17), status (7), contato, `estimateCents`, `contractedCents`, forma de pagamento, links |
+| `payments` | Parcela de um fornecedor: descrição, valor, vencimento, `pendente \| pago`, data real |
+| `attachments` | Arquivo no storage do Convex, preso a um fornecedor **ou** a um pagamento |
+| `galleries` · `inspirationImages` | Moodboards e suas imagens |
+| `invites` · `guests` | Convite (família/grupo) e seus convidados com RSVP e check-in |
+| `tasks` | Tarefa do checklist: prazo, `monthsBefore`, prioridade, responsável, status, `isGenerated` |
+| `verses` · `feedback` | Conteúdo global do versículo diário; caixa de entrada de feedback |
 
-### `tasks` (checklist)
-- `title: string`, `notes?: string`
-- `dueDate?: string` — ISO (calculada a partir da data do casamento na geração)
-- `monthsBefore?: number` — bucket do cronograma (12, 10, 8, 6, 4, 3, 2, 1, 0)
-- `priority:` `alta | media | baixa`
-- `assignee?: string` — nome livre ("Gabriel", "Casal"…)
-- `status:` `pendente | em_andamento | concluida`
-- `isGenerated: boolean` — veio do template (regeneração não duplica)
-- Índices: `by_status`, `by_dueDate`
+Toda tabela do tenant carrega `weddingId` e tem índice `by_wedding`.
+"Atrasado" é **derivado** (pendente && vencimento < hoje), nunca armazenado.
 
-## 3. Regras de cálculo (lib/domain — puro, testado)
+## 4. Regras de cálculo (`lib/domain` — puro, testado)
 
 - **Previsto** = Σ por fornecedor ativo: `contractedCents ?? estimateCents ?? 0`
 - **Fechado** = Σ `contractedCents` de fornecedores fechados/parcialmente pagos/pagos
 - **Pago** = Σ `payments` com status `pago`
-- **Pendente** = Fechado − Pago
-- **Saldo restante** = Meta − Fechado
-- **% consumido** = Fechado ÷ Meta
-- **Parcelas restantes** (por fornecedor e global) = nº de payments `pendente`
-- **Vencimento próximo** = pendente com dueDate nos próximos 14 dias; **Atrasado** = pendente com dueDate < hoje (SP)
-- Status do fornecedor sugerido automaticamente: ao registrar pagamento, `fechado → parcialmente_pago → pago` conforme Pago ÷ Fechado.
+- **Pendente** = Fechado − Pago · **Saldo** = Meta − Fechado · **% consumido** = Fechado ÷ Meta
+- **Vencimento próximo** = pendente nos próximos 14 dias; **Atrasado** = pendente com vencimento < hoje (SP)
+- Status do fornecedor é recalculado a cada pagamento: `fechado → parcialmente_pago → pago`
+- Gerador de parcelas distribui o resto em centavos nas primeiras parcelas, para a soma fechar exata
+- Lembretes diários (`lib/domain/notifications.ts`) disparam em D-7, D-3, D-1, no dia e no dia seguinte
 
-## 4. Fluxos principais
+## 5. Fluxos principais
 
-1. **Primeiro uso**: abrir app → sem `settings` → onboarding (nomes, data, meta) → gera checklist do template → dashboard.
-2. **Contratar fornecedor**: criar em `pesquisando` com orçamento inicial → atualizar para `negociando` → fechar: informa valor fechado, data, forma de pagamento → cadastrar entrada + parcelas (gerador de parcelas: valor total, nº de parcelas, primeira data) → status `fechado`.
-3. **Pagar parcela**: dashboard/financeiro mostra vencimento → marcar como pago (data real) → totais e status do fornecedor atualizam automaticamente → toast de celebração.
-4. **Rotina mensal**: checklist do mês no dashboard → concluir/editar tarefas → adicionar tarefas próprias.
-5. **Ajuste de meta**: configurações → muda meta → barra e saldo refletem na hora.
+1. **Primeiro uso**: `/cadastro` (casal, data, meta) → conta + casamento + trial de 14 dias → checklist gerado → e-mail de boas-vindas → dashboard.
+2. **Convidar o par**: Ajustes → Acessos → e-mail → a pessoa recebe o link, escolhe a própria senha em `/convite` e entra.
+3. **Contratar fornecedor**: criar em `pesquisando` → `negociando` → fechar com valor e forma de pagamento → gerar entrada + parcelas → status vira `fechado`.
+4. **Pagar parcela**: marcar como pago (data real) → totais e status do fornecedor se atualizam.
+5. **Não esquecer vencimento**: o cron diário manda o resumo por e-mail; o casal controla isso em Ajustes → Notificações.
 
-## 5. Cortes de escopo do MVP (conscientes)
+## 6. Cortes de escopo conscientes
 
-- Anexos = links externos (sem upload de arquivos).
-- Sem módulo de convidados/RSVP (referência Joy fica para v2).
-- Sem auth/multiusuário — app local de uso pessoal (ver AGENTS.md).
-- Visão calendário = grid mensal próprio somente leitura com navegação, sem arrastar/soltar.
+- RSVP é registrado pelo casal — não existe link público para o convidado responder.
+- Cobrança é manual: o superadmin estende `subscriptionActiveUntil` após o pagamento; não há checkout no app.
+- Calendário é somente leitura (sem arrastar/soltar) e o quadro não tem drag-and-drop.
+- Sem mapa de mesas, sem importação em massa de convidados, sem PWA instalável.
