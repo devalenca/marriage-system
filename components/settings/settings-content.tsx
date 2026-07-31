@@ -9,6 +9,7 @@ import { CurrencyInput } from "@/components/currency-input";
 import { PageHeader } from "@/components/page-header";
 import { AccessCard } from "@/components/settings/access-card";
 import { AccountCard } from "@/components/settings/account-card";
+import { BackgroundCard } from "@/components/settings/background-card";
 import { FeedbackCard } from "@/components/settings/feedback-card";
 import { NotificationsCard } from "@/components/settings/notifications-card";
 import { ThemeCard } from "@/components/settings/theme-card";
@@ -64,7 +65,10 @@ export function SettingsContent() {
 				/>
 				<ChecklistCard hasWedding={wedding !== null} />
 				{wedding !== null ? (
-					<ThemeCard current={resolveTheme(wedding.theme ?? undefined)} />
+					<>
+						<ThemeCard current={resolveTheme(wedding.theme ?? undefined)} />
+						<BackgroundCard />
+					</>
 				) : null}
 				<AccountCard />
 				<AccessCard />

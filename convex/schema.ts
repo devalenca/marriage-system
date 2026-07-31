@@ -37,6 +37,8 @@ export default defineSchema({
 		...weddingFieldValidators,
 		subscriptionActiveUntil: v.optional(v.string()), // ISO yyyy-MM-dd
 		theme: v.optional(v.string()), // accent theme id (see lib/domain/themes)
+		// The couple's own background photo; missing = the shipped default.
+		backgroundStorageId: v.optional(v.id("_storage")),
 		termsAcceptedAt: v.optional(v.number()), // epoch ms, set at self-signup
 	}),
 
