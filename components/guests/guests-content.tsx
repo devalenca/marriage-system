@@ -14,9 +14,9 @@ import {
 	UserPlus,
 	X,
 } from "lucide-react";
-import Link from "next/link";
 import type * as React from "react";
 import { useMemo, useState } from "react";
+import { ButtonLink } from "@/components/button-link";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { GuestExportButton } from "@/components/guests/guest-export-button";
 import { GuestFormDialog } from "@/components/guests/guest-form-dialog";
@@ -139,14 +139,11 @@ export function GuestsContent() {
 				action={
 					<div className="flex flex-wrap items-center justify-end gap-2">
 						{hasAny ? <GuestExportButton invites={invites} /> : null}
-						<Button
-							variant="outline"
-							render={<Link href="/convidados/check-in" />}
-						>
+						<ButtonLink variant="outline" href="/convidados/check-in">
 							<CalendarCheck data-icon="inline-start" aria-hidden />
 							<span className="hidden sm:inline">Check-in do dia</span>
 							<span className="sm:hidden">Check-in</span>
-						</Button>
+						</ButtonLink>
 						<Button onClick={() => setCreateInviteOpen(true)}>
 							<Plus data-icon="inline-start" aria-hidden />
 							Novo convite

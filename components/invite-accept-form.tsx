@@ -2,9 +2,9 @@
 
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useAction, useQuery } from "convex/react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import { ButtonLink } from "@/components/button-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,9 +37,9 @@ export function InviteAcceptForm() {
 					Este convite não existe mais ou expirou. Peça um novo para quem
 					administra o casamento.
 				</p>
-				<Button variant="outline" render={<Link href="/login" />}>
+				<ButtonLink variant="outline" href="/login">
 					Ir para o login
-				</Button>
+				</ButtonLink>
 			</div>
 		);
 	}

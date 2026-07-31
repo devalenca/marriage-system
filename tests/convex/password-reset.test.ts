@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { api } from "../../convex/_generated/api";
 import { generateNumericCode } from "../../convex/lib/otp";
 import { stubAuthTokenEnv } from "./authEnv";
-import { setupUnauthenticatedTest } from "./helpers";
+import { codeFrom, setupUnauthenticatedTest, stubResend } from "./helpers";
 
 // Self-service password reset: the login page requests a numeric code by
 // email (Resend) and exchanges it plus a new password for a session.
@@ -10,26 +10,6 @@ import { setupUnauthenticatedTest } from "./helpers";
 const EMAIL = "casal@example.com";
 const OLD_PASSWORD = "senha-antiga-123";
 const NEW_PASSWORD = "senha-nova-456";
-
-/** Captures emails "sent" through the stubbed Resend API. */
-function stubResend() {
-	const sent: { to: string; subject: string; html: string }[] = [];
-	vi.stubEnv("RESEND_API_KEY", "re_test_123");
-	vi.stubGlobal(
-		"fetch",
-		vi.fn(async (_url: string, init: RequestInit) => {
-			sent.push(JSON.parse(String(init.body)));
-			return new Response(JSON.stringify({ id: "email_1" }), { status: 200 });
-		}),
-	);
-	return sent;
-}
-
-function codeFrom(html: string): string {
-	const match = html.match(/\b(\d{8})\b/);
-	if (!match?.[1]) throw new Error("no code found in email html");
-	return match[1];
-}
 
 beforeEach(() => {
 	stubAuthTokenEnv();

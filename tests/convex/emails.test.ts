@@ -1,23 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { api } from "../../convex/_generated/api";
 import { stubAuthTokenEnv } from "./authEnv";
-import { setupUnauthenticatedTest } from "./helpers";
+import { setupUnauthenticatedTest, stubResend } from "./helpers";
 
 // Welcome email: scheduled (fire-and-forget) right after a wedding is
 // created, for both the self-signup and the superadmin-provisioning paths.
-
-function stubResend() {
-	const sent: { to: string; subject: string; html: string }[] = [];
-	vi.stubEnv("RESEND_API_KEY", "re_test_123");
-	vi.stubGlobal(
-		"fetch",
-		vi.fn(async (_url: string, init: RequestInit) => {
-			sent.push(JSON.parse(String(init.body)));
-			return new Response(JSON.stringify({ id: "email_1" }), { status: 200 });
-		}),
-	);
-	return sent;
-}
 
 beforeEach(() => {
 	stubAuthTokenEnv();

@@ -3,8 +3,8 @@
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { ArrowLeft, Baby, Check, Search } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
+import { ButtonLink } from "@/components/button-link";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,10 +43,10 @@ export function CheckInContent() {
 				title="Check-in do dia"
 				subtitle={`${present} de ${expected} presentes`}
 				action={
-					<Button variant="outline" render={<Link href="/convidados" />}>
+					<ButtonLink variant="outline" href="/convidados">
 						<ArrowLeft data-icon="inline-start" aria-hidden />
 						Convidados
-					</Button>
+					</ButtonLink>
 				}
 			/>
 

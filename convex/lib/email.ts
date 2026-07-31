@@ -57,6 +57,9 @@ export async function sendEmail(
 			subject: message.subject,
 			html: message.html,
 		}),
+		// A hung connection would otherwise burn the whole action's wall clock —
+		// in the daily cron that costs every couple after this one their e-mail.
+		signal: AbortSignal.timeout(15_000),
 	});
 	if (!response.ok) {
 		const body = await response.text();

@@ -34,9 +34,9 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 		inactiveDurationMs: 90 * DAY_MS,
 	},
 	callbacks: {
-		// Single gate for account creation: the admin creates accounts from
-		// Ajustes; the only self-service path is the first-run bootstrap of
-		// the admin account itself (empty users table + AUTH_ADMIN_EMAIL).
+		// Single gate for account creation (see lib/userCreation): public
+		// signup, an invited e-mail, an admin acting on behalf of someone, or
+		// the first-run bootstrap of the superadmin account itself.
 		async createOrUpdateUser(ctx, args) {
 			if (args.existingUserId !== null) {
 				return args.existingUserId;
@@ -45,17 +45,15 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 			const email = String(args.profile.email ?? "")
 				.trim()
 				.toLowerCase();
-			// A live invitation lets the invited person create their account even
-			// when public self-signup is disabled.
-			const invitation = await mutationCtx.db
-				.query("invitations")
-				.withIndex("by_email", (q) => q.eq("email", email))
-				.first();
+			// `access.acceptInvitation` sets this after verifying the link token;
+			// the public sign-up path can't forge it, because the Password
+			// provider's profile() above only ever returns an e-mail.
+			const viaInvitation = args.profile.viaInvitation === true;
 			const allowed = canCreateUser({
 				callerIsSuperadmin: await viewerIsSuperadmin(mutationCtx),
 				callerIsWeddingAdmin: await viewerIsWeddingAdmin(mutationCtx),
 				selfSignupEnabled: isSelfSignupEnabled(),
-				hasInvitation: invitation !== null && invitation.expiresAt > Date.now(),
+				viaInvitation,
 				anyUserExists: (await mutationCtx.db.query("users").first()) !== null,
 				email,
 				superadminEmails: superadminEmails(),

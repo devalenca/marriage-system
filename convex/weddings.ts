@@ -16,6 +16,7 @@ import {
 	getViewer,
 	isSuperadminEmail,
 	requireWeddingAdmin,
+	superadminEmails,
 	superadminMutation,
 	superadminQuery,
 	weddingAdminMutation,
@@ -166,6 +167,8 @@ export const subscriptionStatus = weddingQuery({
 			...computeStatus(wedding?.subscriptionActiveUntil, todayInSaoPaulo()),
 			isAdmin: ctx.role === "admin",
 			isSuperadmin: ctx.isSuperadmin,
+			// Who to write to for a renewal — the banner is useless without it.
+			supportEmail: superadminEmails()[0] ?? null,
 		};
 	},
 });

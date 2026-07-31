@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
+import { superadminEmails } from "./lib/auth";
 import { appBaseUrl, escapeHtml, renderEmail, sendEmail } from "./lib/email";
 
 // Fire-and-forget transactional emails, scheduled from mutations with
@@ -14,10 +15,7 @@ export const sendFeedbackAlert = internalAction({
 	},
 	handler: async (_ctx, { kind, message, fromEmail, coupleNames }) => {
 		// The superadmin hears about new feedback without opening /admin.
-		const to = (process.env.AUTH_ADMIN_EMAIL ?? "")
-			.split(/[,;]/)[0]
-			?.trim()
-			.toLowerCase();
+		const to = superadminEmails()[0];
 		if (!to) return;
 		await sendEmail({
 			to,

@@ -74,15 +74,6 @@ export const viewer = authedQuery({
 	},
 });
 
-/**
- * Who to contact for renewals/support — the first configured superadmin.
- * Surfaced on the subscription banner so an expired couple has a way out.
- */
-export const supportContact = authedQuery({
-	args: {},
-	handler: async () => superadminEmails()[0] ?? null,
-});
-
 // Actions run without direct db access, so the superadmin gate and lookups go
 // through internal queries; account writes go through Convex Auth helpers.
 
@@ -101,8 +92,8 @@ export const emailById = internalQuery({
 });
 
 /**
- * Superadmin-only: resets any account's password (e.g. a wedding admin who
- * is locked out — there is no self-service e-mail reset yet).
+ * Superadmin-only: resets any account's password. Last-resort support path —
+ * couples recover on their own with "esqueci minha senha" on the login page.
  */
 export const resetPassword = action({
 	args: { id: v.id("users"), password: v.string() },

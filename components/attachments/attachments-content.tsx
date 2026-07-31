@@ -6,17 +6,8 @@ import Link from "next/link";
 import type * as React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PageHeader } from "@/components/page-header";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -237,30 +228,15 @@ export function AttachmentsContent() {
 				</ul>
 			)}
 
-			<AlertDialog
+			<ConfirmDialog
 				open={pendingDelete !== null}
 				onOpenChange={(open) => {
 					if (!open) setPendingDelete(null);
 				}}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle className="font-display">
-							Excluir anexo?
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{pendingDelete?.name} será apagado em definitivo. O fornecedor e o
-							pagamento continuam como estão.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>Cancelar</AlertDialogCancel>
-						<AlertDialogAction variant="destructive" onClick={handleDelete}>
-							Excluir
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+				title="Excluir anexo?"
+				description={`${pendingDelete?.name ?? "O arquivo"} será apagado em definitivo. O fornecedor e o pagamento continuam como estão.`}
+				onConfirm={handleDelete}
+			/>
 		</div>
 	);
 }

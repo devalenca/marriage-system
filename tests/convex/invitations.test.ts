@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { api } from "../../convex/_generated/api";
 import { stubAuthTokenEnv } from "./authEnv";
-import { setupUnauthenticatedTest } from "./helpers";
+import { setupUnauthenticatedTest, stubResend, tokenFrom } from "./helpers";
 
 // Real member invitations: the wedding admin types only an e-mail; the
 // invited person receives a link and chooses their own password.
@@ -9,25 +9,6 @@ import { setupUnauthenticatedTest } from "./helpers";
 const ADMIN_EMAIL = "ana@example.com";
 const OTHER_ADMIN_EMAIL = "carla@example.com";
 const INVITED_EMAIL = "bruno@example.com";
-
-function stubResend() {
-	const sent: { to: string; subject: string; html: string }[] = [];
-	vi.stubEnv("RESEND_API_KEY", "re_test_123");
-	vi.stubGlobal(
-		"fetch",
-		vi.fn(async (_url: string, init: RequestInit) => {
-			sent.push(JSON.parse(String(init.body)));
-			return new Response(JSON.stringify({ id: "email_1" }), { status: 200 });
-		}),
-	);
-	return sent;
-}
-
-function tokenFrom(html: string): string {
-	const match = html.match(/[?&]token=([A-Za-z0-9_-]+)/);
-	if (!match?.[1]) throw new Error("no token link found in email html");
-	return match[1];
-}
 
 async function setupInviteTest() {
 	const t = setupUnauthenticatedTest();
@@ -219,6 +200,34 @@ describe("access.acceptInvitation", () => {
 				password: "senha-do-bruno-123",
 			}),
 		).resolves.not.toThrow();
+	});
+
+	test("knowing an invited address does not let a stranger claim it", async () => {
+		const sent = stubResend();
+		vi.stubEnv("AUTH_SIGNUP_DISABLED", "true");
+		const { asAdminA, t } = await setupInviteTest();
+		await asAdminA.action(api.access.inviteMember, { email: INVITED_EMAIL });
+
+		// No token — just the address. The account-creation gate must refuse,
+		// otherwise the real invitee is locked out of their own invitation.
+		await expect(
+			t.action(api.auth.signIn, {
+				provider: "password",
+				params: {
+					email: INVITED_EMAIL,
+					password: "senha-do-invasor-123",
+					flow: "signUp",
+				},
+			}),
+		).rejects.toThrowError();
+
+		// The genuine link still works.
+		await expect(
+			t.action(api.access.acceptInvitation, {
+				token: tokenFrom(sent.at(-1)?.html ?? ""),
+				password: "senha-do-bruno-123",
+			}),
+		).resolves.toMatchObject({ email: INVITED_EMAIL });
 	});
 
 	test("rejects an unknown token", async () => {

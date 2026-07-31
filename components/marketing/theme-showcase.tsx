@@ -51,8 +51,8 @@ export function ThemeShowcase() {
 									)}
 								>
 									<span
-										className="flex size-5 items-center justify-center rounded-full ring-1 ring-black/10"
-										style={{ backgroundColor: option.swatch }}
+										data-wedding-theme={option.id}
+										className="flex size-5 items-center justify-center rounded-full bg-primary ring-1 ring-black/10"
 									>
 										{selected ? (
 											<Check className="size-3.5 text-white" aria-hidden />

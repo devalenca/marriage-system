@@ -1,23 +1,10 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { api, internal } from "../../convex/_generated/api";
 import { addDaysISO, todayInSaoPaulo } from "../../lib/domain/dates";
-import { setupWeddingScopedTest } from "./helpers";
+import { setupWeddingScopedTest, stubResend } from "./helpers";
 
 // The daily reminder cron: payment digests on nudge days, subscription
 // expiry warnings to admins, both honoring per-user opt-outs.
-
-function stubResend() {
-	const sent: { to: string; subject: string; html: string }[] = [];
-	vi.stubEnv("RESEND_API_KEY", "re_test_123");
-	vi.stubGlobal(
-		"fetch",
-		vi.fn(async (_url: string, init: RequestInit) => {
-			sent.push(JSON.parse(String(init.body)));
-			return new Response(JSON.stringify({ id: "email_1" }), { status: 200 });
-		}),
-	);
-	return sent;
-}
 
 afterEach(() => {
 	vi.unstubAllEnvs();

@@ -16,6 +16,8 @@ import {
 	assertValidPassword,
 	normalizeEmail,
 	PASSWORD_PROVIDER,
+	passwordAccountByEmail,
+	renamePasswordAccount,
 } from "./lib/accounts";
 import { getViewer, isSuperadminEmail } from "./lib/auth";
 import { escapeHtml, renderEmail, sendEmail } from "./lib/email";
@@ -161,27 +163,14 @@ export const applyEmailChange = internalMutation({
 			throw new ConvexError("Código inválido ou expirado");
 		}
 		// Re-check the address is still free — someone may have claimed it
-		// between the request and the confirmation.
-		const taken = (await ctx.db.query("users").collect()).some(
-			(u) => u.email === request.newEmail && u._id !== userId,
-		);
-		if (taken) {
+		// between the request and the confirmation. The credential row is the
+		// constraint that matters: a duplicate there breaks sign-in for the
+		// address entirely (Convex Auth resolves it with .unique()).
+		const existing = await passwordAccountByEmail(ctx, request.newEmail);
+		if (existing !== null && existing.userId !== userId) {
 			throw new ConvexError("Já existe um acesso com esse e-mail");
 		}
-		// The e-mail lives in two places and both must move together: the user
-		// doc (what the app shows) and the credential id (what sign-in uses).
-		await ctx.db.patch(userId, { email: request.newEmail });
-		const account = await ctx.db
-			.query("authAccounts")
-			.withIndex("userIdAndProvider", (q) =>
-				q.eq("userId", userId).eq("provider", PASSWORD_PROVIDER),
-			)
-			.unique();
-		if (account !== null) {
-			await ctx.db.patch(account._id, {
-				providerAccountId: request.newEmail,
-			});
-		}
+		await renamePasswordAccount(ctx, userId, request.newEmail);
 		await ctx.db.delete(request._id);
 	},
 });

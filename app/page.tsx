@@ -9,11 +9,10 @@ import {
 	Wallet,
 } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ButtonLink } from "@/components/button-link";
 import { CockpitPreview } from "@/components/marketing/cockpit-preview";
 import { LandingFooter } from "@/components/marketing/landing-footer";
 import { ThemeShowcase } from "@/components/marketing/theme-showcase";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export const metadata: Metadata = {
@@ -32,20 +31,12 @@ export default function LandingPage() {
 					Nosso Casamento
 				</span>
 				<div className="flex items-center gap-1.5">
-					<Button
-						variant="ghost"
-						className="h-10 px-4"
-						render={<Link href="/login" />}
-					>
+					<ButtonLink variant="ghost" className="h-10 px-4" href="/login">
 						Entrar
-					</Button>
-					<Button
-						size="lg"
-						className="h-10 px-5"
-						render={<Link href="/cadastro" />}
-					>
+					</ButtonLink>
+					<ButtonLink size="lg" className="h-10 px-5" href="/cadastro">
 						Criar conta
-					</Button>
+					</ButtonLink>
 				</div>
 			</header>
 
@@ -67,22 +58,22 @@ export default function LandingPage() {
 						perder um vencimento.
 					</p>
 					<div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-						<Button
+						<ButtonLink
 							size="lg"
 							className="h-12 px-6 text-base"
-							render={<Link href="/cadastro" />}
+							href="/cadastro"
 						>
 							Criar conta
 							<ArrowRight className="size-4" />
-						</Button>
-						<Button
+						</ButtonLink>
+						<ButtonLink
 							variant="outline"
 							size="lg"
 							className="h-12 px-6 text-base"
-							render={<Link href="/login" />}
+							href="/login"
 						>
 							Entrar
-						</Button>
+						</ButtonLink>
 					</div>
 					<p className="mt-4 text-sm text-muted-foreground">
 						Comece com{" "}
@@ -286,22 +277,22 @@ export default function LandingPage() {
 							casamento.
 						</p>
 						<div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-							<Button
+							<ButtonLink
 								size="lg"
 								className="h-12 px-7 text-base"
-								render={<Link href="/cadastro" />}
+								href="/cadastro"
 							>
 								Criar conta
 								<ArrowRight className="size-4" />
-							</Button>
-							<Button
+							</ButtonLink>
+							<ButtonLink
 								variant="ghost"
 								size="lg"
 								className="h-12 px-6 text-base text-white hover:bg-white/15 hover:text-white"
-								render={<Link href="/login" />}
+								href="/login"
 							>
 								Já tenho conta
-							</Button>
+							</ButtonLink>
 						</div>
 					</div>
 				</Card>

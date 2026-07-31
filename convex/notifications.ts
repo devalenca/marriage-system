@@ -1,13 +1,19 @@
 import { ConvexError, v } from "convex/values";
-import { formatDateBR, todayInSaoPaulo } from "../lib/domain/dates";
+import {
+	daysBetween,
+	formatDateBR,
+	todayInSaoPaulo,
+} from "../lib/domain/dates";
 import { formatBRL } from "../lib/domain/money";
 import {
+	DIGEST_WINDOW_DAYS,
 	digestPayments,
 	type ReminderPayment,
 	shouldSendPaymentDigest,
 	subscriptionReminderDaysLeft,
 } from "../lib/domain/notifications";
 import { internal } from "./_generated/api";
+import type { Doc } from "./_generated/dataModel";
 import { internalAction, internalQuery } from "./_generated/server";
 import {
 	authedMutation,
@@ -34,20 +40,26 @@ export type WeddingReminderData = {
 	pendingPayments: ReminderPayment[];
 };
 
+/** Stored switches for `userId`, with the "everything on" defaults applied. */
+function withPrefDefaults(row: Doc<"notificationPrefs"> | null) {
+	return {
+		paymentReminders: row?.paymentReminders ?? true,
+		subscriptionReminders: row?.subscriptionReminders ?? true,
+	};
+}
+
 /** The caller's own reminder switches (defaults: everything on). */
 export const myPrefs = authedQuery({
 	args: {},
 	handler: async (ctx) => {
 		const viewer = await getViewer(ctx);
 		if (viewer === null) throw new ConvexError("Não autenticado");
-		const row = await ctx.db
-			.query("notificationPrefs")
-			.withIndex("by_user", (q) => q.eq("userId", viewer._id))
-			.unique();
-		return {
-			paymentReminders: row?.paymentReminders ?? true,
-			subscriptionReminders: row?.subscriptionReminders ?? true,
-		};
+		return withPrefDefaults(
+			await ctx.db
+				.query("notificationPrefs")
+				.withIndex("by_user", (q) => q.eq("userId", viewer._id))
+				.unique(),
+		);
 	},
 });
 
@@ -79,51 +91,65 @@ export const savePrefs = authedMutation({
 export const dailyReminderData = internalQuery({
 	args: {},
 	handler: async (ctx): Promise<WeddingReminderData[]> => {
+		const today = todayInSaoPaulo();
 		const weddings = await ctx.db.query("weddings").collect();
-		const result: WeddingReminderData[] = [];
-		for (const wedding of weddings) {
-			const memberships = await ctx.db
-				.query("memberships")
-				.withIndex("by_wedding_user", (q) => q.eq("weddingId", wedding._id))
-				.collect();
-			const recipients: ReminderRecipient[] = [];
-			for (const membership of memberships) {
-				const user = await ctx.db.get(membership.userId);
-				if (!user?.email) continue;
-				const prefs = await ctx.db
-					.query("notificationPrefs")
-					.withIndex("by_user", (q) => q.eq("userId", membership.userId))
-					.unique();
-				recipients.push({
-					email: user.email,
-					role: membership.role,
-					paymentReminders: prefs?.paymentReminders ?? true,
-					subscriptionReminders: prefs?.subscriptionReminders ?? true,
-				});
-			}
-			const payments = await ctx.db
-				.query("payments")
-				.withIndex("by_wedding", (q) => q.eq("weddingId", wedding._id))
-				.collect();
-			const pendingPayments: ReminderPayment[] = [];
-			for (const payment of payments) {
-				if (payment.status !== "pendente") continue;
-				const vendor = await ctx.db.get(payment.vendorId);
-				pendingPayments.push({
-					description: payment.description,
-					vendorName: vendor?.name ?? "Fornecedor",
-					amountCents: payment.amountCents,
-					dueDate: payment.dueDate,
-				});
-			}
-			result.push({
-				coupleNames: wedding.coupleNames,
-				subscriptionActiveUntil: wedding.subscriptionActiveUntil,
-				recipients,
-				pendingPayments,
-			});
-		}
-		return result;
+		return await Promise.all(
+			weddings.map(async (wedding) => {
+				const [memberships, payments] = await Promise.all([
+					ctx.db
+						.query("memberships")
+						.withIndex("by_wedding_user", (q) => q.eq("weddingId", wedding._id))
+						.collect(),
+					ctx.db
+						.query("payments")
+						.withIndex("by_wedding", (q) => q.eq("weddingId", wedding._id))
+						.collect(),
+				]);
+				const recipients = await Promise.all(
+					memberships.map(async (membership) => {
+						const [user, prefs] = await Promise.all([
+							ctx.db.get(membership.userId),
+							ctx.db
+								.query("notificationPrefs")
+								.withIndex("by_user", (q) => q.eq("userId", membership.userId))
+								.unique(),
+						]);
+						if (!user?.email) return null;
+						return {
+							email: user.email,
+							role: membership.role,
+							...withPrefDefaults(prefs),
+						};
+					}),
+				);
+				// Only payments the digest can actually mention are worth naming a
+				// vendor for — everything overdue plus the next DIGEST_WINDOW_DAYS.
+				const relevant = payments.filter(
+					(payment) =>
+						payment.status === "pendente" &&
+						daysBetween(today, payment.dueDate) <= DIGEST_WINDOW_DAYS,
+				);
+				const vendorNames = new Map(
+					(
+						await ctx.db
+							.query("vendors")
+							.withIndex("by_wedding", (q) => q.eq("weddingId", wedding._id))
+							.collect()
+					).map((vendor) => [vendor._id, vendor.name] as const),
+				);
+				return {
+					coupleNames: wedding.coupleNames,
+					subscriptionActiveUntil: wedding.subscriptionActiveUntil,
+					recipients: recipients.filter((r) => r !== null),
+					pendingPayments: relevant.map((payment) => ({
+						description: payment.description,
+						vendorName: vendorNames.get(payment.vendorId) ?? "Fornecedor",
+						amountCents: payment.amountCents,
+						dueDate: payment.dueDate,
+					})),
+				};
+			}),
+		);
 	},
 });
 
@@ -147,6 +173,20 @@ export const runDailyReminders = internalAction({
 		);
 		const supportEmail = superadminEmails()[0];
 		let sentCount = 0;
+		const failed: string[] = [];
+
+		// Sends stay sequential (Resend's free tier allows ~2 req/s) and each
+		// one is isolated: a single bad address must not cost every other
+		// couple their reminder, and the cron is not retried.
+		async function deliver(to: string, subject: string, html: string) {
+			try {
+				await sendEmail({ to, subject, html });
+				sentCount++;
+			} catch (error) {
+				failed.push(to);
+				console.error(`[reminders] falha ao enviar para ${to}`, error);
+			}
+		}
 
 		for (const wedding of weddings) {
 			if (shouldSendPaymentDigest(wedding.pendingPayments, today)) {
@@ -173,12 +213,11 @@ export const runDailyReminders = internalAction({
 				});
 				for (const recipient of wedding.recipients) {
 					if (!recipient.paymentReminders) continue;
-					await sendEmail({
-						to: recipient.email,
-						subject: "Vencimentos chegando — Nosso Casamento",
+					await deliver(
+						recipient.email,
+						"Vencimentos chegando — Nosso Casamento",
 						html,
-					});
-					sentCount++;
+					);
 				}
 			}
 
@@ -200,15 +239,16 @@ export const runDailyReminders = internalAction({
 					if (recipient.role !== "admin" || !recipient.subscriptionReminders) {
 						continue;
 					}
-					await sendEmail({
-						to: recipient.email,
-						subject: "Sua assinatura está chegando ao fim — Nosso Casamento",
+					await deliver(
+						recipient.email,
+						"Sua assinatura está chegando ao fim — Nosso Casamento",
 						html,
-					});
-					sentCount++;
+					);
 				}
 			}
 		}
-		return { sentCount };
+		// Surfaced in the Convex dashboard's cron history, so a silent day is
+		// visible without digging through logs.
+		return { sentCount, failed };
 	},
 });

@@ -63,8 +63,8 @@ export function ThemeCard({ current }: { current: string }) {
 									)}
 								>
 									<span
-										className="flex size-6 items-center justify-center rounded-full ring-1 ring-black/10"
-										style={{ backgroundColor: theme.swatch }}
+										data-wedding-theme={theme.id}
+										className="flex size-6 items-center justify-center rounded-full bg-primary ring-1 ring-black/10"
 									>
 										{selected ? (
 											<Check className="size-4 text-white" aria-hidden />

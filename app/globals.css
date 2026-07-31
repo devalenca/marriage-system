@@ -117,9 +117,16 @@
 	--sidebar-ring: var(--ring);
 }
 
-/* Per-wedding accent themes (see lib/domain/themes). "oliva" is the default
-   above; each block only restates the three raw parts — everything else
-   follows from them. */
+/* Per-wedding accent themes (see lib/domain/themes). Each block only restates
+   the three raw parts — everything else follows from them. Oliva repeats the
+   :root default on purpose: a scoped preview must carry its own hue, not
+   inherit whatever its ancestor is wearing. */
+[data-wedding-theme="oliva"] {
+	--theme-hue: 142;
+	--theme-chroma: 0.075;
+	--theme-l: 0.45;
+}
+
 [data-wedding-theme="terracota"] {
 	--theme-hue: 42;
 	--theme-chroma: 0.11;
@@ -179,9 +186,7 @@
 	--sidebar-foreground: oklch(0.94 0.008 85);
 	--sidebar-primary: var(--primary);
 	--sidebar-primary-foreground: oklch(0.22 0.008 70);
-	--sidebar-accent: oklch(
-		0.33 calc(var(--theme-chroma) * 0.35) var(--theme-hue)
-	);
+	--sidebar-accent: var(--accent);
 	--sidebar-accent-foreground: oklch(0.9 0.03 85);
 	--sidebar-border: oklch(1 0 0 / 12%);
 	--sidebar-ring: var(--primary);
