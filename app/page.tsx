@@ -102,7 +102,7 @@ export default function LandingPage() {
 
 				{/* Frosted paper backing keeps the copy readable over the field photo
 				    (AA) while staying airy rather than a hard-edged card. */}
-				<div className="landing-glass rounded-[2.25rem] bg-card/55 p-7 ring-1 ring-border backdrop-blur-2xl sm:p-9">
+				<div className="landing-glass rounded-[2.25rem] bg-card/55 p-7 ring-1 ring-border backdrop-blur-2xl sm:p-9 dark:bg-card/85">
 					<span
 						data-hero-item
 						className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5 text-sm font-medium text-primary ring-1 ring-primary/15"
@@ -187,7 +187,7 @@ export default function LandingPage() {
 					{PAIN_POINTS.map((pain) => (
 						<li
 							key={pain.title}
-							className="landing-tile flex gap-4 rounded-2xl bg-card/55 p-5 ring-1 ring-border backdrop-blur-xl"
+							className="landing-tile flex gap-4 rounded-2xl bg-card/55 p-5 ring-1 ring-border backdrop-blur-xl dark:bg-card/80"
 						>
 							<span
 								aria-hidden

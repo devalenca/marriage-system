@@ -327,21 +327,38 @@
 		z-index: 1;
 	}
 
-	/* Dark: the field photo stays, dimmed to a night wash so the glass
-	   surfaces keep their depth without blinding anyone at 1am. */
+	/* Dark mode drops the field photo from the page ground.
+	   A daylight pasture crushed to 42% brightness and then buried under a
+	   90% scrim stops reading as a photograph — it just leaves a muddy green
+	   haze, and every translucent panel above it looks smeared. Instead the
+	   ground becomes a deep, theme-tinted gradient; the hero's blobs carry the
+	   ambience, and the photo still appears where it is meant to be looked at
+	   (the closing band and the in-app preview). */
 	.dark body {
-		background: oklch(0.2 0.02 var(--theme-hue));
+		background: oklch(0.17 0.018 var(--theme-hue));
 	}
 
 	.dark body::before {
-		filter: saturate(0.7) brightness(0.42);
+		background-image:
+			radial-gradient(
+				78% 52% at 12% -5%,
+				oklch(0.34 0.055 var(--theme-hue) / 0.5),
+				transparent 62%
+			),
+			radial-gradient(
+				64% 48% at 105% 12%,
+				oklch(0.3 0.05 var(--theme-hue) / 0.32),
+				transparent 66%
+			);
+		filter: none;
+		transform: none;
 	}
 
 	.dark body::after {
 		background: linear-gradient(
 			180deg,
-			oklch(0.17 0.03 var(--theme-hue) / 0.82),
-			oklch(0.13 0.02 var(--theme-hue) / 0.92)
+			oklch(0.16 0.02 var(--theme-hue) / 0.2),
+			oklch(0.11 0.015 var(--theme-hue) / 0.55)
 		);
 		opacity: 1;
 	}

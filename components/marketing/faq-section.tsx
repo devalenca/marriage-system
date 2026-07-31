@@ -63,7 +63,7 @@ export function FaqSection() {
 				</div>
 				<div
 					data-reveal
-					className="landing-glass rounded-[2rem] bg-card/70 px-6 py-2 ring-1 ring-border backdrop-blur-2xl sm:px-8"
+					className="landing-glass rounded-[2rem] bg-card/70 px-6 py-2 ring-1 ring-border backdrop-blur-2xl sm:px-8 dark:bg-card/85"
 				>
 					<Accordion>
 						{FAQ_ITEMS.map((item) => (

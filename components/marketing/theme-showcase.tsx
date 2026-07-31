@@ -70,7 +70,7 @@ export function ThemeShowcase() {
 					data-wedding-theme={theme}
 					data-reveal
 					data-parallax="4"
-					className="landing-glass rounded-[2rem] bg-card/70 p-5 ring-1 ring-border backdrop-blur-2xl sm:p-6"
+					className="landing-glass rounded-[2rem] bg-card/70 p-5 ring-1 ring-border backdrop-blur-2xl sm:p-6 dark:bg-card/90"
 				>
 					<div className="flex items-center gap-3">
 						<span className="flex size-10 items-center justify-center rounded-[1.1rem] bg-primary/12 text-primary ring-1 ring-primary/15">
