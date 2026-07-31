@@ -170,8 +170,9 @@ export function GuestsContent() {
 			) : null}
 
 			{hasAny ? (
-				<div className="mb-4 flex flex-col gap-2">
-					<div className="relative">
+				// Stacked on a phone, one line from sm up.
+				<div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+					<div className="relative sm:flex-1">
 						<Search
 							className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
 							aria-hidden
@@ -181,10 +182,10 @@ export function GuestsContent() {
 							placeholder="Buscar por nome..."
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
-							className="pl-9"
+							className="h-11 pl-9 sm:h-9"
 						/>
 					</div>
-					<div className="flex gap-2">
+					<div className="flex flex-wrap gap-2 sm:shrink-0">
 						<Select
 							value={view}
 							onValueChange={(v) => setView(v as "convite" | "convidado")}
@@ -192,7 +193,7 @@ export function GuestsContent() {
 						>
 							<SelectTrigger
 								aria-label="Modo de visualização"
-								className="flex-1"
+								className="min-h-11 flex-1 sm:min-h-9 sm:w-40 sm:flex-none"
 								size="sm"
 							>
 								<SelectValue />
@@ -210,7 +211,7 @@ export function GuestsContent() {
 							>
 								<SelectTrigger
 									aria-label="Filtrar por grupo"
-									className="flex-1"
+									className="min-h-11 flex-1 sm:min-h-9 sm:w-40 sm:flex-none"
 									size="sm"
 								>
 									<SelectValue />
@@ -233,7 +234,7 @@ export function GuestsContent() {
 							>
 								<SelectTrigger
 									aria-label="Filtrar por status"
-									className="flex-1"
+									className="min-h-11 flex-1 sm:min-h-9 sm:w-40 sm:flex-none"
 									size="sm"
 								>
 									<SelectValue />

@@ -86,8 +86,9 @@ export function AttachmentsContent() {
 				}
 			/>
 
-			<div className="mb-4 flex flex-col gap-2">
-				<div className="relative">
+			{/* Stacked on a phone, one line from sm up. */}
+			<div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+				<div className="relative sm:flex-1">
 					<Search
 						className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
 						aria-hidden
@@ -97,7 +98,7 @@ export function AttachmentsContent() {
 						placeholder="Buscar por nome, fornecedor..."
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
-						className="pl-9"
+						className="h-11 pl-9 sm:h-9"
 					/>
 				</div>
 				<Select
@@ -107,7 +108,7 @@ export function AttachmentsContent() {
 				>
 					<SelectTrigger
 						aria-label="Filtrar por tipo"
-						className="w-full"
+						className="min-h-11 w-full sm:min-h-9 sm:w-44 sm:shrink-0"
 						size="sm"
 					>
 						<SelectValue />

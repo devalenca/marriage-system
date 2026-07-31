@@ -20,6 +20,13 @@ export const WEDDING_THEMES: readonly WeddingTheme[] = [
 /** The default theme id when a wedding has not chosen one. */
 export const DEFAULT_THEME = "oliva";
 
+/**
+ * Where the browser remembers the last resolved theme, so the accent can be
+ * painted before the backend answers (see components/theme-bootstrap.tsx).
+ * The bootstrap script hardcodes this same key — it runs before any module.
+ */
+export const THEME_STORAGE_KEY = "wedding-theme";
+
 export function isWeddingTheme(id: string | undefined): boolean {
 	return WEDDING_THEMES.some((theme) => theme.id === id);
 }

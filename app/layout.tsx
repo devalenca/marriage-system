@@ -3,6 +3,7 @@ import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppThemeProvider } from "@/components/app-theme-provider";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
+import { ThemeBootstrap } from "@/components/theme-bootstrap";
 import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
@@ -44,6 +45,7 @@ export default function RootLayout({
 			className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
 		>
 			<body className="min-h-full flex flex-col">
+				<ThemeBootstrap />
 				<AppThemeProvider>
 					<ConvexClientProvider>{children}</ConvexClientProvider>
 					<Toaster position="top-center" richColors />
