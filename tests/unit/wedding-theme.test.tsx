@@ -103,6 +103,22 @@ describe("WeddingTheme", () => {
 		).toBe("");
 	});
 
+	it("hands the palette back when it leaves the signed-in shell", async () => {
+		await mockQueries({
+			identity: { coupleNames: "Ana & Bruno", theme: "oceano" },
+		});
+
+		const { unmount } = render(<WeddingTheme />);
+		expect(document.documentElement.getAttribute("data-wedding-theme")).toBe(
+			"oceano",
+		);
+		unmount();
+
+		expect(
+			document.documentElement.getAttribute("data-wedding-theme"),
+		).toBeNull();
+	});
+
 	it("applies the couple's own photo", async () => {
 		await mockQueries({
 			identity: { coupleNames: "Ana & Bruno", theme: "oliva" },

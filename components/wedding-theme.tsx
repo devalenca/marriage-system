@@ -30,6 +30,15 @@ export function WeddingTheme() {
 	}, [identity]);
 
 	useEffect(() => {
+		// This component only lives inside the signed-in shell, so leaving it
+		// (signing out, or landing on a public page) must hand the palette
+		// back to the product's own.
+		return () => {
+			document.documentElement.removeAttribute("data-wedding-theme");
+		};
+	}, []);
+
+	useEffect(() => {
 		const root = document.documentElement;
 		if (typeof backgroundUrl === "string" && backgroundUrl.length > 0) {
 			root.style.setProperty("--app-background", `url("${backgroundUrl}")`);

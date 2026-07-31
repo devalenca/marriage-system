@@ -4,6 +4,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { LogOut } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { forgetWeddingTheme } from "@/lib/theme-storage";
 
 export function SignOutButton() {
 	const { signOut } = useAuthActions();
@@ -13,6 +14,7 @@ export function SignOutButton() {
 		setSigningOut(true);
 		try {
 			await signOut();
+			forgetWeddingTheme();
 			// Full-page navigation: crossing the auth boundary must drop all
 			// client state (soft router navigation races the auth teardown).
 			window.location.assign("/login");

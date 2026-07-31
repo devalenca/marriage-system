@@ -38,6 +38,7 @@ import type { Doc } from "@/convex/_generated/dataModel";
 import { isValidISODate, isValidISOTime } from "@/lib/domain/dates";
 import { resolveTheme } from "@/lib/domain/themes";
 import { notifyError } from "@/lib/notify";
+import { forgetWeddingTheme } from "@/lib/theme-storage";
 
 export function SettingsContent() {
 	const wedding = useQuery(api.weddings.getCurrent, {});
@@ -135,6 +136,7 @@ function DangerZoneCard() {
 		try {
 			await deleteWedding({});
 			await signOut();
+			forgetWeddingTheme();
 			// Hard navigation: the account is gone, so a full teardown avoids the
 			// now-invalid wedding queries racing a soft client transition.
 			window.location.assign("/");
