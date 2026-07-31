@@ -26,10 +26,17 @@ Next.js (App Router) + TypeScript (strict) + Convex (anonymous local backend) + 
 - **Persistent sessions**: cookie and session last up to 365 days (90-day inactivity window), refreshed automatically.
 - **Deployment env vars**: `JWT_PRIVATE_KEY` + `JWKS` (generate with `node scripts/generate-auth-keys.mjs <outDir>`, then `npx convex env set -- NAME "$(cat file)"` — never let a shell eat the JSON quotes), `SITE_URL` (also the base for e-mailed links), `AUTH_ADMIN_EMAIL`, `AUTH_ADMIN_PASSWORD` (8+ chars; seeds the admin account).
 
-## E-mail (Resend)
+## E-mail
 
-- `convex/lib/email.ts` posts to the Resend HTTP API — no SDK. Without `RESEND_API_KEY` every send is a logged no-op, so local dev and tests never need a key (reset codes are printed to the backend log instead).
-- Env vars on the **Convex** deployment (not Vercel): `RESEND_API_KEY`, `EMAIL_FROM` (verified sender, e.g. `Nosso Casamento <contato@dominio.com.br>`; falls back to Resend's test sender, which only delivers to the account owner).
+`convex/lib/email.ts` owns templates and transport choice; whichever credentials the **Convex** deployment carries decides how a message leaves.
+
+- **Relay** (`EMAIL_RELAY_SECRET`) — the current setup: a personal mailbox, which needs no domain and delivers to anyone. SMTP needs a TCP socket and Convex's runtime only speaks HTTP, so `sendEmail` POSTs the message to `${SITE_URL}/api/email` with the secret as a bearer token, and `app/api/email/route.ts` (Node runtime, nodemailer) does the SMTP. **Do not turn this into a `"use node"` Convex action**: the anonymous local backend refuses to deploy Node actions unless Node 18–24 is installed, which breaks `npm run dev` outright on a machine running a newer Node.
+  - On the **web app** (`.env.local` / Vercel): `EMAIL_RELAY_SECRET`, `SMTP_USER`, `SMTP_PASSWORD`, optional `EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT` (defaults `smtp.gmail.com`/`465`; 587 switches to STARTTLS). Gmail requires an **app password**, not the account password, and caps a free account at ~500 messages/day.
+  - On **Convex**: the same `EMAIL_RELAY_SECRET` plus `SITE_URL` pointing at the app's public URL (which must not sit behind Vercel deployment protection, or the relay call gets an auth wall instead of the route).
+- **Resend** (`RESEND_API_KEY`) — a direct HTTP call, no SDK. Wins over the relay when both are set: it is where this goes once the product has its own domain. Until then its test sender only delivers to the account owner.
+- **Neither** — every send is a logged no-op, so local dev and tests need no setup at all (reset codes are printed to the backend log instead).
+- `EMAIL_FROM` sets the sender; over SMTP it must be the authenticated mailbox or one of its aliases, so it defaults to `SMTP_USER`. `emailFrom()` is shared by both sides of the relay.
+- Configurações → Notificações has **Enviar teste** (`notifications.sendTestEmail`), which mails the signed-in user and surfaces the mailbox's own error — the way to prove a deployment's setup, especially in production.
 - Transactional sends: welcome (`convex/emails.ts`), invitation and password reset, plus the daily reminder digest. Feedback submissions alert the superadmin.
 - **Daily cron** (`convex/crons.ts`, 11:30 UTC = 08:30 BRT) runs `notifications.runDailyReminders`: payment digests on D-7/D-3/D-1/D-0/D+1 and subscription-expiry warnings on D-7/D-3/D-1. Selection logic is pure in `lib/domain/notifications.ts`; per-user opt-outs live in `notificationPrefs`.
 

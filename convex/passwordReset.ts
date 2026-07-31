@@ -3,8 +3,8 @@ import { isEmailEnabled, renderEmail, sendEmail } from "./lib/email";
 import { generateNumericCode } from "./lib/otp";
 
 // Auth.js-style email provider plugged into Password({ reset }): generates
-// an 8-digit code, emails it via Resend and lets the login page exchange it
-// (flow "reset-verification") for a new password + session.
+// an 8-digit code, emails it and lets the login page exchange it (flow
+// "reset-verification") for a new password + session.
 
 const CODE_MAX_AGE_SECONDS = 15 * 60;
 
@@ -16,8 +16,8 @@ export const ResendOTPPasswordReset = Email({
 	},
 	async sendVerificationRequest({ identifier: email, token }) {
 		if (!isEmailEnabled()) {
-			// Local dev without a Resend key: surface the code in the backend
-			// logs so the flow stays testable end to end.
+			// Local dev with no transport configured: surface the code in the
+			// backend logs so the flow stays testable end to end.
 			console.log(`[email] código de redefinição para ${email}: ${token}`);
 			return;
 		}

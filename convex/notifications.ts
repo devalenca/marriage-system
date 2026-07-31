@@ -14,7 +14,7 @@ import {
 } from "../lib/domain/notifications";
 import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
-import { internalAction, internalQuery } from "./_generated/server";
+import { action, internalAction, internalQuery } from "./_generated/server";
 import {
 	authedMutation,
 	authedQuery,
@@ -84,6 +84,48 @@ export const savePrefs = authedMutation({
 			await ctx.db.patch(row._id, prefs);
 		}
 		return null;
+	},
+});
+
+/** The caller's own address — the only place a test message may go. */
+export const myEmail = internalQuery({
+	args: {},
+	handler: async (ctx): Promise<string> => {
+		const viewer = await getViewer(ctx);
+		if (!viewer?.email) throw new ConvexError("Não autenticado");
+		return viewer.email;
+	},
+});
+
+/**
+ * Sends a message to the caller so a deployment's email setup can be proven
+ * end to end — in dev and, more importantly, in production, where a wrong
+ * SMTP password otherwise only shows up when a reminder silently fails.
+ */
+export const sendTestEmail = action({
+	args: {},
+	handler: async (ctx): Promise<{ to: string; delivered: boolean }> => {
+		const to: string = await ctx.runQuery(internal.notifications.myEmail, {});
+		let outcome: "sent" | "skipped";
+		try {
+			outcome = await sendEmail({
+				to,
+				subject: "Teste de envio — Nosso Casamento",
+				html: renderEmail({
+					heading: "Deu certo!",
+					bodyHtml: `<p>Este é um e-mail de teste. Se ele chegou até você, os avisos do sistema — lembretes de vencimento, convites e redefinição de senha — vão chegar também.</p>`,
+					ctaLabel: "Voltar ao painel",
+					ctaUrl: `${appBaseUrl()}/dashboard`,
+				}),
+			});
+		} catch (error) {
+			// The transport's own words are the whole point of a test send, and a
+			// plain Error would be redacted before reaching the browser.
+			throw new ConvexError(
+				`Falha no envio: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+		return { to, delivered: outcome === "sent" };
 	},
 });
 

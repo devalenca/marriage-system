@@ -109,6 +109,59 @@ describe("notifications.runDailyReminders", () => {
 	});
 });
 
+describe("notifications.sendTestEmail", () => {
+	test("delivers a test message to the caller's own address", async () => {
+		const sent = stubResend();
+		const { asCoupleA } = await setupWeddingScopedTest();
+
+		const result = await asCoupleA.action(api.notifications.sendTestEmail, {});
+
+		expect(result).toEqual({ to: "ana@example.com", delivered: true });
+		expect(sent).toHaveLength(1);
+		expect(sent[0]?.to).toBe("ana@example.com");
+		expect(sent[0]?.subject).toMatch(/teste/i);
+	});
+
+	test("reports the no-transport case instead of pretending to send", async () => {
+		vi.stubEnv("RESEND_API_KEY", "");
+		vi.stubEnv("SMTP_USER", "");
+		vi.stubEnv("SMTP_PASSWORD", "");
+		const { asCoupleA } = await setupWeddingScopedTest();
+
+		expect(await asCoupleA.action(api.notifications.sendTestEmail, {})).toEqual(
+			{
+				to: "ana@example.com",
+				delivered: false,
+			},
+		);
+	});
+
+	test("rejects anonymous callers", async () => {
+		const { t } = await setupWeddingScopedTest();
+		await expect(
+			t.action(api.notifications.sendTestEmail, {}),
+		).rejects.toThrowError(/autenticado/i);
+	});
+
+	test("surfaces the transport failure to the caller", async () => {
+		vi.stubEnv("RESEND_API_KEY", "re_test_123");
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(
+				async () =>
+					new Response(JSON.stringify({ message: "domain not verified" }), {
+						status: 403,
+					}),
+			),
+		);
+		const { asCoupleA } = await setupWeddingScopedTest();
+
+		await expect(
+			asCoupleA.action(api.notifications.sendTestEmail, {}),
+		).rejects.toThrowError(/403/);
+	});
+});
+
 describe("notifications prefs", () => {
 	test("default is everything on; saving persists", async () => {
 		const { asCoupleA } = await setupWeddingScopedTest();

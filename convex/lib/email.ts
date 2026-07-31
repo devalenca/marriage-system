@@ -1,11 +1,20 @@
-// Transactional email via the Resend HTTP API. No SDK: a plain fetch keeps
-// the dependency surface at zero and works in the Convex default runtime.
+// Transactional email. Two transports, chosen by whichever credentials the
+// Convex deployment carries:
 //
-// Deployment env vars:
-// - RESEND_API_KEY — when missing, sends become no-ops (local dev friendly).
-// - EMAIL_FROM — verified sender, e.g. "Nosso Casamento <contato@dominio.com>".
-//   Falls back to Resend's test sender, which only delivers to the account
-//   owner's inbox — good enough to validate flows before a domain exists.
+// - **Resend** (`RESEND_API_KEY`) — a direct HTTP call. Needs a verified
+//   domain to reach anyone but the account owner, so it is where this goes
+//   once the product has one.
+// - **Relay** (`EMAIL_RELAY_SECRET`) — hands the message to the web app's
+//   /api/email route, which sends it through a personal mailbox over SMTP
+//   (see app/api/email/route.ts). A mailbox needs no domain and delivers to
+//   anyone, and SMTP needs a TCP socket, which Convex's runtime has no way to
+//   open — Next.js runs on Node and does.
+//
+// With neither configured every send is a logged no-op, which keeps local dev
+// and the test suite free of any email setup.
+//
+// Other env vars: `EMAIL_FROM` (sender) and `SITE_URL` (the base for links
+// inside the emails — and for reaching the relay).
 
 export type EmailMessage = {
 	to: string;
@@ -13,15 +22,43 @@ export type EmailMessage = {
 	html: string;
 };
 
+export type EmailTransport = "resend" | "relay" | "none";
+
+/**
+ * Which transport this deployment can use. Resend wins when both are present:
+ * a configured domain is the better sender, and the mailbox relay is the
+ * stand-in until there is one.
+ */
+export function chooseTransport(
+	env: Record<string, string | undefined>,
+): EmailTransport {
+	if (env.RESEND_API_KEY?.trim()) return "resend";
+	if (env.EMAIL_RELAY_SECRET?.trim()) return "relay";
+	return "none";
+}
+
+function transport(): EmailTransport {
+	return chooseTransport(process.env);
+}
+
 const FALLBACK_FROM = "Nosso Casamento <onboarding@resend.dev>";
 
+/**
+ * The sender address. Shared by both transports, so the rule is written once
+ * even though each side of the relay reads its own environment: over SMTP the
+ * sender must be the authenticated mailbox, so it wins over Resend's test
+ * address whenever it is configured.
+ */
 export function emailFrom(): string {
 	const configured = process.env.EMAIL_FROM?.trim();
-	return configured ? configured : FALLBACK_FROM;
+	if (configured) return configured;
+	const mailbox = process.env.SMTP_USER?.trim();
+	if (mailbox) return `Nosso Casamento <${mailbox}>`;
+	return FALLBACK_FROM;
 }
 
 export function isEmailEnabled(): boolean {
-	return Boolean(process.env.RESEND_API_KEY?.trim());
+	return transport() !== "none";
 }
 
 /** Where e-mailed links point to (SITE_URL on the deployment). */
@@ -31,20 +68,34 @@ export function appBaseUrl(): string {
 }
 
 /**
- * Sends one email through Resend. Returns "skipped" (without touching the
- * network) when the deployment has no API key, so callers never need to
- * guard — reminder crons and invite flows degrade gracefully in dev.
+ * Sends one email through whichever transport is configured. Returns
+ * "skipped" (without touching the network) when none is, so callers never
+ * need to guard — reminder crons and invite flows degrade gracefully in dev.
  */
 export async function sendEmail(
 	message: EmailMessage,
 ): Promise<"sent" | "skipped"> {
-	const apiKey = process.env.RESEND_API_KEY?.trim();
-	if (!apiKey) {
-		console.log(
-			`[email] RESEND_API_KEY ausente — envio pulado: "${message.subject}" para ${message.to}`,
-		);
-		return "skipped";
+	switch (transport()) {
+		case "resend":
+			await sendViaResend(message);
+			return "sent";
+		case "relay":
+			await sendViaRelay(message);
+			return "sent";
+		default:
+			console.log(
+				`[email] sem transporte configurado — envio pulado: "${message.subject}" para ${message.to}`,
+			);
+			return "skipped";
 	}
+}
+
+// A hung connection would otherwise burn the whole action's wall clock — in
+// the daily cron that costs every couple after this one their e-mail.
+const SEND_TIMEOUT_MS = 20_000;
+
+async function sendViaResend(message: EmailMessage): Promise<void> {
+	const apiKey = process.env.RESEND_API_KEY?.trim();
 	const response = await fetch("https://api.resend.com/emails", {
 		method: "POST",
 		headers: {
@@ -57,15 +108,29 @@ export async function sendEmail(
 			subject: message.subject,
 			html: message.html,
 		}),
-		// A hung connection would otherwise burn the whole action's wall clock —
-		// in the daily cron that costs every couple after this one their e-mail.
-		signal: AbortSignal.timeout(15_000),
+		signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
 	});
 	if (!response.ok) {
 		const body = await response.text();
 		throw new Error(`Resend respondeu ${response.status}: ${body}`);
 	}
-	return "sent";
+}
+
+async function sendViaRelay(message: EmailMessage): Promise<void> {
+	const secret = process.env.EMAIL_RELAY_SECRET?.trim();
+	const response = await fetch(`${appBaseUrl()}/api/email`, {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${secret}`,
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(message),
+		signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+	});
+	if (!response.ok) {
+		const body = await response.text();
+		throw new Error(`O envio respondeu ${response.status}: ${body}`);
+	}
 }
 
 export function escapeHtml(value: string): string {

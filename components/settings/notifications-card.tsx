@@ -1,6 +1,10 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { Send } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -66,7 +70,48 @@ export function NotificationsCard() {
 						onCheckedChange={() => toggle("subscriptionReminders")}
 					/>
 				</div>
+				<TestEmailSection />
 			</CardContent>
 		</Card>
+	);
+}
+
+/** Proves the deployment can actually deliver — sends only to the caller. */
+function TestEmailSection() {
+	const sendTestEmail = useAction(api.notifications.sendTestEmail);
+	const [sending, setSending] = useState(false);
+
+	async function handleClick() {
+		setSending(true);
+		try {
+			const { to, delivered } = await sendTestEmail({});
+			if (delivered) {
+				toast.success(`E-mail de teste enviado para ${to}`);
+			} else {
+				toast.warning("Nenhum serviço de e-mail configurado neste ambiente");
+			}
+		} catch (error) {
+			notifyError(error, "Não foi possível enviar o e-mail de teste");
+		} finally {
+			setSending(false);
+		}
+	}
+
+	return (
+		<div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+			<span className="text-xs text-muted-foreground">
+				Quer conferir se está tudo certo? Mandamos um e-mail de teste para você.
+			</span>
+			<Button
+				type="button"
+				variant="outline"
+				size="sm"
+				onClick={handleClick}
+				disabled={sending}
+			>
+				<Send className="size-4" aria-hidden />
+				{sending ? "Enviando..." : "Enviar teste"}
+			</Button>
+		</div>
 	);
 }

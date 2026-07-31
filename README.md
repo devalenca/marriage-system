@@ -17,7 +17,7 @@ Interface em português (pt-BR), valores em Real (R$), datas `dd/MM/aaaa`, fuso 
 
 ## Stack
 
-Next.js (App Router) · TypeScript · Convex · Tailwind v4 · shadcn/ui · Biome · Vitest · Resend (e-mail).
+Next.js (App Router) · TypeScript · Convex · Tailwind v4 · shadcn/ui · Biome · Vitest · e-mail por SMTP ou Resend.
 
 ## Rodando localmente
 
@@ -30,7 +30,22 @@ npm run dev
 
 `npm run dev` sobe o Next.js e um backend Convex local anônimo em paralelo — sem precisar de contas ou chaves. Acesse http://localhost:3000.
 
-Sem `RESEND_API_KEY` configurada, os envios de e-mail viram no-ops e o código de verificação aparece no log do backend — os fluxos continuam testáveis de ponta a ponta.
+Sem e-mail configurado, os envios viram no-ops e o código de verificação aparece no log do backend — os fluxos continuam testáveis de ponta a ponta.
+
+### Enviando de verdade pela sua caixa do Gmail
+
+O Convex não consegue abrir uma conexão SMTP (o runtime dele só fala HTTP), então quem conversa com o Gmail é a rota `/api/email` do próprio app, que roda em Node. O Convex entrega a mensagem para ela usando um segredo compartilhado. Por isso as variáveis ficam **dos dois lados**:
+
+1. No Gmail, crie uma **senha de app** (Conta Google → Segurança → Verificação em duas etapas → Senhas de app). A senha da conta não funciona.
+2. No app (`.env.local` local, ou as Environment Variables da Vercel em produção): `EMAIL_RELAY_SECRET` (qualquer valor aleatório e longo), `SMTP_USER`, `SMTP_PASSWORD` e, se quiser, `EMAIL_FROM`. O `.env.local` já vem com essas linhas comentadas.
+3. No deployment Convex, o mesmo segredo e a URL pública do app:
+
+```bash
+npx convex env set EMAIL_RELAY_SECRET "o-mesmo-valor-do-app"
+npx convex env set SITE_URL "https://seu-app.vercel.app"
+```
+
+Depois entre no app e use **Configurações → Notificações por e-mail → Enviar teste**: ele manda um e-mail para o seu próprio endereço e, se algo estiver errado, mostra a resposta exata do Gmail. Em produção é o mesmo caminho, com `npx convex env set --prod`.
 
 ## Scripts
 
