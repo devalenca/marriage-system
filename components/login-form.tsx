@@ -103,7 +103,9 @@ export function LoginForm() {
 			});
 			router.push("/dashboard");
 		} catch {
-			setError("Código inválido ou expirado. Confira o e-mail e tente de novo.");
+			setError(
+				"Código inválido ou expirado. Confira o e-mail e tente de novo.",
+			);
 			setSubmitting(false);
 		}
 	}

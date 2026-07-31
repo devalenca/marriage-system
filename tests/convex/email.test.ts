@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import {
 	emailFrom,
 	escapeHtml,
@@ -45,15 +45,17 @@ describe("sendEmail", () => {
 	test("posts to the Resend API with the key and from address", async () => {
 		vi.stubEnv("RESEND_API_KEY", "re_test_123");
 		vi.stubEnv("EMAIL_FROM", "Nosso Casamento <contato@exemplo.com.br>");
-		const fetchSpy = vi.fn().mockResolvedValue(
-			new Response(JSON.stringify({ id: "email_1" }), { status: 200 }),
-		);
+		const fetchSpy = vi
+			.fn()
+			.mockResolvedValue(
+				new Response(JSON.stringify({ id: "email_1" }), { status: 200 }),
+			);
 		vi.stubGlobal("fetch", fetchSpy);
 
 		await expect(sendEmail(message)).resolves.toBe("sent");
 
 		expect(fetchSpy).toHaveBeenCalledTimes(1);
-		const [url, init] = fetchSpy.mock.calls[0];
+		const [url, init] = fetchSpy.mock.calls[0] ?? [];
 		expect(url).toBe("https://api.resend.com/emails");
 		expect(init.method).toBe("POST");
 		expect(init.headers.Authorization).toBe("Bearer re_test_123");

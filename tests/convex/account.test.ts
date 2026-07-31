@@ -24,7 +24,7 @@ function stubResend() {
 
 function codeFrom(html: string): string {
 	const match = html.match(/\b(\d{8})\b/);
-	if (!match) throw new Error("no code found in email html");
+	if (!match?.[1]) throw new Error("no code found in email html");
 	return match[1];
 }
 

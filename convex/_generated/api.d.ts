@@ -9,9 +9,12 @@
  */
 
 import type * as access from "../access.js";
+import type * as account from "../account.js";
 import type * as attachments from "../attachments.js";
 import type * as auth from "../auth.js";
+import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
+import type * as emails from "../emails.js";
 import type * as feedback from "../feedback.js";
 import type * as finance from "../finance.js";
 import type * as guests from "../guests.js";
@@ -20,9 +23,13 @@ import type * as inspiration from "../inspiration.js";
 import type * as lib_accounts from "../lib/accounts.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_db from "../lib/db.js";
+import type * as lib_email from "../lib/email.js";
+import type * as lib_otp from "../lib/otp.js";
 import type * as lib_userCreation from "../lib/userCreation.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as migrations from "../migrations.js";
+import type * as notifications from "../notifications.js";
+import type * as passwordReset from "../passwordReset.js";
 import type * as payments from "../payments.js";
 import type * as tasks from "../tasks.js";
 import type * as users from "../users.js";
@@ -38,9 +45,12 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   access: typeof access;
+  account: typeof account;
   attachments: typeof attachments;
   auth: typeof auth;
+  crons: typeof crons;
   dashboard: typeof dashboard;
+  emails: typeof emails;
   feedback: typeof feedback;
   finance: typeof finance;
   guests: typeof guests;
@@ -49,9 +59,13 @@ declare const fullApi: ApiFromModules<{
   "lib/accounts": typeof lib_accounts;
   "lib/auth": typeof lib_auth;
   "lib/db": typeof lib_db;
+  "lib/email": typeof lib_email;
+  "lib/otp": typeof lib_otp;
   "lib/userCreation": typeof lib_userCreation;
   "lib/validators": typeof lib_validators;
   migrations: typeof migrations;
+  notifications: typeof notifications;
+  passwordReset: typeof passwordReset;
   payments: typeof payments;
   tasks: typeof tasks;
   users: typeof users;

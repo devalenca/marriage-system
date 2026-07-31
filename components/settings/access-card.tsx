@@ -1,7 +1,14 @@
 "use client";
 
 import { useAction, useMutation, useQuery } from "convex/react";
-import { KeyRound, MailPlus, RotateCcw, Trash2, UserPlus, X } from "lucide-react";
+import {
+	KeyRound,
+	MailPlus,
+	RotateCcw,
+	Trash2,
+	UserPlus,
+	X,
+} from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";

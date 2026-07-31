@@ -20,6 +20,17 @@ export const INVITE_SIDE_LABELS: Record<InviteSide, string> = {
 	ambos: "Ambos",
 };
 
+/** Accent- and case-insensitive name match, for the check-in search box. */
+export function matchesGuestSearch(name: string, search: string): boolean {
+	const needle = normalizeForSearch(search);
+	if (needle.length === 0) return true;
+	return normalizeForSearch(name).includes(needle);
+}
+
+function normalizeForSearch(text: string): string {
+	return text.trim().normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
 export interface GuestSnapshot {
 	rsvpStatus: RsvpStatus;
 	isChild?: boolean;

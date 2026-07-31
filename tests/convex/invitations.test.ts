@@ -25,7 +25,7 @@ function stubResend() {
 
 function tokenFrom(html: string): string {
 	const match = html.match(/[?&]token=([A-Za-z0-9_-]+)/);
-	if (!match) throw new Error("no token link found in email html");
+	if (!match?.[1]) throw new Error("no token link found in email html");
 	return match[1];
 }
 
@@ -104,7 +104,7 @@ describe("access.inviteMember", () => {
 			email: INVITED_EMAIL,
 		});
 		// The raw token never touches the database.
-		expect(rows[0].tokenHash).not.toBe(tokenFrom(invite?.html ?? ""));
+		expect(rows[0]?.tokenHash).not.toBe(tokenFrom(invite?.html ?? ""));
 	});
 
 	test("a plain member cannot invite", async () => {
@@ -252,16 +252,16 @@ describe("access.listInvitations / revokeInvitation", () => {
 
 		const pending = await asAdminA.query(api.access.listInvitations, {});
 		expect(pending).toHaveLength(1);
-		expect(pending[0].email).toBe(INVITED_EMAIL);
+		const first = pending[0];
+		if (!first) throw new Error("no pending invitation");
+		expect(first.email).toBe(INVITED_EMAIL);
 
 		await asAdminA.mutation(api.access.revokeInvitation, {
-			invitationId: pending[0].id,
+			invitationId: first.id,
 		});
 		expect(await asAdminA.query(api.access.listInvitations, {})).toHaveLength(
 			0,
 		);
-		expect(
-			await t.query(api.access.invitationByToken, { token }),
-		).toBeNull();
+		expect(await t.query(api.access.invitationByToken, { token })).toBeNull();
 	});
 });

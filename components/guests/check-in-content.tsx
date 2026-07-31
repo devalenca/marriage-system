@@ -2,14 +2,16 @@
 
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { ArrowLeft, Baby, Check } from "lucide-react";
+import { ArrowLeft, Baby, Check, Search } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
-import { checkInCounts } from "@/lib/domain/guests";
+import { checkInCounts, matchesGuestSearch } from "@/lib/domain/guests";
 import { notifyError } from "@/lib/notify";
 
 type InviteWithGuests = FunctionReturnType<
@@ -20,6 +22,7 @@ type Guest = InviteWithGuests["guests"][number];
 export function CheckInContent() {
 	const invites = useQuery(api.guests.listInvites, {});
 	const setCheckIn = useMutation(api.guests.setCheckIn);
+	const [search, setSearch] = useState("");
 
 	if (invites === undefined) return <CheckInSkeleton />;
 
@@ -47,6 +50,22 @@ export function CheckInContent() {
 				}
 			/>
 
+			{expected > 0 ? (
+				<div className="relative mb-4">
+					<Search
+						className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+						aria-hidden
+					/>
+					<Input
+						aria-label="Buscar convidado"
+						placeholder="Buscar pelo nome..."
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						className="h-11 pl-9"
+					/>
+				</div>
+			) : null}
+
 			{expected === 0 ? (
 				<Card>
 					<CardContent className="flex flex-col items-center gap-3 py-12 text-center">
@@ -63,7 +82,9 @@ export function CheckInContent() {
 				<ul className="flex flex-col gap-3">
 					{invites.map((invite, index) => {
 						const confirmed = invite.guests.filter(
-							(g) => g.rsvpStatus === "confirmado",
+							(g) =>
+								g.rsvpStatus === "confirmado" &&
+								matchesGuestSearch(g.name, search),
 						);
 						if (confirmed.length === 0) return null;
 						return (

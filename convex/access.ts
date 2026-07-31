@@ -20,13 +20,13 @@ import {
 	PASSWORD_PROVIDER,
 	purgeAuthRows,
 } from "./lib/accounts";
-import { appBaseUrl, escapeHtml, renderEmail, sendEmail } from "./lib/email";
-import { generateUrlToken, sha256Hex } from "./lib/otp";
 import {
 	requireWeddingAdmin,
 	weddingAdminMutation,
 	weddingQuery,
 } from "./lib/auth";
+import { appBaseUrl, escapeHtml, renderEmail, sendEmail } from "./lib/email";
+import { generateUrlToken, sha256Hex } from "./lib/otp";
 import { weddingFieldValidators } from "./lib/validators";
 import { createWeddingWithAdmin } from "./weddings";
 
@@ -284,7 +284,10 @@ export const listInvitations = weddingQuery({
 /** Wedding-admin only: cancels a pending invitation (kills the link). */
 export const revokeInvitation = weddingAdminMutation({
 	args: { invitationId: v.id("invitations") },
-	handler: async (ctx, { invitationId }: { invitationId: Id<"invitations"> }) => {
+	handler: async (
+		ctx,
+		{ invitationId }: { invitationId: Id<"invitations"> },
+	) => {
 		const row = await ctx.db.get(invitationId);
 		if (row === null || row.weddingId !== ctx.weddingId) {
 			throw new ConvexError("Convite não encontrado");
@@ -330,8 +333,7 @@ export const invitationByToken = query({
 			.withIndex("by_tokenHash", (q) => q.eq("tokenHash", tokenHash))
 			.unique();
 		if (row === null || row.expiresAt < Date.now()) return null;
-		const coupleNames =
-			(await ctx.db.get(row.weddingId))?.coupleNames ?? "";
+		const coupleNames = (await ctx.db.get(row.weddingId))?.coupleNames ?? "";
 		return { email: row.email, coupleNames };
 	},
 });

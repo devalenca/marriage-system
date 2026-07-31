@@ -44,6 +44,7 @@ describe("welcome email", () => {
 		});
 		const userId = await t.run(async (ctx) => {
 			const user = (await ctx.db.query("users").collect())[0];
+			if (!user) throw new Error("user not created");
 			return user._id;
 		});
 		const asUser = t.withIdentity({
