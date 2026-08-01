@@ -1,5 +1,6 @@
 import { Email } from "@convex-dev/auth/providers/Email";
-import { isEmailEnabled, renderEmail, sendEmail } from "./lib/email";
+import { isEmailEnabled, sendEmail } from "./lib/email";
+import { passwordResetEmail } from "./lib/emailTemplates";
 import { generateNumericCode } from "./lib/otp";
 
 // Auth.js-style email provider plugged into Password({ reset }): generates
@@ -21,16 +22,6 @@ export const ResendOTPPasswordReset = Email({
 			console.log(`[email] código de redefinição para ${email}: ${token}`);
 			return;
 		}
-		await sendEmail({
-			to: email,
-			subject: "Redefinição de senha — Nosso Casamento",
-			html: renderEmail({
-				heading: "Redefinir sua senha",
-				bodyHtml: `<p>Recebemos um pedido para redefinir a senha da sua conta.</p>
-					<p>Use o código abaixo na tela de login. Ele vale por 15 minutos.</p>
-					<p style="font-size:28px;font-weight:bold;letter-spacing:6px;margin:20px 0">${token}</p>
-					<p>Se você não pediu a redefinição, pode ignorar este e-mail — sua senha continua a mesma.</p>`,
-			}),
-		});
+		await sendEmail({ to: email, ...passwordResetEmail(token) });
 	},
 });

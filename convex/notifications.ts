@@ -1,10 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import {
-	daysBetween,
-	formatDateBR,
-	todayInSaoPaulo,
-} from "../lib/domain/dates";
-import { formatBRL } from "../lib/domain/money";
+import { daysBetween, todayInSaoPaulo } from "../lib/domain/dates";
 import {
 	DIGEST_WINDOW_DAYS,
 	digestPayments,
@@ -21,7 +16,13 @@ import {
 	getViewer,
 	superadminEmails,
 } from "./lib/auth";
-import { appBaseUrl, escapeHtml, renderEmail, sendEmail } from "./lib/email";
+import { sendEmail } from "./lib/email";
+import {
+	type EmailContent,
+	paymentDigestEmail,
+	subscriptionEndingEmail,
+	testEmail,
+} from "./lib/emailTemplates";
 
 // Daily e-mail reminders (payments due / subscription expiring), driven by
 // the cron in convex/crons.ts. Per-user opt-outs live in notificationPrefs.
@@ -108,16 +109,7 @@ export const sendTestEmail = action({
 		const to: string = await ctx.runQuery(internal.notifications.myEmail, {});
 		let outcome: "sent" | "skipped";
 		try {
-			outcome = await sendEmail({
-				to,
-				subject: "Teste de envio — Nosso Casamento",
-				html: renderEmail({
-					heading: "Deu certo!",
-					bodyHtml: `<p>Este é um e-mail de teste. Se ele chegou até você, os avisos do sistema — lembretes de vencimento, convites e redefinição de senha — vão chegar também.</p>`,
-					ctaLabel: "Voltar ao painel",
-					ctaUrl: `${appBaseUrl()}/dashboard`,
-				}),
-			});
+			outcome = await sendEmail({ to, ...testEmail() });
 		} catch (error) {
 			// The transport's own words are the whole point of a test send, and a
 			// plain Error would be redacted before reaching the browser.
@@ -195,15 +187,6 @@ export const dailyReminderData = internalQuery({
 	},
 });
 
-function paymentRows(payments: ReminderPayment[]): string {
-	return payments
-		.map(
-			(p) =>
-				`<tr><td style="padding:6px 12px 6px 0">${formatDateBR(p.dueDate)}</td><td style="padding:6px 12px 6px 0">${escapeHtml(p.vendorName)}</td><td style="padding:6px 12px 6px 0">${escapeHtml(p.description)}</td><td style="padding:6px 0;text-align:right;white-space:nowrap">${formatBRL(p.amountCents)}</td></tr>`,
-		)
-		.join("");
-}
-
 /** Runs once a day (cron): payment digests + subscription expiry warnings. */
 export const runDailyReminders = internalAction({
 	args: {},
@@ -220,9 +203,9 @@ export const runDailyReminders = internalAction({
 		// Sends stay sequential (Resend's free tier allows ~2 req/s) and each
 		// one is isolated: a single bad address must not cost every other
 		// couple their reminder, and the cron is not retried.
-		async function deliver(to: string, subject: string, html: string) {
+		async function deliver(to: string, content: EmailContent) {
 			try {
-				await sendEmail({ to, subject, html });
+				await sendEmail({ to, ...content });
 				sentCount++;
 			} catch (error) {
 				failed.push(to);
@@ -236,30 +219,14 @@ export const runDailyReminders = internalAction({
 					wedding.pendingPayments,
 					today,
 				);
-				const sections: string[] = [];
-				if (overdue.length > 0) {
-					sections.push(
-						`<p><b>Atrasados:</b></p><table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px">${paymentRows(overdue)}</table>`,
-					);
-				}
-				if (upcoming.length > 0) {
-					sections.push(
-						`<p><b>Próximos 14 dias:</b></p><table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px">${paymentRows(upcoming)}</table>`,
-					);
-				}
-				const html = renderEmail({
-					heading: "Pagamentos do casamento no radar",
-					bodyHtml: `<p>Um resumo rápido para ${escapeHtml(wedding.coupleNames)} não deixar nada passar:</p>${sections.join("")}`,
-					ctaLabel: "Ver no app",
-					ctaUrl: `${appBaseUrl()}/financeiro`,
-				});
+				const digest = paymentDigestEmail(
+					wedding.coupleNames,
+					overdue,
+					upcoming,
+				);
 				for (const recipient of wedding.recipients) {
 					if (!recipient.paymentReminders) continue;
-					await deliver(
-						recipient.email,
-						"Vencimentos chegando — Nosso Casamento",
-						html,
-					);
+					await deliver(recipient.email, digest);
 				}
 			}
 
@@ -268,24 +235,18 @@ export const runDailyReminders = internalAction({
 				today,
 			);
 			if (daysLeft !== null) {
-				const contact = supportEmail
-					? `<p>Para renovar, fale com a gente: <a href="mailto:${supportEmail}">${supportEmail}</a>.</p>`
-					: "";
-				const html = renderEmail({
-					heading: `Seu acesso expira em ${daysLeft} ${daysLeft === 1 ? "dia" : "dias"}`,
-					bodyHtml: `<p>O período de acesso do casamento de ${escapeHtml(wedding.coupleNames)} termina em ${formatDateBR(wedding.subscriptionActiveUntil ?? today)}.</p>
-						<p>Depois disso o painel fica em modo somente leitura — nada é apagado.</p>${contact}`,
-				});
+				const warning = subscriptionEndingEmail(
+					wedding.coupleNames,
+					wedding.subscriptionActiveUntil ?? today,
+					daysLeft,
+					supportEmail,
+				);
 				for (const recipient of wedding.recipients) {
 					// Renewal is the admin's call; members aren't nagged about it.
 					if (recipient.role !== "admin" || !recipient.subscriptionReminders) {
 						continue;
 					}
-					await deliver(
-						recipient.email,
-						"Sua assinatura está chegando ao fim — Nosso Casamento",
-						html,
-					);
+					await deliver(recipient.email, warning);
 				}
 			}
 		}

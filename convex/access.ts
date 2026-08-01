@@ -26,7 +26,8 @@ import {
 	weddingAdminMutation,
 	weddingQuery,
 } from "./lib/auth";
-import { appBaseUrl, escapeHtml, renderEmail, sendEmail } from "./lib/email";
+import { appBaseUrl, sendEmail } from "./lib/email";
+import { invitationEmail } from "./lib/emailTemplates";
 import { generateUrlToken, sha256Hex } from "./lib/otp";
 import { weddingFieldValidators } from "./lib/validators";
 import { createWeddingWithAdmin } from "./weddings";
@@ -245,17 +246,7 @@ export const inviteMember = action({
 			expiresAt: Date.now() + INVITATION_MAX_AGE_MS,
 		});
 		const link = `${appBaseUrl()}/convite?token=${token}`;
-		await sendEmail({
-			to: email,
-			subject: `Convite para o casamento de ${coupleNames} — Nosso Casamento`,
-			html: renderEmail({
-				heading: "Você foi convidado(a)!",
-				bodyHtml: `<p>Você recebeu um convite para acompanhar o planejamento do casamento de <b>${escapeHtml(coupleNames)}</b> no Nosso Casamento.</p>
-					<p>Clique no botão abaixo para criar sua senha e entrar. O convite vale por 7 dias.</p>`,
-				ctaLabel: "Criar minha senha",
-				ctaUrl: link,
-			}),
-		});
+		await sendEmail({ to: email, ...invitationEmail(coupleNames, link) });
 		return null;
 	},
 });

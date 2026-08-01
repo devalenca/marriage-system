@@ -20,7 +20,8 @@ import {
 	renamePasswordAccount,
 } from "./lib/accounts";
 import { getViewer, isSuperadminEmail } from "./lib/auth";
-import { escapeHtml, renderEmail, sendEmail } from "./lib/email";
+import { sendEmail } from "./lib/email";
+import { emailChangeEmail } from "./lib/emailTemplates";
 import { generateNumericCode, sha256Hex } from "./lib/otp";
 
 // "Minha conta": self-service credential management for the signed-in user.
@@ -102,16 +103,7 @@ export const requestEmailChange = action({
 			codeHash: await sha256Hex(code),
 			expiresAt: Date.now() + EMAIL_CHANGE_MAX_AGE_MS,
 		});
-		await sendEmail({
-			to: newEmail,
-			subject: "Confirme seu novo e-mail — Nosso Casamento",
-			html: renderEmail({
-				heading: "Confirmar novo e-mail",
-				bodyHtml: `<p>Use o código abaixo para confirmar a troca do e-mail da sua conta para <b>${escapeHtml(newEmail)}</b>. Ele vale por 15 minutos.</p>
-					<p style="font-size:28px;font-weight:bold;letter-spacing:6px;margin:20px 0">${code}</p>
-					<p>Se você não pediu essa troca, ignore este e-mail.</p>`,
-			}),
-		});
+		await sendEmail({ to: newEmail, ...emailChangeEmail(newEmail, code) });
 		return null;
 	},
 });

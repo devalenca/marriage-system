@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
 	chooseTransport,
+	codeBlock,
 	emailFrom,
 	escapeHtml,
 	renderEmail,
@@ -154,6 +155,40 @@ describe("renderEmail", () => {
 		expect(html).toContain("Nosso Casamento");
 	});
 
+	test("declares UTF-8, without which the accents arrive as garbage", () => {
+		const html = renderEmail({
+			heading: "Confirme seu e-mail",
+			bodyHtml: "<p>Cerimônia às três horas, com refeição e coração.</p>",
+		});
+		expect(html).toContain('<meta charset="utf-8">');
+		// The copy travels as real characters — no entities, no stripping.
+		expect(html).toContain("Cerimônia às três horas, com refeição e coração.");
+	});
+
+	test("hides the preview line from the body but not from the inbox", () => {
+		const html = renderEmail({
+			heading: "Pagamentos no radar",
+			preview: "Duas parcelas vencem esta semana.",
+			bodyHtml: "<p>Resumo</p>",
+		});
+		expect(html).toContain("Duas parcelas vencem esta semana.");
+		expect(html).toMatch(/display:none[^"]*">Duas parcelas/);
+	});
+
+	test("renders the small print under the call to action", () => {
+		const html = renderEmail({
+			heading: "Você foi convidado(a)",
+			bodyHtml: "<p>Entre.</p>",
+			ctaLabel: "Criar minha senha",
+			ctaUrl: "https://app.example.com/convite?token=abc",
+			footnote: "O convite vale por 7 dias.",
+		});
+		expect(html).toContain("O convite vale por 7 dias.");
+		expect(html.indexOf("Criar minha senha")).toBeLessThan(
+			html.indexOf("O convite vale por 7 dias."),
+		);
+	});
+
 	test("renders an optional call-to-action button", () => {
 		const html = renderEmail({
 			heading: "Você foi convidado(a)",
@@ -163,6 +198,14 @@ describe("renderEmail", () => {
 		});
 		expect(html).toContain("Criar minha senha");
 		expect(html).toContain("https://app.example.com/convite?token=abc");
+	});
+});
+
+describe("codeBlock", () => {
+	test("presents the code as one readable, typeable block", () => {
+		const html = codeBlock("12345678");
+		expect(html).toContain("12345678");
+		expect(html).toContain("letter-spacing");
 	});
 });
 

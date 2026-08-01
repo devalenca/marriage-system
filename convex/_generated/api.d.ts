@@ -24,6 +24,7 @@ import type * as lib_accounts from "../lib/accounts.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_db from "../lib/db.js";
 import type * as lib_email from "../lib/email.js";
+import type * as lib_emailTemplates from "../lib/emailTemplates.js";
 import type * as lib_otp from "../lib/otp.js";
 import type * as lib_userCreation from "../lib/userCreation.js";
 import type * as lib_validators from "../lib/validators.js";
@@ -60,6 +61,7 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/db": typeof lib_db;
   "lib/email": typeof lib_email;
+  "lib/emailTemplates": typeof lib_emailTemplates;
   "lib/otp": typeof lib_otp;
   "lib/userCreation": typeof lib_userCreation;
   "lib/validators": typeof lib_validators;

@@ -149,10 +149,17 @@ export function escapeHtml(value: string): string {
 
 export type EmailTemplate = {
 	heading: string;
+	/**
+	 * The line the inbox shows next to the subject. Without one, clients grab
+	 * the first words of the body, which reads like a fragment.
+	 */
+	preview?: string;
 	/** Already-safe HTML: interpolate user data through escapeHtml first. */
 	bodyHtml: string;
 	ctaLabel?: string;
 	ctaUrl?: string;
+	/** Small print under the button — expiry, "não foi você?", and the like. */
+	footnote?: string;
 };
 
 // Palette mirrors the app (olive primary, gold accent, warm cream) using
@@ -162,31 +169,59 @@ const GOLD = "#b8912f";
 const CREAM = "#faf7f0";
 const INK = "#2b2f26";
 const MUTED = "#6b7061";
+const LINE = "#e8e2d4";
+const BODY_FONT = "-apple-system,'Segoe UI',Helvetica,Arial,sans-serif";
+const DISPLAY_FONT = "Georgia,'Times New Roman',serif";
+
+/**
+ * A verification code, styled to be read out loud and typed. Shared so the
+ * password reset and the e-mail change look like the same product.
+ */
+export function codeBlock(code: string): string {
+	return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0"><tr>
+			<td style="background:${CREAM};border:1px solid ${LINE};border-radius:12px;padding:18px 28px;font-family:${BODY_FONT};font-size:30px;font-weight:bold;letter-spacing:8px;color:${OLIVE};text-align:center">${code}</td>
+		</tr></table>`;
+}
 
 /** Branded pt-BR layout shared by every transactional email. */
 export function renderEmail(template: EmailTemplate): string {
+	const preview = template.preview
+		? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${CREAM};font-size:1px;line-height:1px">${template.preview}</div>`
+		: "";
 	const cta =
 		template.ctaLabel && template.ctaUrl
-			? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px"><tr><td style="border-radius:10px;background:${OLIVE}">
-					<a href="${template.ctaUrl}" style="display:inline-block;padding:12px 24px;font-family:Helvetica,Arial,sans-serif;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none">${template.ctaLabel}</a>
+			? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 4px"><tr><td style="border-radius:999px;background:${OLIVE}">
+					<a href="${template.ctaUrl}" style="display:inline-block;padding:14px 30px;font-family:${BODY_FONT};font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none">${template.ctaLabel}</a>
 				</td></tr></table>`
 			: "";
+	const footnote = template.footnote
+		? `<p style="margin:20px 0 0;font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${MUTED}">${template.footnote}</p>`
+		: "";
 	return `<!doctype html>
 <html lang="pt-BR">
-<body style="margin:0;padding:0;background:${CREAM}">
-	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};padding:32px 16px">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<meta name="color-scheme" content="light">
+	<title>${escapeHtml(template.heading)}</title>
+</head>
+<body style="margin:0;padding:0;background:${CREAM};-webkit-font-smoothing:antialiased">
+	${preview}
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};padding:40px 16px">
 		<tr><td align="center">
 			<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">
-				<tr><td style="padding:0 8px 16px;font-family:Georgia,serif;font-size:20px;font-weight:bold;color:${OLIVE}">
-					Nosso Casamento <span style="color:${GOLD}">&#10084;</span>
+				<tr><td align="center" style="padding:0 8px 24px">
+					<div style="font-family:${DISPLAY_FONT};font-size:13px;letter-spacing:3px;text-transform:uppercase;color:${GOLD}">Nosso Casamento</div>
+					<div style="margin-top:10px;font-family:${DISPLAY_FONT};font-size:15px;color:${LINE}">&#10022;</div>
 				</td></tr>
-				<tr><td style="background:#ffffff;border-radius:16px;padding:32px 28px;border:1px solid #e6e1d3">
-					<h1 style="margin:0 0 16px;font-family:Georgia,serif;font-size:24px;line-height:1.3;color:${INK}">${template.heading}</h1>
-					<div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:${INK}">${template.bodyHtml}</div>
+				<tr><td style="background:#ffffff;border-radius:18px;padding:36px 32px;border:1px solid ${LINE}">
+					<h1 style="margin:0 0 18px;font-family:${DISPLAY_FONT};font-size:26px;line-height:1.25;font-weight:normal;color:${INK}">${template.heading}</h1>
+					<div style="font-family:${BODY_FONT};font-size:15px;line-height:1.65;color:${INK}">${template.bodyHtml}</div>
 					${cta}
+					${footnote}
 				</td></tr>
-				<tr><td style="padding:20px 8px;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:${MUTED}">
-					Você recebeu este e-mail porque tem uma conta no Nosso Casamento.
+				<tr><td align="center" style="padding:24px 8px 0;font-family:${BODY_FONT};font-size:12px;line-height:1.6;color:${MUTED}">
+					Você recebeu este e-mail porque tem uma conta no Nosso Casamento,<br>o painel onde o casal organiza o casamento até o grande dia.
 				</td></tr>
 			</table>
 		</td></tr>
