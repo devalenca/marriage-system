@@ -6,8 +6,13 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 // the only thing standing between it and an open relay.
 
 const sendMail = vi.fn().mockResolvedValue({ messageId: "<1@gmail.com>" });
-const createTransport = vi.fn(() => ({ sendMail }));
+const createTransport = vi.fn((_options: Record<string, unknown>) => ({
+	sendMail,
+}));
 vi.mock("nodemailer", () => ({ default: { createTransport } }));
+
+const lookup = vi.fn().mockResolvedValue({ address: "172.217.192.108" });
+vi.mock("node:dns/promises", () => ({ lookup, default: { lookup } }));
 
 afterEach(() => {
 	vi.unstubAllEnvs();
@@ -54,10 +59,35 @@ describe("POST /api/email", () => {
 		expect(response.status).toBe(200);
 		expect(createTransport).toHaveBeenCalledWith(
 			expect.objectContaining({
-				host: "smtp.gmail.com",
 				port: 465,
 				secure: true,
 				auth: { user: "gabriel@gmail.com", pass: "senha-de-app" },
+			}),
+		);
+	});
+
+	test("resolves the mailbox itself, over IPv4, and fails fast", async () => {
+		configure();
+
+		await post("s3cret-relay-token");
+
+		// nodemailer resolves DNS with dns.resolve4/6, which plenty of networks
+		// refuse outright (corporate DNS, VPNs); it then falls back to the
+		// hostname and lands on Gmail's AAAA record, which those same networks
+		// black-hole for ~21s. dns.lookup goes through the OS resolver, which
+		// works wherever the machine itself works.
+		expect(lookup).toHaveBeenCalledWith("smtp.gmail.com", { family: 4 });
+		expect(createTransport).toHaveBeenCalledWith(
+			expect.objectContaining({
+				host: "172.217.192.108",
+				// Connecting by IP still has to present the name, or the
+				// certificate does not match.
+				tls: { servername: "smtp.gmail.com" },
+				// When something else stalls, failing fast beats the caller
+				// timing out with nothing to show the user.
+				connectionTimeout: 10_000,
+				greetingTimeout: 10_000,
+				socketTimeout: 20_000,
 			}),
 		);
 		expect(sendMail).toHaveBeenCalledWith({

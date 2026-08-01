@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import { lookup } from "node:dns/promises";
 import nodemailer from "nodemailer";
 import { emailFrom } from "@/convex/lib/email";
 
@@ -78,15 +79,31 @@ export async function POST(request: Request): Promise<Response> {
 		return new Response("Mensagem inválida", { status: 400 });
 	}
 
+	const host = process.env.SMTP_HOST?.trim() || GMAIL_HOST;
 	const port = Number(process.env.SMTP_PORT ?? IMPLICIT_TLS_PORT);
-	const transporter = nodemailer.createTransport({
-		host: process.env.SMTP_HOST?.trim() || GMAIL_HOST,
-		port,
-		// 465 is implicit TLS; 587 starts plaintext and upgrades via STARTTLS.
-		secure: port === IMPLICIT_TLS_PORT,
-		auth: { user, pass },
-	});
 	try {
+		// Resolve the mailbox ourselves. nodemailer uses dns.resolve4/6, which
+		// talks to the configured nameservers directly — plenty of networks
+		// (corporate DNS, VPNs) refuse that outright, and nodemailer then falls
+		// back to the bare hostname and lands on Gmail's AAAA record, which
+		// those same networks black-hole for ~21s per send. dns.lookup goes
+		// through the OS resolver, so it works wherever the machine does.
+		const { address } = await lookup(host, { family: 4 });
+		const transporter = nodemailer.createTransport({
+			host: address,
+			port,
+			// 465 is implicit TLS; 587 starts plaintext and upgrades via STARTTLS.
+			secure: port === IMPLICIT_TLS_PORT,
+			// Connecting by IP still has to present the name for SNI and the
+			// certificate check.
+			tls: { servername: host },
+			// Fail fast and say why, rather than letting the caller time out with
+			// nothing but an AbortError to show the user.
+			connectionTimeout: 10_000,
+			greetingTimeout: 10_000,
+			socketTimeout: 20_000,
+			auth: { user, pass },
+		});
 		await transporter.sendMail({ from: emailFrom(), ...message });
 	} catch (error) {
 		// The mailbox's own words travel back to the caller: "535-5.7.8

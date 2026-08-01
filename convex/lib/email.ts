@@ -92,7 +92,12 @@ export async function sendEmail(
 
 // A hung connection would otherwise burn the whole action's wall clock — in
 // the daily cron that costs every couple after this one their e-mail.
-const SEND_TIMEOUT_MS = 20_000;
+const RESEND_TIMEOUT_MS = 20_000;
+// The relay has a whole SMTP conversation to get through (connect, TLS, auth,
+// DATA) and enforces its own tighter deadlines inside; this only has to be
+// loose enough that the caller never gives up on a send that is still going —
+// an abort here would report failure for a message that does get delivered.
+const RELAY_TIMEOUT_MS = 45_000;
 
 async function sendViaResend(message: EmailMessage): Promise<void> {
 	const apiKey = process.env.RESEND_API_KEY?.trim();
@@ -108,7 +113,7 @@ async function sendViaResend(message: EmailMessage): Promise<void> {
 			subject: message.subject,
 			html: message.html,
 		}),
-		signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+		signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
 	});
 	if (!response.ok) {
 		const body = await response.text();
@@ -125,7 +130,7 @@ async function sendViaRelay(message: EmailMessage): Promise<void> {
 			"Content-Type": "application/json",
 		},
 		body: JSON.stringify(message),
-		signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+		signal: AbortSignal.timeout(RELAY_TIMEOUT_MS),
 	});
 	if (!response.ok) {
 		const body = await response.text();
