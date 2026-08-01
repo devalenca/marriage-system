@@ -8,7 +8,10 @@ import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
 import { PageHeader } from "@/components/page-header";
 import { AccessCard } from "@/components/settings/access-card";
+import { AccountCard } from "@/components/settings/account-card";
+import { BackgroundCard } from "@/components/settings/background-card";
 import { FeedbackCard } from "@/components/settings/feedback-card";
+import { NotificationsCard } from "@/components/settings/notifications-card";
 import { ThemeCard } from "@/components/settings/theme-card";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Button } from "@/components/ui/button";
@@ -35,6 +38,7 @@ import type { Doc } from "@/convex/_generated/dataModel";
 import { isValidISODate, isValidISOTime } from "@/lib/domain/dates";
 import { resolveTheme } from "@/lib/domain/themes";
 import { notifyError } from "@/lib/notify";
+import { forgetWeddingTheme } from "@/lib/theme-storage";
 
 export function SettingsContent() {
 	const wedding = useQuery(api.weddings.getCurrent, {});
@@ -62,9 +66,14 @@ export function SettingsContent() {
 				/>
 				<ChecklistCard hasWedding={wedding !== null} />
 				{wedding !== null ? (
-					<ThemeCard current={resolveTheme(wedding.theme ?? undefined)} />
+					<>
+						<ThemeCard current={resolveTheme(wedding.theme ?? undefined)} />
+						<BackgroundCard />
+					</>
 				) : null}
+				<AccountCard />
 				<AccessCard />
+				<NotificationsCard />
 				<FeedbackCard />
 				<Card>
 					<CardHeader>
@@ -127,6 +136,7 @@ function DangerZoneCard() {
 		try {
 			await deleteWedding({});
 			await signOut();
+			forgetWeddingTheme();
 			// Hard navigation: the account is gone, so a full teardown avoids the
 			// now-invalid wedding queries racing a soft client transition.
 			window.location.assign("/");

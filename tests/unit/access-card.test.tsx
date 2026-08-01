@@ -6,13 +6,18 @@ const useQueryMock = vi.fn();
 const createMock = vi.fn();
 const resetMock = vi.fn();
 const removeMock = vi.fn();
+const inviteMock = vi.fn();
 
 vi.mock("convex/react", async () => {
 	const { getFunctionName } = await import("convex/server");
 	return {
 		useQuery: (...args: unknown[]) => useQueryMock(...args),
-		useAction: (ref: never) =>
-			getFunctionName(ref) === "access:createMember" ? createMock : resetMock,
+		useAction: (ref: never) => {
+			const name = getFunctionName(ref);
+			if (name === "access:createMember") return createMock;
+			if (name === "access:inviteMember") return inviteMock;
+			return resetMock;
+		},
 		useMutation: () => removeMock,
 	};
 });
@@ -80,13 +85,32 @@ describe("AccessCard", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("lets the admin create a member", async () => {
+	it("lets the admin invite a member by e-mail", async () => {
+		mockMembers("admin");
+		inviteMock.mockResolvedValue(null);
+		render(<AccessCard />);
+
+		const user = userEvent.setup();
+		await user.type(
+			screen.getByLabelText(/e-mail do convidado/i),
+			"novo@example.com",
+		);
+		await user.click(screen.getByRole("button", { name: /convidar/i }));
+
+		await waitFor(() =>
+			expect(inviteMock).toHaveBeenCalledWith({ email: "novo@example.com" }),
+		);
+	});
+
+	it("lets the admin create a member manually (fallback)", async () => {
 		mockMembers("admin");
 		createMock.mockResolvedValue(null);
 		render(<AccessCard />);
 
 		const user = userEvent.setup();
-		await user.type(screen.getByLabelText(/e-mail/i), "novo@example.com");
+		// The manual form lives behind a disclosure — open it first.
+		await user.click(screen.getByText(/criar o acesso manualmente/i));
+		await user.type(screen.getByLabelText(/^e-mail$/i), "novo@example.com");
 		await user.type(screen.getByLabelText(/^senha$/i), "senha-forte-123");
 		await user.click(screen.getByRole("button", { name: /criar acesso/i }));
 

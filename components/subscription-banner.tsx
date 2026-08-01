@@ -16,6 +16,17 @@ export function SubscriptionBanner() {
 
 	if (status === undefined) return null;
 
+	const contact = status.supportEmail ? (
+		<a
+			className="font-medium underline underline-offset-2"
+			href={`mailto:${status.supportEmail}?subject=${encodeURIComponent(
+				"Renovação — Nosso Casamento",
+			)}`}
+		>
+			{status.supportEmail}
+		</a>
+	) : null;
+
 	if (!status.active) {
 		return (
 			<div
@@ -31,7 +42,11 @@ export function SubscriptionBanner() {
 						{status.activeUntil
 							? `Sua assinatura venceu em ${formatDateBR(status.activeUntil)}. `
 							: ""}
-						Fale com quem administra o app para renovar e voltar a editar.
+						{contact ? (
+							<>Para renovar e voltar a editar, escreva para {contact}.</>
+						) : (
+							"Fale com quem administra o app para renovar e voltar a editar."
+						)}
 					</p>
 				</div>
 			</div>

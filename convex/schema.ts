@@ -37,6 +37,8 @@ export default defineSchema({
 		...weddingFieldValidators,
 		subscriptionActiveUntil: v.optional(v.string()), // ISO yyyy-MM-dd
 		theme: v.optional(v.string()), // accent theme id (see lib/domain/themes)
+		// The couple's own background photo; missing = the shipped default.
+		backgroundStorageId: v.optional(v.id("_storage")),
 		termsAcceptedAt: v.optional(v.number()), // epoch ms, set at self-signup
 	}),
 
@@ -64,6 +66,36 @@ export default defineSchema({
 		message: v.string(),
 		createdAt: v.number(), // epoch ms
 	}).index("by_created", ["createdAt"]),
+
+	// A pending self-service e-mail change: the code is emailed to the NEW
+	// address and must come back before anything is touched. One per user.
+	emailChangeRequests: defineTable({
+		userId: v.id("users"),
+		newEmail: v.string(),
+		codeHash: v.string(), // sha-256 hex of the 8-digit code
+		expiresAt: v.number(), // epoch ms
+	}).index("by_user", ["userId"]),
+
+	// Per-user opt-outs for the daily reminder e-mails. Missing row = all on.
+	notificationPrefs: defineTable({
+		userId: v.id("users"),
+		paymentReminders: v.boolean(),
+		subscriptionReminders: v.boolean(),
+	}).index("by_user", ["userId"]),
+
+	// A pending invitation to join a wedding as a member. The e-mailed link
+	// carries the raw token; only its hash is stored. Accepting creates the
+	// account (invited person picks their own password) and burns the row.
+	invitations: defineTable({
+		weddingId: v.id("weddings"),
+		email: v.string(),
+		tokenHash: v.string(), // sha-256 hex of the link token
+		invitedByUserId: v.id("users"),
+		expiresAt: v.number(), // epoch ms
+	})
+		.index("by_wedding", ["weddingId"])
+		.index("by_email", ["email"])
+		.index("by_tokenHash", ["tokenHash"]),
 
 	// Links a user to a wedding. A user belongs to exactly one wedding today;
 	// the superadmin (AUTH_ADMIN_EMAIL) reaches any wedding without one.

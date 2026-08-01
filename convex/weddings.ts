@@ -6,6 +6,7 @@ import {
 } from "../lib/domain/subscription";
 import { isWeddingTheme } from "../lib/domain/themes";
 import { normalizeWeddingFields } from "../lib/domain/wedding";
+import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { purgeAuthRows } from "./lib/accounts";
@@ -15,6 +16,7 @@ import {
 	getViewer,
 	isSuperadminEmail,
 	requireWeddingAdmin,
+	superadminEmails,
 	superadminMutation,
 	superadminQuery,
 	weddingAdminMutation,
@@ -57,6 +59,12 @@ export async function createWeddingWithAdmin(
 		userId: adminUserId,
 		role: "admin",
 	});
+	if (adminUser.email) {
+		await ctx.scheduler.runAfter(0, internal.emails.sendWelcome, {
+			email: adminUser.email,
+			coupleNames: doc.coupleNames,
+		});
+	}
 	return weddingId;
 }
 
@@ -159,6 +167,8 @@ export const subscriptionStatus = weddingQuery({
 			...computeStatus(wedding?.subscriptionActiveUntil, todayInSaoPaulo()),
 			isAdmin: ctx.role === "admin",
 			isSuperadmin: ctx.isSuperadmin,
+			// Who to write to for a renewal — the banner is useless without it.
+			supportEmail: superadminEmails()[0] ?? null,
 		};
 	},
 });
@@ -217,6 +227,52 @@ export const setTheme = weddingAdminMutation({
 			throw new ConvexError("Tema inválido");
 		}
 		await ctx.db.patch(ctx.weddingId, { theme });
+		return null;
+	},
+});
+
+/**
+ * The couple's own background photo, or null for the shipped default. The
+ * URL is short-lived, so this is a query the client re-reads, not a stored
+ * string.
+ */
+export const background = weddingQuery({
+	args: {},
+	handler: async (ctx) => {
+		const wedding = await ctx.db.get(ctx.weddingId);
+		if (!wedding?.backgroundStorageId) return null;
+		return await ctx.storage.getUrl(wedding.backgroundStorageId);
+	},
+});
+
+/** Upload target for a new background photo (admin only). */
+export const generateBackgroundUploadUrl = weddingAdminMutation({
+	args: {},
+	handler: async (ctx) => await ctx.storage.generateUploadUrl(),
+});
+
+export const setBackground = weddingAdminMutation({
+	args: { storageId: v.id("_storage") },
+	handler: async (ctx, { storageId }: { storageId: Id<"_storage"> }) => {
+		const wedding = await ctx.db.get(ctx.weddingId);
+		const previous = wedding?.backgroundStorageId;
+		await ctx.db.patch(ctx.weddingId, { backgroundStorageId: storageId });
+		// Drop the replaced file so storage doesn't grow with every change.
+		if (previous && previous !== storageId) {
+			await ctx.storage.delete(previous);
+		}
+		return null;
+	},
+});
+
+/** Back to the photo the app ships with. */
+export const clearBackground = weddingAdminMutation({
+	args: {},
+	handler: async (ctx) => {
+		const wedding = await ctx.db.get(ctx.weddingId);
+		if (!wedding?.backgroundStorageId) return null;
+		await ctx.storage.delete(wedding.backgroundStorageId);
+		await ctx.db.patch(ctx.weddingId, { backgroundStorageId: undefined });
 		return null;
 	},
 });

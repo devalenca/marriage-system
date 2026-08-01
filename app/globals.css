@@ -43,6 +43,7 @@
 	--color-gold: var(--gold);
 	--color-success: var(--success);
 	--color-warning: var(--warning);
+	--color-field: var(--field);
 	--radius-sm: calc(var(--radius) * 0.6);
 	--radius-md: calc(var(--radius) * 0.8);
 	--radius-lg: var(--radius);
@@ -55,119 +56,149 @@
 /* Realistic wedding field: photo-led, glass surfaces, espresso ink and
    cinematic green/gold accents. Light is the canonical theme. */
 :root {
+	/* The couple's colour, as raw parts (default: Oliva). Every accent token
+	   is derived from these three, and so is the ambient wash in @layer base —
+	   switching a theme repaints the whole app, not just the buttons. */
+	--theme-hue: 142;
+	--theme-chroma: 0.075;
+	--theme-l: 0.45;
+}
+
+/* The derivation lives in a rule that matches BOTH the document root and any
+   scoped [data-wedding-theme] subtree (the landing's live preview). Custom
+   properties substitute var() where they are declared, so a nested theme only
+   recolours if the derived tokens are declared on that element too. */
+:root,
+[data-wedding-theme] {
 	--background: oklch(0.973 0.018 112);
 	--foreground: oklch(0.25 0.018 75);
 	--card: oklch(0.993 0.012 98);
 	--card-foreground: oklch(0.25 0.018 75);
 	--popover: oklch(0.993 0.012 98);
 	--popover-foreground: oklch(0.25 0.018 75);
-	--primary: oklch(0.45 0.075 142);
+	--primary: oklch(var(--theme-l) var(--theme-chroma) var(--theme-hue));
 	--primary-foreground: oklch(0.985 0.018 105);
-	--secondary: oklch(0.91 0.04 141);
-	--secondary-foreground: oklch(0.31 0.045 130);
+	--secondary: oklch(0.91 calc(var(--theme-chroma) * 0.55) var(--theme-hue));
+	--secondary-foreground: oklch(
+		0.32 calc(var(--theme-chroma) * 0.6) var(--theme-hue)
+	);
 	--muted: oklch(0.93 0.028 105);
 	--muted-foreground: oklch(0.49 0.03 96);
-	--accent: oklch(0.91 0.044 88);
-	--accent-foreground: oklch(0.38 0.045 82);
+	--accent: oklch(0.92 calc(var(--theme-chroma) * 0.5) var(--theme-hue));
+	--accent-foreground: oklch(
+		0.36 calc(var(--theme-chroma) * 0.62) var(--theme-hue)
+	);
 	--destructive: oklch(0.5 0.13 35);
-	--border: oklch(0.84 0.035 110 / 0.68);
-	--input: oklch(0.84 0.035 110 / 0.82);
-	--ring: oklch(0.47 0.08 145);
+	--border: oklch(0.84 0.03 var(--theme-hue) / 0.6);
+	--input: oklch(0.84 0.03 var(--theme-hue) / 0.75);
+	/* Surface for form controls. They sit over the field photo, so they need
+	   a near-opaque backing of their own — transparent fields let the
+	   landscape through and swallowed their text. */
+	--field: oklch(0.995 0.008 100 / 0.95);
+	--ring: oklch(
+		calc(var(--theme-l) + 0.02) var(--theme-chroma) var(--theme-hue)
+	);
+	/* Champagne gold is the constant of the brand — it pairs with every
+	   theme and never shifts. */
 	--gold: oklch(0.63 0.095 82);
 	--success: oklch(0.5 0.08 150);
 	--warning: oklch(0.58 0.1 80);
-	--chart-1: oklch(0.45 0.075 142);
+	--chart-1: var(--primary);
 	--chart-2: oklch(0.62 0.085 80);
 	--chart-3: oklch(0.5 0.13 35);
 	--chart-4: oklch(0.74 0.075 170);
 	--chart-5: oklch(0.66 0.075 225);
 	--radius: 1rem;
-	--sidebar: oklch(0.975 0.018 108 / 0.76);
+	--sidebar: oklch(0.975 0.016 var(--theme-hue) / 0.78);
 	--sidebar-foreground: oklch(0.25 0.018 75);
-	--sidebar-primary: oklch(0.45 0.075 142);
+	--sidebar-primary: var(--primary);
 	--sidebar-primary-foreground: oklch(0.985 0.018 105);
-	--sidebar-accent: oklch(0.89 0.05 132 / 0.72);
-	--sidebar-accent-foreground: oklch(0.31 0.045 130);
-	--sidebar-border: oklch(0.84 0.035 110 / 0.55);
-	--sidebar-ring: oklch(0.47 0.08 145);
+	--sidebar-accent: oklch(
+		0.89 calc(var(--theme-chroma) * 0.65) var(--theme-hue) /
+		0.72
+	);
+	--sidebar-accent-foreground: var(--secondary-foreground);
+	--sidebar-border: oklch(0.84 0.03 var(--theme-hue) / 0.5);
+	--sidebar-ring: var(--ring);
 }
 
-/* Per-wedding accent themes (see lib/domain/themes). "oliva" is the default
-   above; each block below shifts only the accent-carrying tokens so buttons,
-   active nav, links and focus rings take the couple's colour while the warm
-   glass surfaces, ink and champagne gold stay put. */
+/* Per-wedding accent themes (see lib/domain/themes). Each block only restates
+   the three raw parts — everything else follows from them. Oliva repeats the
+   :root default on purpose: a scoped preview must carry its own hue, not
+   inherit whatever its ancestor is wearing. */
+[data-wedding-theme="oliva"] {
+	--theme-hue: 142;
+	--theme-chroma: 0.075;
+	--theme-l: 0.45;
+}
+
 [data-wedding-theme="terracota"] {
-	--primary: oklch(0.52 0.11 42);
-	--ring: oklch(0.54 0.11 42);
-	--sidebar-primary: oklch(0.52 0.11 42);
-	--sidebar-ring: oklch(0.54 0.11 42);
-	--sidebar-accent: oklch(0.9 0.05 60 / 0.72);
-	--sidebar-accent-foreground: oklch(0.36 0.06 45);
+	--theme-hue: 42;
+	--theme-chroma: 0.11;
+	--theme-l: 0.52;
 }
 
 [data-wedding-theme="rose"] {
-	--primary: oklch(0.55 0.1 12);
-	--ring: oklch(0.57 0.1 12);
-	--sidebar-primary: oklch(0.55 0.1 12);
-	--sidebar-ring: oklch(0.57 0.1 12);
-	--sidebar-accent: oklch(0.91 0.045 20 / 0.72);
-	--sidebar-accent-foreground: oklch(0.4 0.07 15);
+	--theme-hue: 12;
+	--theme-chroma: 0.1;
+	--theme-l: 0.55;
 }
 
 [data-wedding-theme="lavanda"] {
-	--primary: oklch(0.5 0.09 300);
-	--ring: oklch(0.52 0.09 300);
-	--sidebar-primary: oklch(0.5 0.09 300);
-	--sidebar-ring: oklch(0.52 0.09 300);
-	--sidebar-accent: oklch(0.9 0.04 300 / 0.72);
-	--sidebar-accent-foreground: oklch(0.38 0.06 300);
+	--theme-hue: 300;
+	--theme-chroma: 0.09;
+	--theme-l: 0.5;
 }
 
 [data-wedding-theme="oceano"] {
-	--primary: oklch(0.5 0.08 235);
-	--ring: oklch(0.52 0.08 235);
-	--sidebar-primary: oklch(0.5 0.08 235);
-	--sidebar-ring: oklch(0.52 0.08 235);
-	--sidebar-accent: oklch(0.9 0.04 235 / 0.72);
-	--sidebar-accent-foreground: oklch(0.36 0.06 235);
+	--theme-hue: 235;
+	--theme-chroma: 0.08;
+	--theme-l: 0.5;
 }
 
-/* Dark exists for completeness; light is canonical. */
-.dark {
-	--background: oklch(0.22 0.008 70);
+/* Dark mode. Light is canonical, but the couple can switch — and the accent
+   still follows their theme, so Terracota stays Terracota at night. */
+.dark,
+.dark [data-wedding-theme] {
+	/* The dark neutrals carry the couple's hue at very low chroma. Left on a
+	   fixed warm grey they read as brown panels floating on a green ground —
+	   the exact dissonance that made dark mode look dirty. */
+	--background: oklch(0.19 0.014 var(--theme-hue));
 	--foreground: oklch(0.94 0.008 85);
-	--card: oklch(0.26 0.009 70);
+	--card: oklch(0.235 0.016 var(--theme-hue));
 	--card-foreground: oklch(0.94 0.008 85);
-	--popover: oklch(0.26 0.009 70);
+	--popover: oklch(0.235 0.016 var(--theme-hue));
 	--popover-foreground: oklch(0.94 0.008 85);
-	--primary: oklch(0.72 0.06 130);
+	/* Lifted lightness and softened chroma so the accent reads on dark. */
+	--primary: oklch(0.74 calc(var(--theme-chroma) * 0.8) var(--theme-hue));
 	--primary-foreground: oklch(0.22 0.008 70);
-	--secondary: oklch(0.31 0.012 80);
+	--secondary: oklch(0.31 calc(var(--theme-chroma) * 0.25) var(--theme-hue));
 	--secondary-foreground: oklch(0.94 0.008 85);
-	--muted: oklch(0.31 0.012 80);
-	--muted-foreground: oklch(0.7 0.015 80);
-	--accent: oklch(0.33 0.02 85);
+	--muted: oklch(0.29 0.016 var(--theme-hue));
+	--muted-foreground: oklch(0.72 0.018 var(--theme-hue));
+	--accent: oklch(0.33 calc(var(--theme-chroma) * 0.35) var(--theme-hue));
 	--accent-foreground: oklch(0.9 0.03 85);
 	--destructive: oklch(0.62 0.14 35);
 	--border: oklch(1 0 0 / 12%);
 	--input: oklch(1 0 0 / 16%);
-	--ring: oklch(0.72 0.06 130);
+	--field: oklch(0.27 0.018 var(--theme-hue) / 0.95);
+	--ring: var(--primary);
 	--gold: oklch(0.74 0.09 80);
 	--success: oklch(0.68 0.08 150);
 	--warning: oklch(0.72 0.1 80);
-	--chart-1: oklch(0.72 0.06 130);
+	--chart-1: var(--primary);
 	--chart-2: oklch(0.74 0.09 80);
 	--chart-3: oklch(0.62 0.14 35);
-	--chart-4: oklch(0.55 0.05 130);
+	--chart-4: oklch(0.55 0.05 var(--theme-hue));
 	--chart-5: oklch(0.85 0.02 90);
-	--sidebar: oklch(0.26 0.009 70);
+	--sidebar: oklch(0.235 0.016 var(--theme-hue) / 0.92);
 	--sidebar-foreground: oklch(0.94 0.008 85);
-	--sidebar-primary: oklch(0.72 0.06 130);
+	--sidebar-primary: var(--primary);
 	--sidebar-primary-foreground: oklch(0.22 0.008 70);
-	--sidebar-accent: oklch(0.33 0.02 85);
+	--sidebar-accent: var(--accent);
 	--sidebar-accent-foreground: oklch(0.9 0.03 85);
 	--sidebar-border: oklch(1 0 0 / 12%);
-	--sidebar-ring: oklch(0.72 0.06 130);
+	--sidebar-ring: var(--primary);
 }
 
 @layer base {
@@ -177,6 +208,48 @@
 
 	html {
 		@apply font-sans;
+		/* Reserve the scrollbar's lane permanently. Base UI locks body scroll
+		   while a select or dialog is open and does not compensate for the
+		   scrollbar it removes, so without this the whole page slid sideways
+		   every time a filter opened. */
+		scrollbar-gutter: stable;
+	}
+
+	/* The scrollbar belongs to the interface, not to the OS: slim, rounded and
+	   tinted with the couple's accent, in every scrollable area. */
+	::-webkit-scrollbar {
+		width: 12px;
+		height: 12px;
+	}
+
+	::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	::-webkit-scrollbar-thumb {
+		background-color: color-mix(in oklch, var(--primary) 32%, transparent);
+		background-clip: content-box;
+		border: 3.5px solid transparent;
+		border-radius: 9999px;
+	}
+
+	::-webkit-scrollbar-thumb:hover {
+		background-color: color-mix(in oklch, var(--primary) 55%, transparent);
+	}
+
+	::-webkit-scrollbar-corner {
+		background: transparent;
+	}
+
+	/* Firefox has no pseudo-elements for this; its own properties would win
+	   over the rules above in Chrome, so they are scoped to browsers that
+	   lack the pseudo-element. */
+	@supports not selector(::-webkit-scrollbar) {
+		html {
+			scrollbar-width: thin;
+			scrollbar-color: color-mix(in oklch, var(--primary) 40%, transparent)
+				transparent;
+		}
 	}
 
 	/* Consistent keyboard focus ring across every interactive surface. The
@@ -192,7 +265,7 @@
 		@apply text-foreground;
 		position: relative;
 		isolation: isolate;
-		background: oklch(0.91 0.035 120);
+		background: oklch(0.91 0.035 var(--theme-hue));
 	}
 
 	body::before {
@@ -201,16 +274,21 @@
 		z-index: -2;
 		pointer-events: none;
 		content: "";
-		background:
+		/* background-image, never the `background` shorthand: a var() inside a
+		   shorthand makes the whole declaration pending-substitution, which
+		   drops the background-size/position set after it — the photo would
+		   render at its natural size and tile. */
+		background-image:
 			radial-gradient(70% 46% at 18% 10%, oklch(1 0 0 / 0.34), transparent 55%),
 			linear-gradient(
 				180deg,
-				oklch(0.9 0.035 220 / 0.16) 0%,
-				oklch(0.62 0.07 140 / 0.28) 100%
+				oklch(0.9 0.035 var(--theme-hue) / 0.16) 0%,
+				oklch(0.62 0.07 var(--theme-hue) / 0.28) 100%
 			),
-			url("/wedding-field-hero.png");
+			var(--app-background, url("/wedding-field-hero.png"));
 		background-position: center;
 		background-size: cover;
+		background-repeat: no-repeat;
 		filter: saturate(1.08) contrast(1.02);
 		transform: scale(1.02);
 	}
@@ -224,8 +302,8 @@
 		background:
 			linear-gradient(
 				90deg,
-				oklch(0.17 0.03 95 / 0.34),
-				oklch(0.22 0.04 130 / 0.08) 42%,
+				oklch(0.17 0.03 var(--theme-hue) / 0.34),
+				oklch(0.22 0.04 var(--theme-hue) / 0.08) 42%,
 				oklch(0.96 0.02 100 / 0.16)
 			),
 			linear-gradient(
@@ -252,19 +330,63 @@
 		z-index: 1;
 	}
 
-	[data-slot="card"] {
-		position: relative;
+	/* Dark mode drops the field photo from the page ground.
+	   A daylight pasture crushed to 42% brightness and then buried under a
+	   90% scrim stops reading as a photograph — it just leaves a muddy green
+	   haze, and every translucent panel above it looks smeared. Instead the
+	   ground becomes a deep, theme-tinted gradient; the hero's blobs carry the
+	   ambience, and the photo still appears where it is meant to be looked at
+	   (the closing band and the in-app preview). */
+	.dark body {
+		background: oklch(0.165 0.014 var(--theme-hue));
+	}
+
+	.dark body::before {
+		background-image:
+			radial-gradient(
+				85% 55% at 10% -8%,
+				oklch(0.3 0.035 var(--theme-hue) / 0.34),
+				transparent 64%
+			),
+			radial-gradient(
+				70% 50% at 108% 10%,
+				oklch(0.27 0.03 var(--theme-hue) / 0.2),
+				transparent 68%
+			);
+		filter: none;
+		transform: none;
+	}
+
+	.dark body::after {
+		background: linear-gradient(
+			180deg,
+			oklch(0.16 0.02 var(--theme-hue) / 0.2),
+			oklch(0.11 0.015 var(--theme-hue) / 0.55)
+		);
+		opacity: 1;
+	}
+
+	/* `:not(.hero-wash)` is load-bearing, not cosmetic: this `background`
+	   shorthand carries var()/color-mix, which makes the whole declaration
+	   resolve late and clobber the background-size/position that .hero-wash
+	   sets on the same element — the photo would tile at natural size. A
+	   photo-backed card doesn't want the glass gradient anyway. */
+	[data-slot="card"]:not(.hero-wash) {
 		background: linear-gradient(
 			135deg,
 			color-mix(in oklch, var(--card) 78%, transparent),
 			color-mix(in oklch, var(--accent) 18%, var(--card))
 		);
+	}
+
+	[data-slot="card"] {
+		position: relative;
 		-webkit-backdrop-filter: blur(20px) saturate(1.2);
 		backdrop-filter: blur(20px) saturate(1.2);
 		box-shadow:
 			inset 0 1px 0 oklch(1 0 0 / 0.66),
-			0 1px 2px oklch(0.14 0.04 120 / 0.08),
-			0 26px 70px oklch(0.19 0.06 132 / 0.18);
+			0 1px 2px oklch(0.14 0.04 var(--theme-hue) / 0.08),
+			0 26px 70px oklch(0.19 0.06 var(--theme-hue) / 0.18);
 		transition:
 			transform 180ms ease,
 			box-shadow 180ms ease,
@@ -275,11 +397,13 @@
 		transform: translateY(-2px);
 		box-shadow:
 			inset 0 1px 0 oklch(1 0 0 / 0.7),
-			0 1px 2px oklch(0.14 0.04 120 / 0.08),
-			0 34px 84px oklch(0.18 0.06 132 / 0.22);
+			0 1px 2px oklch(0.14 0.04 var(--theme-hue) / 0.08),
+			0 34px 84px oklch(0.18 0.06 var(--theme-hue) / 0.22);
 	}
 
-	[data-slot="card"]::before {
+	/* The tint sheet stays off photo-backed cards, so the picture reads as a
+	   picture. */
+	[data-slot="card"]:not(.hero-wash)::before {
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
@@ -287,12 +411,12 @@
 		background:
 			radial-gradient(
 				120% 80% at 10% 0%,
-				oklch(0.88 0.055 222 / 0.14),
+				oklch(0.88 0.055 var(--theme-hue) / 0.14),
 				transparent 50%
 			),
 			radial-gradient(
 				80% 60% at 96% 92%,
-				oklch(0.78 0.08 132 / 0.14),
+				oklch(0.78 0.08 var(--theme-hue) / 0.14),
 				transparent 58%
 			);
 		opacity: 0.95;
@@ -305,42 +429,59 @@
 
 	.hero-wash {
 		color: oklch(0.22 0.025 88);
-		background:
+		/* Longhand for the same reason as body::before above. */
+		background-image:
 			linear-gradient(90deg, oklch(0.12 0.03 90 / 0.42), transparent 58%),
 			linear-gradient(
 				180deg,
 				oklch(0.96 0.015 100 / 0.1),
-				oklch(0.16 0.045 110 / 0.25)
+				oklch(0.16 0.045 var(--theme-hue) / 0.25)
 			),
-			url("/wedding-field-hero.png");
+			var(--app-background, url("/wedding-field-hero.png"));
 		background-position: center;
 		background-size: cover;
+		background-repeat: no-repeat;
 	}
 
 	[data-slot="progress-indicator"] {
 		background-image: linear-gradient(
 			90deg,
-			oklch(0.43 0.085 146),
+			var(--primary),
 			oklch(0.7 0.105 88)
 		);
 	}
 
 	[data-slot="button"] {
-		box-shadow: 0 8px 18px oklch(0.34 0.07 132 / 0.08);
+		box-shadow: 0 8px 18px oklch(0.34 0.07 var(--theme-hue) / 0.1);
 	}
 
 	[data-slot="button"][class*="bg-primary"] {
 		background-image: linear-gradient(
 			135deg,
-			oklch(0.46 0.09 145),
-			oklch(0.36 0.07 132)
+			oklch(calc(var(--theme-l) + 0.03) var(--theme-chroma) var(--theme-hue)),
+			oklch(calc(var(--theme-l) - 0.08) var(--theme-chroma) var(--theme-hue))
 		);
 	}
 
-	[data-slot="input"],
-	[data-slot="textarea"],
-	[data-slot="select-trigger"] {
-		background-color: oklch(0.99 0.012 100 / 0.62);
+	/* Comfortable touch targets on phones, compact on desktop. The surface
+	   and placeholder colours live on the components themselves (bg-field),
+	   because a utility class always outranks this layer. */
+	@media (width < 40rem) {
+		[data-slot="input"],
+		[data-slot="select-trigger"] {
+			min-height: 2.75rem;
+		}
+	}
+
+	.dark [data-slot="card"] {
+		box-shadow:
+			inset 0 1px 0 oklch(1 0 0 / 0.06),
+			0 1px 2px oklch(0 0 0 / 0.3),
+			0 26px 70px oklch(0 0 0 / 0.45);
+	}
+
+	.dark [data-slot="card"]::before {
+		opacity: 0.45;
 	}
 
 	.animate-screen-enter {
@@ -359,7 +500,7 @@
 		background:
 			radial-gradient(
 				90% 70% at 8% 0%,
-				oklch(0.66 0.1 145 / 0.42),
+				oklch(0.66 0.12 var(--theme-hue) / 0.45),
 				transparent 58%
 			),
 			radial-gradient(
@@ -367,7 +508,12 @@
 				oklch(0.74 0.1 86 / 0.42),
 				transparent 60%
 			),
-			linear-gradient(135deg, #2c3626 0%, #3d4a31 52%, #20261b 100%);
+			linear-gradient(
+				135deg,
+				oklch(0.3 0.05 var(--theme-hue)) 0%,
+				oklch(0.38 0.06 var(--theme-hue)) 52%,
+				oklch(0.24 0.04 var(--theme-hue)) 100%
+			);
 	}
 
 	.finance-glow-card::before {
@@ -477,6 +623,210 @@
 		.grow-y {
 			animation: none;
 		}
+	}
+
+	/* ---------- Landing page (marketing) ---------- */
+
+	/* Frosted hero/preview panels share one soft elevated shadow. */
+	.landing-glass {
+		box-shadow: 0 20px 60px oklch(0.2 0.05 var(--theme-hue) / 0.16);
+	}
+
+	/* Hero ambient backdrop: three radial-gradient blobs in the brand tones
+	   (olive / champagne gold / accent) glowing softly behind the hero glass.
+	   The blur is a STATIC filter on each blob — painted once and cached —
+	   and GSAP animates transform only (desktop, motion allowed), so the
+	   whole effect lives on the compositor. Colours derive from tokens via
+	   color-mix, so the blobs re-tint themselves correctly in dark mode. */
+	.hero-ambient {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		overflow: hidden;
+		pointer-events: none;
+		border-radius: 3rem;
+	}
+
+	.hero-blob {
+		position: absolute;
+		border-radius: 50%;
+		filter: blur(64px);
+		will-change: transform;
+	}
+
+	.hero-blob-olive {
+		top: -14%;
+		left: -8%;
+		width: 34rem;
+		height: 34rem;
+		background: radial-gradient(
+			circle at 35% 35%,
+			color-mix(in oklch, var(--primary) 26%, transparent),
+			transparent 68%
+		);
+	}
+
+	.hero-blob-gold {
+		top: 20%;
+		right: -10%;
+		width: 30rem;
+		height: 30rem;
+		background: radial-gradient(
+			circle at 60% 40%,
+			color-mix(in oklch, var(--gold) 24%, transparent),
+			transparent 70%
+		);
+	}
+
+	.hero-blob-champagne {
+		bottom: -18%;
+		left: 24%;
+		width: 26rem;
+		height: 26rem;
+		background: radial-gradient(
+			circle at 50% 50%,
+			color-mix(in oklch, var(--accent) 42%, transparent),
+			transparent 70%
+		);
+	}
+
+	/* CTA micro-interaction: lift + subtle brightness, snappy press.
+	   Transform/filter only, so it stays compositor-friendly. */
+	.cta-button {
+		transition:
+			transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			filter 200ms ease,
+			box-shadow 200ms ease,
+			background-color 200ms ease;
+		will-change: transform;
+	}
+
+	.cta-button:hover {
+		transform: translateY(-1px) scale(1.03);
+		filter: brightness(1.06) saturate(1.04);
+		box-shadow: 0 14px 30px oklch(0.34 0.07 var(--theme-hue) / 0.2);
+	}
+
+	.cta-button:active {
+		transform: translateY(0) scale(0.98);
+	}
+
+	/* Landing cards: slightly richer hover than app cards (scale + glow). */
+	.landing-card {
+		transition:
+			transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			box-shadow 220ms ease,
+			filter 220ms ease;
+	}
+
+	[data-slot="card"].landing-card:hover {
+		transform: translateY(-4px) scale(1.012);
+		filter: brightness(1.025);
+		box-shadow:
+			inset 0 1px 0 oklch(1 0 0 / 0.7),
+			0 1px 2px oklch(0.14 0.04 var(--theme-hue) / 0.08),
+			0 36px 90px oklch(0.18 0.06 var(--theme-hue) / 0.24);
+	}
+
+	/* Landing tiles: the quieter sibling of .landing-card for non-Card glass
+	   rows (pain points). Same easing family, roughly half the amplitude. */
+	.landing-tile {
+		transition:
+			transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+			filter 220ms ease,
+			box-shadow 220ms ease;
+	}
+
+	.landing-tile:hover {
+		transform: translateY(-2px) scale(1.008);
+		filter: brightness(1.03);
+		box-shadow: 0 18px 44px oklch(0.18 0.06 var(--theme-hue) / 0.16);
+	}
+
+	/* Floating mobile CTA: hidden until the landing GSAP layer reveals it
+	   after the hero scrolls away. Reduced-motion users get it always on
+	   (no scroll listener runs for them). */
+	.floating-cta {
+		opacity: 0;
+		visibility: hidden;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.floating-cta {
+			opacity: 1;
+			visibility: visible;
+		}
+	}
+
+	/* ---------- Dark mode: landing-specific surfaces. The app-wide dark
+	   treatment (body scrims, card/input glass) lives with the theme system
+	   further up; these only cover the landing's own classes. ---------- */
+
+	.dark .landing-glass {
+		box-shadow: 0 20px 60px oklch(0 0 0 / 0.45);
+	}
+
+	/* The finance surface is a deliberately dark, glowing card designed to pop
+	   against a light page. On a dark page that same glow turns it into the
+	   loudest thing on screen, so dark mode keeps it only one step above the
+	   surrounding surface and dims the sheen. */
+	.dark .finance-glow-card {
+		background:
+			radial-gradient(
+				90% 70% at 8% 0%,
+				oklch(0.6 0.09 var(--theme-hue) / 0.22),
+				transparent 60%
+			),
+			radial-gradient(
+				80% 90% at 100% 96%,
+				oklch(0.7 0.08 86 / 0.18),
+				transparent 62%
+			),
+			linear-gradient(
+				135deg,
+				oklch(0.27 0.035 var(--theme-hue)) 0%,
+				oklch(0.32 0.045 var(--theme-hue)) 52%,
+				oklch(0.24 0.03 var(--theme-hue)) 100%
+			);
+	}
+
+	.dark .finance-glow-card::before {
+		opacity: 0.45;
+	}
+
+	/* In dark the tokens flip to lighter accents, so the blobs read as glow;
+	   ease their intensity down so they stay ambient, never spotlight. */
+	.dark .hero-blob {
+		opacity: 0.6;
+	}
+
+	.dark .landing-tile:hover {
+		box-shadow: 0 18px 44px oklch(0 0 0 / 0.4);
+	}
+
+	.dark [data-slot="card"]:hover {
+		box-shadow:
+			inset 0 1px 0 oklch(1 0 0 / 0.08),
+			0 1px 2px oklch(0 0 0 / 0.3),
+			0 34px 84px oklch(0 0 0 / 0.52);
+	}
+
+	.dark [data-slot="card"].landing-card:hover {
+		box-shadow:
+			inset 0 1px 0 oklch(1 0 0 / 0.08),
+			0 1px 2px oklch(0 0 0 / 0.3),
+			0 36px 90px oklch(0 0 0 / 0.55);
+	}
+
+	/* The primary button gradient derives from the light-mode lightness, so
+	   in dark it must lift with the dark --primary (L 0.74) to keep the dark
+	   ink (primary-foreground) readable on it. */
+	.dark [data-slot="button"][class*="bg-primary"] {
+		background-image: linear-gradient(
+			135deg,
+			oklch(0.77 calc(var(--theme-chroma) * 0.8) var(--theme-hue)),
+			oklch(0.68 calc(var(--theme-chroma) * 0.8) var(--theme-hue))
+		);
 	}
 
 	.pergola-scene {

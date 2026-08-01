@@ -3,14 +3,13 @@
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { ArrowRight, Check, PartyPopper } from "lucide-react";
-import Link from "next/link";
 import { useMemo } from "react";
 import { toast } from "sonner";
+import { ButtonLink } from "@/components/button-link";
 import { DailyVerseCard } from "@/components/dashboard/daily-verse-card";
 import { OnboardingCard } from "@/components/dashboard/onboarding-card";
 import { BudgetOverviewCard } from "@/components/finance/budget-overview-card";
 import { PaymentListCard } from "@/components/payment-list-card";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -126,10 +125,10 @@ function MonthTasksCard({ tasks }: { tasks: Summary["monthTasks"] }) {
 		<Card>
 			<CardHeader className="flex-row items-center justify-between">
 				<CardTitle className="font-display text-lg">Tarefas do mês</CardTitle>
-				<Button variant="ghost" size="sm" render={<Link href="/checklist" />}>
+				<ButtonLink variant="ghost" size="sm" href="/checklist">
 					Ver tudo
 					<ArrowRight data-icon="inline-end" aria-hidden />
-				</Button>
+				</ButtonLink>
 			</CardHeader>
 			<CardContent>
 				{tasks.length === 0 ? (
@@ -178,10 +177,10 @@ function GuestsSummaryCard() {
 		<Card>
 			<CardHeader className="flex-row items-center justify-between">
 				<CardTitle className="font-display text-lg">Convidados</CardTitle>
-				<Button variant="ghost" size="sm" render={<Link href="/convidados" />}>
+				<ButtonLink variant="ghost" size="sm" href="/convidados">
 					Ver tudo
 					<ArrowRight data-icon="inline-end" aria-hidden />
-				</Button>
+				</ButtonLink>
 			</CardHeader>
 			<CardContent>
 				{guests.total === 0 ? (
@@ -189,13 +188,13 @@ function GuestsSummaryCard() {
 						<p className="text-sm text-muted-foreground">
 							Monte sua lista de convidados e acompanhe as confirmações.
 						</p>
-						<Button
+						<ButtonLink
 							size="sm"
 							className="h-11 px-4 sm:h-7 sm:px-2.5"
-							render={<Link href="/convidados" />}
+							href="/convidados"
 						>
 							Criar convite
-						</Button>
+						</ButtonLink>
 					</div>
 				) : (
 					<div className="grid grid-cols-3 gap-3 text-center">
@@ -233,10 +232,10 @@ function CategorySummaryCard({
 		<Card>
 			<CardHeader className="flex-row items-center justify-between">
 				<CardTitle className="font-display text-lg">Por categoria</CardTitle>
-				<Button variant="ghost" size="sm" render={<Link href="/financeiro" />}>
+				<ButtonLink variant="ghost" size="sm" href="/financeiro">
 					Financeiro
 					<ArrowRight data-icon="inline-end" aria-hidden />
-				</Button>
+				</ButtonLink>
 			</CardHeader>
 			<CardContent>
 				{categories.length === 0 ? (
@@ -245,13 +244,13 @@ function CategorySummaryCard({
 							Cadastre seu primeiro fornecedor para acompanhar o orçamento por
 							categoria.
 						</p>
-						<Button
+						<ButtonLink
 							size="sm"
 							className="h-11 px-4 sm:h-7 sm:px-2.5"
-							render={<Link href="/fornecedores" />}
+							href="/fornecedores"
 						>
 							Cadastrar fornecedor
-						</Button>
+						</ButtonLink>
 					</div>
 				) : (
 					<ul className="grid gap-3 md:grid-cols-2">

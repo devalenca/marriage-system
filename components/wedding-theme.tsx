@@ -3,24 +3,53 @@
 import { useQuery } from "convex/react";
 import { useEffect } from "react";
 import { api } from "@/convex/_generated/api";
-import { resolveTheme } from "@/lib/domain/themes";
+import { resolveTheme, THEME_STORAGE_KEY } from "@/lib/domain/themes";
 
 /**
- * Applies the couple's accent theme app-wide by setting `data-wedding-theme`
- * on the document root, so it reaches portalled dialogs and toasts too.
+ * Applies the couple's look app-wide from the document root, so it reaches
+ * portalled dialogs and toasts too: `data-wedding-theme` for the accent and
+ * `--app-background` for their own photo (CSS falls back to the shipped one).
  * Renders nothing.
  */
 export function WeddingTheme() {
 	const identity = useQuery(api.weddings.currentIdentity, {});
-	const theme = resolveTheme(identity?.theme ?? undefined);
+	const backgroundUrl = useQuery(api.weddings.background, {});
+
+	useEffect(() => {
+		// Undefined means the query is still in flight. Applying a theme now
+		// would mean applying the *default* one, undoing what ThemeBootstrap
+		// already painted and producing the flash it exists to prevent.
+		if (identity === undefined) return;
+		const theme = resolveTheme(identity?.theme ?? undefined);
+		document.documentElement.setAttribute("data-wedding-theme", theme);
+		try {
+			localStorage.setItem(THEME_STORAGE_KEY, theme);
+		} catch {
+			// Private mode or a full quota: the theme still applies this session.
+		}
+	}, [identity]);
+
+	useEffect(() => {
+		// This component only lives inside the signed-in shell, so leaving it
+		// (signing out, or landing on a public page) must hand the palette
+		// back to the product's own.
+		return () => {
+			document.documentElement.removeAttribute("data-wedding-theme");
+		};
+	}, []);
 
 	useEffect(() => {
 		const root = document.documentElement;
-		root.setAttribute("data-wedding-theme", theme);
+		if (typeof backgroundUrl === "string" && backgroundUrl.length > 0) {
+			root.style.setProperty("--app-background", `url("${backgroundUrl}")`);
+		} else if (backgroundUrl === null) {
+			// Explicitly no custom photo — hand it back to the CSS fallback.
+			root.style.removeProperty("--app-background");
+		}
 		return () => {
-			root.removeAttribute("data-wedding-theme");
+			root.style.removeProperty("--app-background");
 		};
-	}, [theme]);
+	}, [backgroundUrl]);
 
 	return null;
 }

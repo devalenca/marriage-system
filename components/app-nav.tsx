@@ -95,7 +95,10 @@ function BrandIcon({ size = "md" }: { size?: "sm" | "md" }) {
 	);
 }
 
-/** One nav row. Collapsed on the desktop rail, it becomes an icon + tooltip. */
+/**
+ * One nav row. Expanded it is an icon + label; collapsed it is a single
+ * square button with a tooltip — no nested circles, nothing to scroll.
+ */
 function NavRow({
 	item,
 	pathname,
@@ -117,28 +120,28 @@ function NavRow({
 			aria-label={collapsed ? label : undefined}
 			aria-current={active ? "page" : undefined}
 			className={cn(
-				"group flex items-center rounded-2xl font-semibold transition-colors active:translate-y-px",
+				"group flex items-center rounded-xl font-medium transition-colors active:translate-y-px",
 				collapsed
-					? "justify-center p-1.5"
-					: "min-h-11 gap-2.5 px-3 py-2 text-sm",
+					? "size-11 justify-center"
+					: "min-h-11 gap-3 px-3 py-2 text-sm",
 				active
-					? "bg-card/80 text-sidebar-primary shadow-sm ring-1 ring-sidebar-border"
-					: "text-muted-foreground hover:bg-card/50 hover:text-foreground",
+					? "bg-primary text-primary-foreground shadow-sm"
+					: "text-muted-foreground hover:bg-primary/10 hover:text-primary",
 			)}
 		>
-			<span
-				className={cn(
-					"flex size-9 shrink-0 items-center justify-center rounded-full transition-colors",
-					active ? "bg-primary/12 text-primary" : "bg-card/40 text-current",
-				)}
-			>
-				<Icon className="size-4.5" aria-hidden />
-			</span>
+			<Icon className="size-5 shrink-0" aria-hidden />
 			{collapsed ? null : (
 				<>
 					<span className="flex-1 truncate">{label}</span>
 					{shortcut ? (
-						<kbd className="hidden shrink-0 rounded-md border border-sidebar-border bg-card/60 px-1.5 py-0.5 font-sans text-[11px] font-medium text-muted-foreground/70 group-hover:inline-block">
+						<kbd
+							className={cn(
+								"hidden shrink-0 rounded-md px-1.5 py-0.5 font-sans text-[11px] font-medium group-hover:inline-block",
+								active
+									? "bg-primary-foreground/15 text-primary-foreground/80"
+									: "bg-card/70 text-muted-foreground/70",
+							)}
+						>
 							{shortcut}
 						</kbd>
 					) : null}
@@ -161,8 +164,15 @@ function NavRow({
 	);
 }
 
-function Hairline() {
-	return <div className="mx-3 my-1.5 h-px bg-sidebar-border/60" />;
+function Hairline({ collapsed = false }: { collapsed?: boolean }) {
+	return (
+		<div
+			className={cn(
+				"my-1.5 h-px bg-sidebar-border/60",
+				collapsed ? "mx-2.5" : "mx-3",
+			)}
+		/>
+	);
 }
 
 /** Search (⌘K/Ctrl+K palette) and quick-create (+) controls for the sidebar. */
@@ -178,6 +188,7 @@ function NavToolbar({ collapsed }: { collapsed: boolean }) {
 								size="icon"
 								aria-label="Buscar (Ctrl+K)"
 								onClick={openPalette}
+								className="size-11 rounded-xl"
 							/>
 						}
 					>
@@ -193,6 +204,7 @@ function NavToolbar({ collapsed }: { collapsed: boolean }) {
 								size="icon"
 								aria-label="Criar rápido"
 								onClick={openQuickCreate}
+								className="size-11 rounded-xl"
 							/>
 						}
 					>
@@ -244,14 +256,27 @@ function NavItems({
 	return (
 		<nav
 			aria-label="Navegação principal"
-			className="flex min-h-0 flex-1 flex-col gap-1"
+			className={cn(
+				"flex min-h-0 flex-1 flex-col gap-1",
+				collapsed && "items-center",
+			)}
 		>
-			{/* The main groups scroll when they outgrow the viewport, so nothing
-			    (least of all Ajustes below) is ever pushed out of reach. */}
-			<div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+			{/* The main groups scroll only if the viewport is genuinely too short,
+			    so nothing (least of all Ajustes below) is ever out of reach. The
+			    native scrollbar is hidden — it read as a stray widget on the rail. */}
+			<div
+				className={cn(
+					"flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+					collapsed && "items-center",
+				)}
+			>
 				{NAV_GROUPS.map((group, i) => (
 					<Fragment key={group[0]?.href ?? i}>
-						{i > 0 ? <Hairline /> : null}
+						{i > 0 ? (
+							<div className={cn(collapsed && "w-full")}>
+								<Hairline collapsed={collapsed} />
+							</div>
+						) : null}
 						{group.map((item) => (
 							<NavRow
 								key={item.href}
@@ -265,8 +290,15 @@ function NavItems({
 				))}
 			</div>
 			{/* Ajustes (and Administração) stay pinned at the bottom. */}
-			<div className="flex shrink-0 flex-col gap-1 pt-1">
-				<Hairline />
+			<div
+				className={cn(
+					"flex shrink-0 flex-col gap-1 pt-1",
+					collapsed ? "w-full items-center" : "",
+				)}
+			>
+				<div className={cn(collapsed && "w-full")}>
+					<Hairline collapsed={collapsed} />
+				</div>
 				{showAdmin ? (
 					<NavRow
 						item={ADMIN_ITEM}
@@ -366,59 +398,95 @@ export function AppNav({
 			{/* Desktop: collapsible sidebar. */}
 			<aside
 				className={cn(
-					"fixed inset-y-0 left-0 z-50 hidden flex-col gap-3 border-r border-sidebar-border bg-sidebar/85 p-3 shadow-[18px_0_60px_oklch(0.32_0.07_132_/_0.12)] backdrop-blur-2xl transition-[width] duration-200 ease-out md:flex",
-					collapsed ? "w-[4.75rem]" : "w-64",
+					"fixed inset-y-0 left-0 z-50 hidden flex-col overflow-hidden border-r border-sidebar-border bg-sidebar/85 shadow-[18px_0_60px_oklch(0.32_0.07_var(--theme-hue)_/_0.12)] backdrop-blur-2xl transition-[width] duration-200 ease-out md:flex",
+					collapsed ? "w-[4.5rem] items-center px-1.5 py-3" : "w-64 p-3",
 				)}
 			>
-				{/* Utility row: brand icon + collapse toggle. The identity block
-				    below gets the full width so the couple's names never wrap. */}
+				{/*
+				 * The column keeps the width its state calls for (w-11 of icons, or
+				 * the rail's 16rem minus padding) instead of stretching to the rail.
+				 * Only the rail's width animates, so nothing inside re-lays-out
+				 * mid-flight — the search button used to be `flex-1` with the
+				 * Button's own `transition-all`, so it re-animated its width on
+				 * every frame and finished ahead of the rail. The overflow-hidden
+				 * above turns the widening into a clean reveal.
+				 */}
 				<div
 					className={cn(
-						"flex items-center gap-2",
-						collapsed ? "flex-col" : "justify-between",
+						"flex min-h-0 flex-1 flex-col gap-3",
+						collapsed ? "w-11 items-center" : "w-[14.5rem]",
 					)}
 				>
+					{/* Collapsed, the rail leads with the toggle: the brand mark would
+					    only echo the "Início" house right below it. */}
 					{collapsed ? (
-						<BrandIcon />
+						<Tooltip>
+							<TooltipTrigger
+								render={
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={onToggle}
+										aria-label="Expandir menu"
+										aria-expanded={false}
+										aria-keyshortcuts="Control+B"
+										className="size-11 rounded-xl"
+									/>
+								}
+							>
+								<PanelLeftOpen aria-hidden />
+							</TooltipTrigger>
+							<TooltipContent side="right">
+								Expandir menu <span className="ml-1 opacity-70">Ctrl B</span>
+							</TooltipContent>
+						</Tooltip>
 					) : (
-						<Link
-							href="/dashboard"
-							className="rounded-2xl p-1 transition-colors hover:bg-card/55"
-						>
-							<BrandIcon />
-						</Link>
+						<>
+							<div className="flex items-center justify-between gap-2">
+								<Link
+									href="/dashboard"
+									className="rounded-2xl p-1 transition-colors hover:bg-card/55"
+								>
+									<BrandIcon />
+								</Link>
+								<Tooltip>
+									<TooltipTrigger
+										render={
+											<Button
+												variant="ghost"
+												size="icon"
+												onClick={onToggle}
+												aria-label="Recolher menu"
+												aria-expanded
+												aria-keyshortcuts="Control+B"
+											/>
+										}
+									>
+										<PanelLeftClose aria-hidden />
+									</TooltipTrigger>
+									<TooltipContent side="right">
+										Recolher menu{" "}
+										<span className="ml-1 opacity-70">Ctrl B</span>
+									</TooltipContent>
+								</Tooltip>
+							</div>
+							<Link
+								href="/dashboard"
+								className="rounded-2xl px-1 transition-colors hover:bg-card/40"
+							>
+								<BrandIdentity identity={identity} />
+							</Link>
+						</>
 					)}
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={onToggle}
-						aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-						aria-expanded={!collapsed}
-					>
-						{collapsed ? (
-							<PanelLeftOpen aria-hidden />
-						) : (
-							<PanelLeftClose aria-hidden />
-						)}
-					</Button>
+
+					<NavToolbar collapsed={collapsed} />
+
+					<NavItems
+						pathname={pathname}
+						collapsed={collapsed}
+						showAdmin={showAdmin}
+					/>
 				</div>
-
-				{collapsed ? null : (
-					<Link
-						href="/dashboard"
-						className="rounded-2xl px-1 transition-colors hover:bg-card/40"
-					>
-						<BrandIdentity identity={identity} />
-					</Link>
-				)}
-
-				<NavToolbar collapsed={collapsed} />
-
-				<NavItems
-					pathname={pathname}
-					collapsed={collapsed}
-					showAdmin={showAdmin}
-				/>
 			</aside>
 		</TooltipProvider>
 	);

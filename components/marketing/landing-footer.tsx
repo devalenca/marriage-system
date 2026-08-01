@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function LandingFooter() {
 	return (
-		<footer className="mt-24 border-t border-border/70 pt-10 pb-12">
+		<footer data-reveal className="mt-24 border-t border-border/70 pt-10 pb-12">
 			<div className="mx-auto flex max-w-5xl flex-col gap-6 px-5 sm:flex-row sm:items-end sm:justify-between">
 				<div>
 					<p className="font-display text-lg font-semibold text-primary">

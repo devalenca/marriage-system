@@ -32,6 +32,7 @@ import {
 	type VendorStatus,
 } from "@/lib/domain/categories";
 import { formatBRL } from "@/lib/domain/money";
+import { cn } from "@/lib/utils";
 
 const CATEGORY_FILTER_ITEMS: Record<string, React.ReactNode> = {
 	todas: "Todas as categorias",
@@ -74,8 +75,9 @@ export function VendorsContent() {
 				}
 			/>
 
-			<div className="mb-4 flex flex-col gap-2">
-				<div className="relative">
+			{/* Stacked on a phone, one line from sm up. */}
+			<div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+				<div className="relative sm:flex-1">
 					<Search
 						className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
 						aria-hidden
@@ -85,10 +87,10 @@ export function VendorsContent() {
 						placeholder="Buscar por nome..."
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
-						className="h-11 pl-9 sm:h-8"
+						className="h-11 pl-9 sm:h-9"
 					/>
 				</div>
-				<div className="flex gap-2">
+				<div className="flex gap-2 sm:shrink-0">
 					<Select
 						value={category}
 						onValueChange={(v) => setCategory(v as VendorCategory | "todas")}
@@ -96,7 +98,7 @@ export function VendorsContent() {
 					>
 						<SelectTrigger
 							aria-label="Filtrar por categoria"
-							className="min-h-11 flex-1 sm:min-h-8"
+							className="min-h-11 flex-1 sm:min-h-9 sm:w-44 sm:flex-none"
 						>
 							<SelectValue />
 						</SelectTrigger>
@@ -116,7 +118,7 @@ export function VendorsContent() {
 					>
 						<SelectTrigger
 							aria-label="Filtrar por status"
-							className="min-h-11 flex-1 sm:min-h-8"
+							className="min-h-11 flex-1 sm:min-h-9 sm:w-44 sm:flex-none"
 						>
 							<SelectValue />
 						</SelectTrigger>
@@ -206,16 +208,10 @@ export function VendorsContent() {
 												</div>
 											</div>
 											{progress !== null ? (
-												<div className="flex items-center gap-2">
-													<Progress
-														value={progress}
-														className="h-1.5"
-														aria-label={`${progress}% pago`}
-													/>
-													<span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-														{progress}% pago
-													</span>
-												</div>
+												<PaymentProgress
+													percent={progress}
+													pendingCents={vendor.financials.pendingCents}
+												/>
 											) : null}
 										</CardContent>
 									</Card>
@@ -227,6 +223,48 @@ export function VendorsContent() {
 			)}
 
 			<VendorFormDialog open={createOpen} onOpenChange={setCreateOpen} />
+		</div>
+	);
+}
+
+/**
+ * How far a contracted vendor is from being settled. The percentage carries
+ * the emphasis and the amount still owed sits beside it — that is the number
+ * the couple actually acts on.
+ */
+function PaymentProgress({
+	percent,
+	pendingCents,
+}: {
+	percent: number;
+	pendingCents: number;
+}) {
+	const settled = pendingCents <= 0;
+	return (
+		<div className="flex flex-col gap-1.5">
+			<Progress
+				value={percent}
+				aria-label={`${percent}% pago`}
+				className="[&_[data-slot=progress-track]]:h-2"
+			/>
+			<div className="flex items-baseline justify-between gap-2 text-xs">
+				<span
+					className={cn(
+						"font-semibold tabular-nums",
+						settled ? "text-success" : "text-foreground",
+					)}
+				>
+					{settled ? "Tudo pago" : `${percent}% pago`}
+				</span>
+				{settled ? null : (
+					<span className="text-muted-foreground tabular-nums">
+						faltam{" "}
+						<span className="font-medium text-foreground">
+							{formatBRL(pendingCents)}
+						</span>
+					</span>
+				)}
+			</div>
 		</div>
 	);
 }

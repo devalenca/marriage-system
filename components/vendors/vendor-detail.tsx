@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ButtonLink } from "@/components/button-link";
 import { FileUpload } from "@/components/file-upload";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -82,10 +83,10 @@ export function VendorDetail({ vendorId }: { vendorId: Id<"vendors"> }) {
 				<p className="text-sm text-muted-foreground">
 					Fornecedor não encontrado.
 				</p>
-				<Button variant="outline" render={<Link href="/fornecedores" />}>
+				<ButtonLink variant="outline" href="/fornecedores">
 					<ArrowLeft data-icon="inline-start" aria-hidden />
 					Voltar
-				</Button>
+				</ButtonLink>
 			</div>
 		);
 	}

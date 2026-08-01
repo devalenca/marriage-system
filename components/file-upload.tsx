@@ -123,14 +123,15 @@ export function FileUpload({
 									<Download className="size-4" aria-hidden />
 								</a>
 							) : null}
-							<button
-								type="button"
+							<Button
+								variant="ghost"
+								size="icon"
 								aria-label={`Remover ${file.name}`}
 								onClick={() => handleRemove(file._id)}
-								className="text-muted-foreground transition-colors hover:text-destructive"
+								className="size-9 shrink-0 text-muted-foreground hover:text-destructive"
 							>
-								<Trash2 className="size-4" aria-hidden />
-							</button>
+								<Trash2 aria-hidden />
+							</Button>
 						</li>
 					))}
 				</ul>

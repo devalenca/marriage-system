@@ -92,8 +92,8 @@ export const emailById = internalQuery({
 });
 
 /**
- * Superadmin-only: resets any account's password (e.g. a wedding admin who
- * is locked out — there is no self-service e-mail reset yet).
+ * Superadmin-only: resets any account's password. Last-resort support path —
+ * couples recover on their own with "esqueci minha senha" on the login page.
  */
 export const resetPassword = action({
 	args: { id: v.id("users"), password: v.string() },
