@@ -17,11 +17,11 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import { ButtonLink } from "@/components/button-link";
-import { CockpitPreview } from "@/components/marketing/cockpit-preview";
 import { FaqSection } from "@/components/marketing/faq-section";
 import { InspirationShowcase } from "@/components/marketing/inspiration-showcase";
 import { LandingFooter } from "@/components/marketing/landing-footer";
 import { LandingMotion } from "@/components/marketing/landing-motion";
+import { ProductDemo } from "@/components/marketing/product-demo";
 import { SectionSurface } from "@/components/marketing/section-surface";
 import { TestimonialsSection } from "@/components/marketing/testimonials";
 import { ThemeToggle } from "@/components/marketing/theme-toggle";
@@ -202,98 +202,108 @@ export default function LandingPage() {
 				</div>
 			</header>
 
-			{/* 1. Hero — the promise: the whole wedding, in one place */}
+			{/* 1. Hero — a cinematic full-bleed band, the casar.com structure: the
+			    field photograph fills the top of the page, the promise runs huge
+			    and centred across it, and the product frame rises into it from
+			    below. The band paints its own scrim (radial behind the headline,
+			    linear at the foot, where the frame seats), so the white ink here
+			    follows the `.hero-wash` pattern — the one sanctioned way of
+			    writing straight on the photograph. Like the closing band, the
+			    surface is a photograph and ignores the light/dark axis. */}
 			<section
 				data-hero-section
 				aria-labelledby="hero-title"
-				className="relative isolate mt-12 grid items-center gap-10 lg:mt-16 lg:grid-cols-[1.05fr_0.95fr]"
+				className="landing-band landing-band-hero relative isolate mt-4 flex max-h-[56rem] min-h-[78svh] flex-col items-center justify-center pt-16 pb-40 text-center sm:pb-48 lg:min-h-[82svh]"
 			>
-				{/* Ambient backdrop: three low-opacity gradient blobs in the brand
-				    tones drift slowly behind the glass card (GSAP, desktop only —
-				    they stay as a static painted-once glow on mobile and for
-				    reduced-motion users). Purely decorative. */}
-				<div aria-hidden data-hero-ambient className="hero-ambient">
-					<span data-hero-blob className="hero-blob hero-blob-olive" />
-					<span data-hero-blob className="hero-blob hero-blob-gold" />
-					<span data-hero-blob className="hero-blob hero-blob-champagne" />
-				</div>
-
-				{/* Frosted paper backing keeps the copy readable over the field photo
-				    while staying airy rather than a hard-edged card. At 0.55 the
-				    "frosted" was still 45% photograph and the muted subtitle went
-				    with whatever the picture put behind it; the ring, the soft shadow
-				    and the blur are what carry the airiness, not the transparency. */}
-				<div className="landing-glass rounded-[2rem] bg-card/95 p-7 ring-1 ring-border backdrop-blur-2xl sm:p-9 dark:bg-card/85">
+				{/* Kicker: the trial promise as a whisper above the shout, flanked
+				    by two hairline gold bars (GSAP scales them from the centre). */}
+				<p
+					data-hero-item
+					className="flex items-center gap-3 text-[0.8125rem] font-medium tracking-[0.22em] text-gold uppercase sm:text-sm"
+				>
 					<span
-						data-hero-item
-						className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5 text-sm font-medium text-primary ring-1 ring-primary/15"
-					>
-						<Sparkles className="size-4 text-gold" aria-hidden />
-						14 dias grátis · sem cartão de crédito
-					</span>
-					<h1
-						data-hero-item
-						id="hero-title"
-						className="mt-5 font-display text-4xl leading-[1.05] font-light tracking-tight text-balance text-foreground sm:text-5xl lg:text-[4rem]"
-					>
-						Planeje cada detalhe do seu casamento em um só lugar.
-					</h1>
-					<div
 						data-hero-bar
 						aria-hidden
-						className="mt-6 h-2 w-40 rounded-full bg-gradient-to-r from-gold via-gold/60 to-transparent"
+						className="h-px w-8 bg-gradient-to-r from-transparent via-gold/70 to-transparent sm:w-12"
 					/>
-					<p
-						data-hero-item
-						className="mt-6 max-w-xl text-lg text-pretty text-muted-foreground"
-					>
-						Criado por noivos, para noivos. Organize orçamento, fornecedores,
-						convidados, inspirações e todas as etapas da jornada até o grande
-						dia, sem depender de planilhas ou dezenas de aplicativos diferentes.
-					</p>
-					<div
-						data-hero-item
-						className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
-					>
-						<ButtonLink
-							size="lg"
-							className="cta-button h-12 px-6 text-base"
-							href="/cadastro"
-						>
-							Começar 14 dias grátis
-							<ArrowRight className="size-4" />
-						</ButtonLink>
-						<ButtonLink
-							variant="outline"
-							size="lg"
-							className="cta-button h-12 px-6 text-base"
-							href="/login"
-						>
-							Já tenho conta
-						</ButtonLink>
-					</div>
-				</div>
-
-				{/* The money shot leans out of its column instead of sitting
-				    obediently inside it. The right shift is capped well under the
-				    real gutter at that breakpoint (and `scale` is Tailwind v4's
-				    standalone property, so GSAP's parallax transform still
-				    composes with it). */}
-				<div
-					data-hero-visual
-					data-parallax="5"
-					className="flex justify-center lg:scale-[1.04] lg:justify-end xl:-mr-8"
+					14 dias grátis · sem cartão
+					<span
+						data-hero-bar
+						aria-hidden
+						className="h-px w-8 bg-gradient-to-r from-transparent via-gold/70 to-transparent sm:w-12"
+					/>
+				</p>
+				{/* Three fixed lines — manual breaks, no text-balance — so the
+				    headline keeps its shape at every width. The clamp lands ~38px
+				    at 390, ~59px at 768 and tops out at 104px on desktop: the
+				    largest type on the page by design ("chamando bastante
+				    atenção"). The closing line takes the display italic, the same
+				    roman/italic pair the final CTA already uses; the whitespace
+				    between the block spans keeps the accessible name readable and
+				    never renders. */}
+				<h1
+					data-hero-item
+					id="hero-title"
+					className="mt-6 font-display text-[clamp(2.25rem,0.8rem+6vw,6.5rem)] leading-[1.04] font-[350] tracking-tight text-white"
 				>
-					<CockpitPreview />
+					<span className="block">Planeje cada detalhe</span>{" "}
+					<span className="block">do seu casamento</span>{" "}
+					<span className="block text-white/85 italic [font-synthesis-style:none]">
+						em um só lugar.
+					</span>
+				</h1>
+				<p
+					data-hero-item
+					className="mx-auto mt-6 max-w-xl text-base text-pretty text-white/85 sm:text-lg"
+				>
+					Orçamento, fornecedores, convidados e todas as etapas até o grande dia
+					— sem planilhas.
+				</p>
+				<div
+					data-hero-item
+					className="mt-8 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row"
+				>
+					<ButtonLink
+						size="lg"
+						className="cta-button h-12 w-full max-w-xs px-7 text-base sm:w-auto"
+						href="/cadastro"
+					>
+						Começar 14 dias grátis
+						<ArrowRight className="size-4" />
+					</ButtonLink>
+					{/* Not the stock outline variant: paper on the photograph reads
+					    as a hole in the scene. Translucent white glass instead, in
+					    both themes — the surface under it is the photo either way. */}
+					<ButtonLink
+						variant="outline"
+						size="lg"
+						className="cta-button h-12 w-full max-w-xs border-white/40 bg-white/10 px-7 text-base text-white backdrop-blur-sm hover:bg-white/20 hover:text-white dark:border-white/40 dark:bg-white/10 dark:hover:bg-white/20"
+						href="/login"
+					>
+						Já tenho conta
+					</ButtonLink>
 				</div>
 			</section>
+
+			{/* The stage: the product frame rises out of the hero's bottom scrim
+			    (negative margin), casar.com-style — photograph above, product
+			    below, one shared centre axis. ProductDemo animates itself; the
+			    page only carries the entrance and parallax hooks. */}
+			<div
+				data-hero-visual
+				data-parallax="5"
+				className="relative z-10 -mt-28 flex justify-center sm:-mt-36 lg:-mt-40"
+			>
+				<ProductDemo />
+			</div>
 
 			{/* 2. Pain — the cost of keeping the wedding in a dozen places.
 			    It stands on the cool, recessed band: this is the one stretch of
 			    the page that is deliberately desaturated, so the colour returns
-			    with the solution. */}
+			    with the solution. The stage above already provides the pause, so
+			    the approach is one step shorter than the other bands'. */}
 			<section
-				className="landing-band landing-band-deep mt-32 sm:mt-40"
+				className="landing-band landing-band-deep mt-24 sm:mt-32"
 				aria-labelledby="dores"
 			>
 				<SectionSurface data-reveal className="max-w-3xl">

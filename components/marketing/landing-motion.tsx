@@ -6,18 +6,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-/**
- * Per-blob drift recipes for the hero's ambient gradient blobs. Values are
- * deliberately small (single-digit percents of the blob's own size) and the
- * periods are long and mutually prime-ish, so the three blobs never sync up
- * and the background reads as a slow, organic shimmer — not an animation.
- */
-const BLOB_DRIFTS = [
-	{ xPercent: 7, yPercent: -9, scale: 1.07, rotation: 8, duration: 19 },
-	{ xPercent: -9, yPercent: 7, scale: 1.11, rotation: -10, duration: 23 },
-	{ xPercent: 6, yPercent: 9, scale: 1.05, rotation: 6, duration: 17 },
-] as const;
-
 type RevealGesture = { from: gsap.TweenVars; to: gsap.TweenVars };
 
 /**
@@ -83,12 +71,11 @@ function gestureFor(value: string | undefined): RevealGesture {
  * and works without JavaScript:
  *
  * - `data-hero-nav` / `data-hero-item` / `data-hero-bar` / `data-hero-visual`
- *   compose the entrance timeline (staggered fade + vertical lift).
- * - `data-hero-ambient` / `data-hero-blob` — the hero's slow-drifting
- *   gradient blobs (styled in globals.css; only `transform` is animated,
- *   the blur is a static `filter` on the element).
- * - `data-hero-meter="bar" | "column"` — the cockpit preview's progress fills
- *   and forecast columns, grown by the entrance timeline itself (see below).
+ *   compose the entrance timeline (staggered fade + vertical lift). The bars
+ *   are the kicker's flanking dashes, so they grow from their center; the
+ *   visual is the framed ProductDemo wrapper — the demo animates its own
+ *   interior (`data-demo-*` hooks live in product-demo.tsx, and nothing here
+ *   selects inside the frame).
  * - `data-reveal` fades a block in when it scrolls into view (once). Its value
  *   picks the gesture: none/`"true"` = lift, `"mask"` = wipe, `"scale"` = land.
  * - `data-reveal-stagger` does the same for a container's children, staggered,
@@ -101,15 +88,12 @@ function gestureFor(value: string | undefined): RevealGesture {
  * 1. `prefers-reduced-motion: reduce` — nothing here runs; the user gets the
  *    fully static page (the CSS kill-switch in globals.css backs this up).
  * 2. Mobile (< 768px) — only the cheap one-shot motion runs: hero entrance,
- *    scroll reveals and the floating CTA. Scroll-scrubbed parallax and the
- *    looping blob drift are desktop-only, so phones never carry a persistent
- *    tween or a scrub listener; the blobs stay as a static painted-once
- *    backdrop.
+ *    scroll reveals and the floating CTA. Scroll-scrubbed parallax is
+ *    desktop-only, so phones never carry a scrub listener.
  *
  * Everything animates compositor-friendly properties only (transform /
  * opacity) to hold 60fps, and reveals use `once: true` so their triggers are
- * released after firing. GSAP's rAF-driven ticker pauses in hidden tabs, so
- * the infinite blob tweens cost nothing while the page is backgrounded.
+ * released after firing.
  */
 export function LandingMotion() {
 	useGSAP(() => {
@@ -117,52 +101,23 @@ export function LandingMotion() {
 
 		// --- Tier 1: every viewport, motion allowed. One-shot animations only.
 		mm.add("(prefers-reduced-motion: no-preference)", () => {
-			// Hero entrance: ambient glows breathe in, nav drops, copy staggers
-			// up, visual follows. One shared power3/expo signature.
+			// Hero entrance: nav drops, copy staggers up, the kicker's dashes
+			// grow from their center, and the framed demo rises last. One shared
+			// power3/expo signature. The demo's interior animates itself.
 			const entrance = gsap.timeline({
 				defaults: { ease: "power3.out", duration: 0.7 },
 			});
 			entrance
-				.from("[data-hero-ambient]", {
-					autoAlpha: 0,
-					duration: 1.6,
-					ease: "power2.out",
-				})
 				.from("[data-hero-nav]", { y: -14, autoAlpha: 0, duration: 0.5 }, 0)
 				.from("[data-hero-item]", { y: 28, autoAlpha: 0, stagger: 0.09 }, 0.3)
 				.from(
 					"[data-hero-bar]",
-					{ scaleX: 0, transformOrigin: "left center", duration: 0.6 },
+					{ scaleX: 0, transformOrigin: "center center", duration: 0.6 },
 					"<0.25",
 				)
 				.from(
 					"[data-hero-visual]",
 					{ y: 44, autoAlpha: 0, scale: 0.96, duration: 0.9, ease: "expo.out" },
-					"-=0.55",
-				)
-				// The cockpit's own meters are the last beat of the entrance, so
-				// the budget fills and the forecast columns grow *after* the card
-				// lands instead of racing it on a CSS clock of their own.
-				.from(
-					"[data-hero-meter='bar']",
-					{
-						scaleX: 0,
-						transformOrigin: "left center",
-						duration: 0.8,
-						stagger: 0.12,
-						ease: "power2.out",
-					},
-					"-=0.4",
-				)
-				.from(
-					"[data-hero-meter='column']",
-					{
-						scaleY: 0,
-						transformOrigin: "bottom center",
-						duration: 0.55,
-						stagger: 0.07,
-						ease: "back.out(1.5)",
-					},
 					"-=0.55",
 				);
 
@@ -215,8 +170,8 @@ export function LandingMotion() {
 			}
 		});
 
-		// --- Tier 2: desktop only. Persistent/scrubbed motion that would waste
-		// battery on phones: parallax drift and the hero's ambient blob loop.
+		// --- Tier 2: desktop only. Scrubbed motion that would waste battery on
+		// phones: the parallax drift.
 		mm.add(
 			"(prefers-reduced-motion: no-preference) and (min-width: 768px)",
 			() => {
@@ -238,24 +193,6 @@ export function LandingMotion() {
 						},
 					);
 				}
-
-				// Hero ambient: each blob drifts on its own slow sine loop.
-				gsap.utils
-					.toArray<HTMLElement>("[data-hero-blob]")
-					.forEach((blob, index) => {
-						const drift =
-							BLOB_DRIFTS[index % BLOB_DRIFTS.length] ?? BLOB_DRIFTS[0];
-						gsap.to(blob, {
-							xPercent: drift.xPercent,
-							yPercent: drift.yPercent,
-							scale: drift.scale,
-							rotation: drift.rotation,
-							duration: drift.duration,
-							ease: "sine.inOut",
-							repeat: -1,
-							yoyo: true,
-						});
-					});
 			},
 		);
 

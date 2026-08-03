@@ -9,8 +9,8 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/components/marketing/landing-motion", () => ({
 	LandingMotion: () => null,
 }));
-vi.mock("@/components/marketing/cockpit-preview", () => ({
-	CockpitPreview: () => null,
+vi.mock("@/components/marketing/product-demo", () => ({
+	ProductDemo: () => null,
 }));
 vi.mock("@/components/marketing/inspiration-showcase", () => ({
 	InspirationShowcase: () => null,
@@ -47,9 +47,31 @@ describe("landing page", () => {
 		).toBeInTheDocument();
 		expect(
 			region(/Planeje cada detalhe do seu casamento/i).getByText(
-				/Criado por noivos, para noivos/i,
+				/sem planilhas/i,
 			),
 		).toBeInTheDocument();
+	});
+
+	it("keeps the headline on the hero's own scrim band", () => {
+		// The hero writes white ink straight on the field photograph, which the
+		// legibility invariant only allows inside a surface that paints its own
+		// scrim (the `.hero-wash` pattern). `.landing-band-hero` is that surface;
+		// every run of hero copy must live inside it.
+		render(<LandingPage />);
+
+		const heading = screen.getByRole("heading", { level: 1 });
+		expect(heading.closest(".landing-band-hero")).not.toBeNull();
+		expect(
+			screen.getByText(/sem planilhas/i).closest(".landing-band-hero"),
+		).not.toBeNull();
+	});
+
+	it("no longer renders the retired cockpit mockup", () => {
+		render(<LandingPage />);
+
+		// The Marina & Rafael panel is gone for good; its fragments live on
+		// inside ProductDemo (mocked here — app/page.tsx must not render them).
+		expect(screen.queryByText(/Marina & Rafael/i)).not.toBeInTheDocument();
 	});
 
 	it("offers both hero calls to action", () => {

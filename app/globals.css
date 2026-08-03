@@ -775,26 +775,38 @@
 			inset 0 0 0 1px oklch(0.84 0.03 var(--theme-hue) / 0.32);
 	}
 
-	/* Hero ambient backdrop: three radial-gradient blobs in the brand tones
-	   (olive / champagne gold / accent) glowing softly behind the hero glass.
-	   The blur is a STATIC filter on each blob — painted once and cached —
-	   and GSAP animates transform only (desktop, motion allowed), so the
-	   whole effect lives on the compositor. Colours derive from tokens via
-	   color-mix, so the blobs re-tint themselves correctly in dark mode. */
-	.hero-ambient {
-		position: absolute;
-		inset: 0;
-		z-index: -1;
-		overflow: hidden;
-		pointer-events: none;
-		border-radius: 3rem;
+	/* Hero ground: the photograph itself, held inside the band's rounded
+	   full-bleed frame — the same move as the closing `.hero-wash` card, at
+	   the top of the page. Two scrims make the white ink legible everywhere
+	   on it: a radial pool behind the centred headline block, and a linear
+	   foot that both anchors the darkest text-free stretch and seats the
+	   product frame overlapping up from below. Same declared exception as
+	   `.hero-wash`: the surface is a photograph, so it is identical in light
+	   and dark and the scrims are literal black. */
+	.landing-band-hero {
+		--band-top: 0rem;
+		--band-bottom: 0rem;
 	}
 
-	/* The same machinery, unlocked from the hero: `.ambient-field` is a
-	   positionable instance any section can drop in, so token-derived
-	   atmosphere is not spent once at the top of the page and never again.
-	   Its blobs carry `data-ambient-blob`, never `data-hero-blob`, so the
-	   hero's drift loop in landing-motion.tsx keeps its exact selection. */
+	.landing-band-hero::before {
+		background-image:
+			radial-gradient(
+				90% 75% at 50% 40%,
+				oklch(0 0 0 / 0.5),
+				oklch(0 0 0 / 0.28) 68%,
+				oklch(0 0 0 / 0.12)
+			),
+			linear-gradient(0deg, oklch(0 0 0 / 0.55), transparent 42%),
+			var(--app-background, url("/wedding-field-hero.png"));
+		background-position: center;
+		background-size: cover;
+	}
+
+	/* Token-derived atmosphere for the lower sections: `.ambient-field` is a
+	   positionable backdrop any section can drop in (feedback, final CTA).
+	   Its blobs are painted once — the blur is a static filter, nothing is
+	   tweened — and their colours derive from tokens via color-mix, so they
+	   re-tint themselves correctly in dark mode. */
 	.ambient-field {
 		/* Same gutter-aware bleed as .landing-band, and for the same reason: a
 		   percentage spread overflows the column on narrow desktops and buys a
@@ -808,20 +820,9 @@
 		border-radius: 4rem;
 	}
 
-	.hero-blob,
 	.ambient-blob {
 		position: absolute;
 		border-radius: 50%;
-		filter: blur(64px);
-	}
-
-	/* Only the hero's blobs are ever tweened; the ambient fields are painted
-	   once, so they get no compositor layer promotion. */
-	.hero-blob {
-		will-change: transform;
-	}
-
-	.ambient-blob {
 		filter: blur(56px);
 	}
 
@@ -845,42 +846,6 @@
 		background: radial-gradient(
 			circle at 50% 50%,
 			color-mix(in oklch, var(--gold) 22%, transparent),
-			transparent 70%
-		);
-	}
-
-	.hero-blob-olive {
-		top: -14%;
-		left: -8%;
-		width: 34rem;
-		height: 34rem;
-		background: radial-gradient(
-			circle at 35% 35%,
-			color-mix(in oklch, var(--primary) 26%, transparent),
-			transparent 68%
-		);
-	}
-
-	.hero-blob-gold {
-		top: 20%;
-		right: -10%;
-		width: 30rem;
-		height: 30rem;
-		background: radial-gradient(
-			circle at 60% 40%,
-			color-mix(in oklch, var(--gold) 24%, transparent),
-			transparent 70%
-		);
-	}
-
-	.hero-blob-champagne {
-		bottom: -18%;
-		left: 24%;
-		width: 26rem;
-		height: 26rem;
-		background: radial-gradient(
-			circle at 50% 50%,
-			color-mix(in oklch, var(--accent) 42%, transparent),
 			transparent 70%
 		);
 	}
@@ -991,7 +956,6 @@
 
 	/* In dark the tokens flip to lighter accents, so the blobs read as glow;
 	   ease their intensity down so they stay ambient, never spotlight. */
-	.dark .hero-blob,
 	.dark .ambient-blob {
 		opacity: 0.6;
 	}
