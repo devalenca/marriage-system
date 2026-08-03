@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/convex/_generated/api";
@@ -82,11 +83,11 @@ export function OnboardingCard() {
 					</div>
 					<div className="flex flex-col gap-1.5">
 						<Label htmlFor="wedding-date">Data do casamento</Label>
-						<Input
+						<DatePicker
 							id="wedding-date"
-							type="date"
 							value={weddingDate}
-							onChange={(e) => setWeddingDate(e.target.value)}
+							onChange={setWeddingDate}
+							placeholder="Escolha a data"
 						/>
 					</div>
 					<div className="flex flex-col gap-1.5">

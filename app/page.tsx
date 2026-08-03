@@ -176,8 +176,8 @@ export default function LandingPage() {
 				data-hero-nav
 				className="-mx-3 flex items-center justify-between gap-2 rounded-[1.5rem] border border-border/60 bg-card/95 bg-linear-to-br from-transparent to-accent/20 px-3 py-2 shadow-sm backdrop-blur-sm sm:px-4"
 			>
-				<span className="inline-flex items-center gap-2 font-display text-lg font-semibold text-primary sm:text-xl">
-					<Heart className="size-5 text-gold" aria-hidden />
+				<span className="inline-flex items-center gap-2 font-display text-base font-semibold whitespace-nowrap text-primary sm:text-xl">
+					<Heart className="size-4 shrink-0 text-gold sm:size-5" aria-hidden />
 					Nosso Casamento
 				</span>
 				<div className="flex items-center gap-1.5">
@@ -217,20 +217,22 @@ export default function LandingPage() {
 			>
 				{/* Kicker: the trial promise as a whisper above the shout, flanked
 				    by two hairline gold bars (GSAP scales them from the centre). */}
+				{/* Tracking and gaps step down on mobile so the line never wraps at
+				    390px — a two-line kicker reads as a mistake, not a whisper. */}
 				<p
 					data-hero-item
-					className="flex items-center gap-3 text-[0.8125rem] font-medium tracking-[0.22em] text-gold uppercase sm:text-sm"
+					className="hero-kicker flex items-center gap-2 text-xs font-medium tracking-[0.12em] whitespace-nowrap uppercase sm:gap-3 sm:text-sm sm:tracking-[0.22em]"
 				>
 					<span
 						data-hero-bar
 						aria-hidden
-						className="h-px w-8 bg-gradient-to-r from-transparent via-gold/70 to-transparent sm:w-12"
+						className="h-px w-6 bg-gradient-to-r from-transparent via-gold/70 to-transparent sm:w-12"
 					/>
 					14 dias grátis · sem cartão
 					<span
 						data-hero-bar
 						aria-hidden
-						className="h-px w-8 bg-gradient-to-r from-transparent via-gold/70 to-transparent sm:w-12"
+						className="h-px w-6 bg-gradient-to-r from-transparent via-gold/70 to-transparent sm:w-12"
 					/>
 				</p>
 				{/* Three fixed lines — manual breaks, no text-balance — so the

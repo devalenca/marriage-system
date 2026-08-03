@@ -788,6 +788,17 @@
 		--band-bottom: 0rem;
 	}
 
+	/* The trial kicker sits on the brightest part of the photograph (the sky),
+	   where brand gold at L 0.63 simply vanished. Champagne lifted to L 0.88
+	   plus a soft dark halo keeps it legible over sky and grass alike — the
+	   same reasoning as the scrim, scaled down to one line of small caps. */
+	.hero-kicker {
+		color: oklch(0.88 0.07 85);
+		text-shadow:
+			0 1px 2px oklch(0 0 0 / 0.55),
+			0 0 18px oklch(0 0 0 / 0.35);
+	}
+
 	.landing-band-hero::before {
 		background-image:
 			radial-gradient(
