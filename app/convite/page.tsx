@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function InvitePage() {
 	return (
 		<main className="flex min-h-screen items-center justify-center px-4 py-10">
-			<section className="animate-card-enter w-full max-w-sm rounded-[2rem] border border-border bg-card/80 p-7 shadow-[0_24px_60px_oklch(0.32_0.07_132_/_0.22)] backdrop-blur-2xl sm:p-8">
+			<section className="animate-card-enter w-full max-w-sm rounded-[2rem] border border-border bg-card/95 p-7 shadow-[0_24px_60px_oklch(0.32_0.07_132_/_0.22)] backdrop-blur-2xl sm:p-8">
 				<header className="mb-7 text-center">
 					<h1 className="font-display text-3xl font-semibold tracking-tight text-balance text-primary">
 						Nosso Casamento

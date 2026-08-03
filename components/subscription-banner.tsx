@@ -31,7 +31,7 @@ export function SubscriptionBanner() {
 		return (
 			<div
 				role="alert"
-				className="mb-6 flex animate-card-enter items-start gap-3 rounded-2xl border border-warning/40 bg-warning/12 px-4 py-3.5 text-warning"
+				className="mb-6 flex animate-card-enter items-start gap-3 rounded-2xl border border-warning/40 bg-card/95 bg-gradient-to-br from-warning/16 to-warning/10 px-4 py-3.5 text-warning"
 			>
 				<AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden />
 				<div className="min-w-0 text-sm">
@@ -56,7 +56,7 @@ export function SubscriptionBanner() {
 	if (status.daysLeft !== null && status.daysLeft <= 3) {
 		const days = Math.max(status.daysLeft, 0);
 		return (
-			<div className="mb-6 flex items-center gap-2.5 rounded-xl border border-warning/25 bg-warning/8 px-3.5 py-2.5 text-sm text-muted-foreground">
+			<div className="mb-6 flex items-center gap-2.5 rounded-xl border border-warning/25 bg-card/95 bg-gradient-to-br from-warning/12 to-warning/8 px-3.5 py-2.5 text-sm text-muted-foreground">
 				<Clock className="size-4 shrink-0 text-warning" aria-hidden />
 				<p>
 					Seu período expira em{" "}

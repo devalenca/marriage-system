@@ -4,6 +4,10 @@ import { useMutation, useQuery } from "convex/react";
 import { Images, Loader2, Paperclip, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+	InspirationViewer,
+	type ViewerImage,
+} from "@/components/inspiration/inspiration-viewer";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +35,7 @@ export function InspirationContent() {
 	const [renameValue, setRenameValue] = useState("");
 	const [confirmingDelete, setConfirmingDelete] = useState(false);
 	const [uploading, setUploading] = useState(false);
+	const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	// Keep an active gallery selected: default to first, drop stale selections.
@@ -47,6 +52,17 @@ export function InspirationContent() {
 
 	const activeGallery =
 		galleries?.find((g) => g._id === activeGalleryId) ?? null;
+
+	// Only images whose storage URL resolved can be shown. The viewer walks this
+	// very list, so its indices line up with the grid's.
+	const visibleImages = (activeGallery?.images ?? []).flatMap((image) =>
+		image.url ? [{ ...image, url: image.url }] : [],
+	);
+	const viewerImages: ViewerImage[] = visibleImages.map((image) => ({
+		id: image._id,
+		url: image.url,
+		caption: image.caption,
+	}));
 
 	async function handleCreateGallery() {
 		const name = creatingName.trim();
@@ -116,6 +132,7 @@ export function InspirationContent() {
 
 	async function handleRemoveImage(id: Id<"inspirationImages">) {
 		try {
+			setViewerIndex(null);
 			await removeImage({ id });
 			toast.success("Imagem removida");
 		} catch (error) {
@@ -188,6 +205,9 @@ export function InspirationContent() {
 					<div className="flex flex-wrap gap-2">
 						{galleries.map((gallery) => {
 							const active = gallery._id === activeGalleryId;
+							// The chips sit straight on the field photograph, so the
+							// inactive one needs a surface of its own: at 55% opacity the
+							// same label read 1.92:1 over grass and 15:1 over sky.
 							return (
 								<button
 									key={gallery._id}
@@ -196,12 +216,13 @@ export function InspirationContent() {
 										setActiveGalleryId(gallery._id);
 										setRenaming(false);
 										setConfirmingDelete(false);
+										setViewerIndex(null);
 									}}
 									className={cn(
 										"inline-flex min-h-9 items-center rounded-full px-4 text-sm font-semibold transition-colors",
 										active
 											? "bg-primary text-primary-foreground"
-											: "bg-card/55 text-muted-foreground ring-1 ring-border/60 hover:text-foreground",
+											: "bg-card/95 text-muted-foreground ring-1 ring-border/60 backdrop-blur-sm hover:text-foreground",
 									)}
 								>
 									{gallery.name}
@@ -212,7 +233,9 @@ export function InspirationContent() {
 
 					{activeGallery ? (
 						<div className="flex flex-col gap-4">
-							<div className="flex flex-wrap items-center justify-between gap-2">
+							{/* The gallery name used to be a bare heading over the photo.
+							    Grounding the whole toolbar keeps its buttons legible too. */}
+							<div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-card/95 px-4 py-3 ring-1 ring-border/60 backdrop-blur-sm">
 								{renaming ? (
 									<div className="flex flex-1 flex-wrap gap-2">
 										<Input
@@ -308,7 +331,10 @@ export function InspirationContent() {
 								size="sm"
 								disabled={uploading || !activeGalleryId}
 								onClick={() => inputRef.current?.click()}
-								className="self-start"
+								// The only control left standing on the bare photograph. The
+								// outline variant is opaque in light (bg-background) but in
+								// dark it resolves to alpha 0.048, so it needs its own ground.
+								className="self-start dark:bg-card dark:hover:bg-muted"
 							>
 								{uploading ? (
 									<Loader2
@@ -336,40 +362,54 @@ export function InspirationContent() {
 									</CardContent>
 								</Card>
 							) : (
-								<div className="columns-2 gap-3 md:columns-3 lg:columns-4">
-									{activeGallery.images.map((image, index) =>
-										image.url ? (
-											<figure
-												key={image._id}
-												className="group animate-card-enter relative mb-3 break-inside-avoid overflow-hidden rounded-xl ring-1 ring-border/60"
-												style={{
-													animationDelay: `${Math.min(index, 8) * 40}ms`,
-												}}
+								<div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+									{visibleImages.map((image, index) => (
+										<figure
+											key={image._id}
+											className="group animate-card-enter relative overflow-hidden rounded-xl ring-1 ring-border/60"
+											style={{
+												animationDelay: `${Math.min(index, 8) * 40}ms`,
+											}}
+										>
+											<button
+												type="button"
+												aria-label={`Ampliar ${image.caption ?? "inspiração"}`}
+												onClick={() => setViewerIndex(index)}
+												className="block aspect-square w-full cursor-zoom-in"
 											>
 												{/* biome-ignore lint/performance/noImgElement: Convex storage URLs are not statically known. */}
 												<img
 													src={image.url}
 													alt={image.caption ?? "Inspiração"}
-													className="h-auto w-full"
+													className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
 												/>
-												<button
-													type="button"
-													aria-label="Remover imagem"
-													onClick={() => handleRemoveImage(image._id)}
-													className="absolute top-2 right-2 flex size-9 items-center justify-center rounded-full bg-background/80 text-muted-foreground backdrop-blur-sm transition-opacity hover:text-destructive focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-												>
-													<Trash2 className="size-4" aria-hidden />
-												</button>
-												{image.caption ? (
-													<figcaption className="px-3 py-2 text-xs text-muted-foreground">
-														{image.caption}
-													</figcaption>
-												) : null}
-											</figure>
-										) : null,
-									)}
+											</button>
+											<button
+												type="button"
+												aria-label="Remover imagem"
+												onClick={() => handleRemoveImage(image._id)}
+												className="absolute top-2 right-2 flex size-9 items-center justify-center rounded-full bg-background/95 text-muted-foreground backdrop-blur-sm transition-opacity hover:text-destructive focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+											>
+												<Trash2 className="size-4" aria-hidden />
+											</button>
+											{/* The caption lies over the couple's own photo, which
+											    can be anything — a long line over a bright shot
+											    disappeared at 80%. */}
+											{image.caption ? (
+												<figcaption className="pointer-events-none absolute inset-x-0 bottom-0 line-clamp-2 bg-background/95 px-3 py-2 text-xs text-muted-foreground backdrop-blur-sm">
+													{image.caption}
+												</figcaption>
+											) : null}
+										</figure>
+									))}
 								</div>
 							)}
+
+							<InspirationViewer
+								images={viewerImages}
+								index={viewerIndex}
+								onIndexChange={setViewerIndex}
+							/>
 						</div>
 					) : null}
 				</div>

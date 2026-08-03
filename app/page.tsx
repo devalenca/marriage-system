@@ -1,77 +1,195 @@
 import {
-	ArrowDown,
 	ArrowRight,
-	CalendarX2,
+	CalendarHeart,
 	Check,
 	CircleHelp,
+	EyeOff,
 	Heart,
+	Images,
 	ListChecks,
+	ListTodo,
 	MessagesSquare,
-	Moon,
-	Palette,
-	ShieldCheck,
+	Shuffle,
 	Sparkles,
-	Table2,
+	Store,
+	Users,
 	Wallet,
 } from "lucide-react";
 import type { Metadata } from "next";
 import { ButtonLink } from "@/components/button-link";
 import { CockpitPreview } from "@/components/marketing/cockpit-preview";
 import { FaqSection } from "@/components/marketing/faq-section";
+import { InspirationShowcase } from "@/components/marketing/inspiration-showcase";
 import { LandingFooter } from "@/components/marketing/landing-footer";
 import { LandingMotion } from "@/components/marketing/landing-motion";
-import {
-	SocialProofInline,
-	TestimonialsSection,
-} from "@/components/marketing/testimonials";
-import { ThemeShowcase } from "@/components/marketing/theme-showcase";
+import { SectionSurface } from "@/components/marketing/section-surface";
+import { TestimonialsSection } from "@/components/marketing/testimonials";
 import { ThemeToggle } from "@/components/marketing/theme-toggle";
 import { Card } from "@/components/ui/card";
 
 export const metadata: Metadata = {
-	title: "Nosso Casamento — cheguem ao grande dia sem sustos no orçamento",
+	title: "Nosso Casamento — planejem tudo do casamento em um só lugar",
 	description:
-		"Fornecedores, orçamento em centavos, parcelas com vencimento, checklist mês a mês e contagem regressiva — o casamento inteiro sob controle, no celular. 14 dias grátis, sem cartão de crédito.",
+		"Orçamento, checklist inteligente, fornecedores, convidados, inspirações e cronograma reunidos num só painel. Criado por noivos, para noivos. 14 dias grátis, sem cartão de crédito.",
 };
 
-/** The couple's biggest recurring pains — kept short and visceral. */
+/**
+ * The real problem isn't organising a wedding — it's organising it in a dozen
+ * different places. Each card names one consequence of that scattering.
+ */
 const PAIN_POINTS = [
 	{
-		icon: Table2,
-		title: "A planilha que só um de vocês entende",
-		body: "Três versões do mesmo arquivo, uma fórmula quebrada — e a dúvida eterna: esse total está certo?",
+		icon: ListTodo,
+		title: "Tarefas esquecidas",
+		body: "Com tantas decisões para tomar, é difícil saber o que fazer agora e o que pode esperar mais um pouco.",
 	},
 	{
-		icon: CalendarX2,
-		title: "A parcela que passa em branco",
-		body: "Um vencimento esquecido vira multa, juros e aquela ligação constrangedora para o fornecedor.",
+		icon: EyeOff,
+		title: "Gastos sem visibilidade",
+		body: "Parcelas, entradas, contratos e pagamentos espalhados tornam o orçamento mais difícil de acompanhar.",
+	},
+	{
+		icon: Shuffle,
+		title: "Informações desencontradas",
+		body: "Enquanto um salva referências, o outro conversa com fornecedores. Aos poucos, tudo fica espalhado.",
 	},
 	{
 		icon: CircleHelp,
-		title: "“Quanto já gastamos?” vira discussão",
-		body: "Quando cada um tem uma resposta diferente, o assunto dinheiro azeda até o jantar mais tranquilo.",
-	},
-	{
-		icon: Moon,
-		title: "A conferida mental das 2h da manhã",
-		body: "Deitar repassando pagamentos de cabeça, com medo de ter esquecido algo — todo santo dia.",
+		title: "A sensação de que sempre falta algo",
+		body: "Mesmo quando muita coisa já está resolvida, permanece a dúvida: “Será que esquecemos alguma coisa?”",
 	},
 ] as const;
+
+/**
+ * What the couple finds inside — the breadth is the differentiator. Money is
+ * `featured`: it is the area couples arrive worried about, so it gets the
+ * champagne chip and rides one step above the rest of the grid instead of
+ * being the first of six identical cards.
+ */
+const FEATURES = [
+	{
+		icon: Wallet,
+		title: "Orçamento e pagamentos",
+		body: "Meta, valores fechados, entradas e parcelas com vencimento. O que vence primeiro aparece primeiro.",
+		featured: true,
+	},
+	{
+		icon: ListChecks,
+		title: "Checklist inteligente",
+		body: "As etapas da organização já distribuídas no tempo, da reserva do espaço aos últimos detalhes.",
+	},
+	{
+		icon: Store,
+		title: "Fornecedores",
+		body: "Contatos, propostas, contratos e o andamento de cada negociação reunidos por categoria.",
+	},
+	{
+		icon: Users,
+		title: "Convidados",
+		body: "Lista completa, confirmações de presença e acompanhamento em tempo real de quem já respondeu.",
+	},
+	{
+		icon: Images,
+		title: "Inspirações",
+		body: "Referências de decoração, vestidos, flores e paletas guardadas junto do resto do planejamento.",
+	},
+	{
+		icon: CalendarHeart,
+		title: "Cronograma até o grande dia",
+		body: "Contagem regressiva, próximos vencimentos e as tarefas do momento sempre à vista.",
+	},
+] as const;
+
+/**
+ * The five steps of the journey. Step 2 is `featured` because the automatic
+ * checklist is the feature that most helps couples who have no idea where to
+ * start — it gets a full-width, tinted card instead of a plain column.
+ */
+const STEPS = [
+	{
+		n: "1",
+		title: "Crie o seu casamento",
+		body: "Informe a data do evento, defina uma meta de orçamento e personalize as informações iniciais.",
+	},
+	{
+		n: "2",
+		title: "Receba seu planejamento inicial",
+		body: "O sistema cria automaticamente um checklist com as principais etapas da organização, distribuídas conforme a antecedência ideal de cada atividade.",
+		featured: true,
+	},
+	{
+		n: "3",
+		title: "Organize do seu jeito",
+		body: "Adicione novas tarefas, registre fornecedores, acompanhe contratos, convidados, inspirações e todos os detalhes importantes.",
+	},
+	{
+		n: "4",
+		title: "Acompanhe a evolução",
+		body: "Visualize pagamentos, tarefas concluídas, próximos vencimentos e tudo o que ainda falta para o grande dia.",
+	},
+	{
+		n: "5",
+		title: "Cheguem ao altar com tranquilidade",
+		body: "Com tudo organizado em um único lugar, vocês passam menos tempo controlando planilhas e mais tempo aproveitando a jornada.",
+	},
+] as const;
+
+/** Reassurance strip on the closing CTA. */
+const CTA_HIGHLIGHTS = [
+	"14 dias grátis",
+	"Sem cartão de crédito",
+	"Criado por noivos, para noivos",
+] as const;
+
+/**
+ * Section headings share one voice: display face, light weight, tight
+ * tracking, and a jump of roughly 3x over the 1rem body underneath them.
+ * The lighter weight is deliberate against the semibold card titles below —
+ * the contrast between the two is what makes the page read as typeset rather
+ * than as one weight repeated at two sizes.
+ */
+const SECTION_HEADING =
+	"font-display text-[2rem] leading-[1.06] font-light tracking-tight text-balance text-foreground sm:text-5xl";
+
+/** Champagne rule under a section heading — the accent as structure. */
+function GoldRule() {
+	return (
+		<span
+			aria-hidden
+			className="mt-5 block h-1 w-16 rounded-full bg-gradient-to-r from-gold via-gold/55 to-transparent"
+		/>
+	);
+}
 
 export default function LandingPage() {
 	return (
 		<main className="mx-auto w-full max-w-6xl px-5 pt-6">
 			<LandingMotion />
 
-			{/* Top bar */}
-			<header data-hero-nav className="flex items-center justify-between">
-				<span className="inline-flex items-center gap-2 font-display text-xl font-semibold text-primary">
+			{/* Top bar. It carries the wordmark and the "Entrar" ghost link, both of
+			    them ink straight on the photograph, so the bar itself becomes the
+			    paper — the same two layers the in-app page header uses. The negative
+			    margin exactly cancels the padding at the narrowest width, so the row
+			    keeps the horizontal room it had (at 390px it has ~10px to spare) and
+			    the bar simply reaches a little further into the page gutter. */}
+			<header
+				data-hero-nav
+				className="-mx-3 flex items-center justify-between gap-2 rounded-[1.5rem] border border-border/60 bg-card/95 bg-linear-to-br from-transparent to-accent/20 px-3 py-2 shadow-sm backdrop-blur-sm sm:px-4"
+			>
+				<span className="inline-flex items-center gap-2 font-display text-lg font-semibold text-primary sm:text-xl">
 					<Heart className="size-5 text-gold" aria-hidden />
 					Nosso Casamento
 				</span>
 				<div className="flex items-center gap-1.5">
 					<ThemeToggle />
-					<ButtonLink variant="ghost" className="h-10 px-4" href="/login">
+					{/* At 390px the wordmark plus three controls overflow the viewport
+					    and buy a horizontal scrollbar; signing in is one tap away in
+					    the hero and the footer, so this is the one that gives way. */}
+					<ButtonLink
+						variant="ghost"
+						className="hidden h-10 px-4 sm:inline-flex"
+						href="/login"
+					>
 						Entrar
 					</ButtonLink>
 					<ButtonLink
@@ -84,7 +202,7 @@ export default function LandingPage() {
 				</div>
 			</header>
 
-			{/* 1. Hero — the promise: peace of mind + total control */}
+			{/* 1. Hero — the promise: the whole wedding, in one place */}
 			<section
 				data-hero-section
 				aria-labelledby="hero-title"
@@ -101,8 +219,11 @@ export default function LandingPage() {
 				</div>
 
 				{/* Frosted paper backing keeps the copy readable over the field photo
-				    (AA) while staying airy rather than a hard-edged card. */}
-				<div className="landing-glass rounded-[2.25rem] bg-card/55 p-7 ring-1 ring-border backdrop-blur-2xl sm:p-9 dark:bg-card/85">
+				    while staying airy rather than a hard-edged card. At 0.55 the
+				    "frosted" was still 45% photograph and the muted subtitle went
+				    with whatever the picture put behind it; the ring, the soft shadow
+				    and the blur are what carry the airiness, not the transparency. */}
+				<div className="landing-glass rounded-[2rem] bg-card/95 p-7 ring-1 ring-border backdrop-blur-2xl sm:p-9 dark:bg-card/85">
 					<span
 						data-hero-item
 						className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5 text-sm font-medium text-primary ring-1 ring-primary/15"
@@ -113,22 +234,22 @@ export default function LandingPage() {
 					<h1
 						data-hero-item
 						id="hero-title"
-						className="mt-5 font-display text-4xl leading-[1.08] font-semibold tracking-tight text-balance text-foreground sm:text-5xl lg:text-6xl"
+						className="mt-5 font-display text-4xl leading-[1.05] font-light tracking-tight text-balance text-foreground sm:text-5xl lg:text-[4rem]"
 					>
-						Cheguem ao grande dia com tudo pago, no prazo e sem sustos.
+						Planeje cada detalhe do seu casamento em um só lugar.
 					</h1>
 					<div
 						data-hero-bar
 						aria-hidden
-						className="mt-5 h-1.5 w-28 rounded-full bg-gradient-to-r from-gold via-gold/60 to-transparent"
+						className="mt-6 h-2 w-40 rounded-full bg-gradient-to-r from-gold via-gold/60 to-transparent"
 					/>
 					<p
 						data-hero-item
 						className="mt-6 max-w-xl text-lg text-pretty text-muted-foreground"
 					>
-						Fornecedores, orçamento centavo a centavo, parcelas com vencimento e
-						o checklist do mês — num app que os dois abrem do celular e
-						respondem, numa olhada, exatamente onde o casamento está.
+						Criado por noivos, para noivos. Organize orçamento, fornecedores,
+						convidados, inspirações e todas as etapas da jornada até o grande
+						dia, sem depender de planilhas ou dezenas de aplicativos diferentes.
 					</p>
 					<div
 						data-hero-item
@@ -148,55 +269,62 @@ export default function LandingPage() {
 							className="cta-button h-12 px-6 text-base"
 							href="/login"
 						>
-							Entrar
+							Já tenho conta
 						</ButtonLink>
-					</div>
-					<div data-hero-item className="mt-5 flex flex-col gap-2">
-						<SocialProofInline />
-						<p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-							<ShieldCheck className="size-4 text-success" aria-hidden />
-							Conta pronta em 1 minuto. Cancele quando quiser.
-						</p>
 					</div>
 				</div>
 
+				{/* The money shot leans out of its column instead of sitting
+				    obediently inside it. The right shift is capped well under the
+				    real gutter at that breakpoint (and `scale` is Tailwind v4's
+				    standalone property, so GSAP's parallax transform still
+				    composes with it). */}
 				<div
 					data-hero-visual
 					data-parallax="5"
-					className="flex justify-center lg:justify-end"
+					className="flex justify-center lg:scale-[1.04] lg:justify-end xl:-mr-8"
 				>
 					<CockpitPreview />
 				</div>
 			</section>
 
-			{/* 2. Pain — the real cost of staying on the spreadsheet */}
-			<section className="mt-24" aria-labelledby="dores">
-				<div data-reveal className="max-w-2xl">
-					<h2
-						id="dores"
-						className="font-display text-2xl font-semibold text-balance text-foreground sm:text-3xl"
-					>
-						Planejar o dia mais feliz não deveria tirar o sono de vocês
+			{/* 2. Pain — the cost of keeping the wedding in a dozen places.
+			    It stands on the cool, recessed band: this is the one stretch of
+			    the page that is deliberately desaturated, so the colour returns
+			    with the solution. */}
+			<section
+				className="landing-band landing-band-deep mt-32 sm:mt-40"
+				aria-labelledby="dores"
+			>
+				<SectionSurface data-reveal className="max-w-3xl">
+					<h2 id="dores" className={SECTION_HEADING}>
+						Menos tempo procurando. Mais tempo realizando.
 					</h2>
-					<p className="mt-3 text-pretty text-muted-foreground">
-						Enquanto o casamento vive numa planilha, é isso que continua
-						acontecendo:
+					<GoldRule />
+					<p className="mt-5 max-w-2xl text-pretty text-muted-foreground">
+						Enquanto o orçamento fica na planilha, os convidados no WhatsApp e
+						as inspirações salvas em dezenas de pastas, a organização vira uma
+						preocupação constante.
 					</p>
-				</div>
-				<ul data-reveal-stagger className="mt-8 grid gap-4 sm:grid-cols-2">
+				</SectionSurface>
+				<ul data-reveal-stagger className="mt-10 grid gap-4 sm:grid-cols-2">
 					{PAIN_POINTS.map((pain) => (
 						<li
 							key={pain.title}
-							className="landing-tile flex gap-4 rounded-2xl bg-card/55 p-5 ring-1 ring-border backdrop-blur-xl dark:bg-card/80"
+							className="landing-tile flex gap-4 rounded-2xl bg-card/95 p-5 ring-1 ring-border backdrop-blur-xl"
 						>
+							{/* Not `destructive`: the system's error colour was the only
+							    sharp hue on the page and it belonged to nothing in the
+							    identity. Muted is the point here — these are the greyed
+							    months the product replaces. */}
 							<span
 								aria-hidden
-								className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive"
+								className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted/70 text-muted-foreground ring-1 ring-border/70"
 							>
 								<pain.icon className="size-5" />
 							</span>
-							<div>
-								<h3 className="text-base font-semibold text-foreground">
+							<div className="min-w-0">
+								<h3 className="text-base font-semibold text-balance text-foreground">
 									{pain.title}
 								</h3>
 								<p className="mt-1 text-sm text-pretty text-muted-foreground">
@@ -208,195 +336,175 @@ export default function LandingPage() {
 				</ul>
 			</section>
 
-			{/* 3. Solution — three benefits, then the live customization demo */}
-			<section className="mt-24" aria-labelledby="solucao">
-				<div data-reveal className="max-w-2xl">
-					<h2
-						id="solucao"
-						className="font-display text-2xl font-semibold text-balance text-foreground sm:text-3xl"
-					>
-						Troquem a ansiedade por uma olhada que resolve
+			{/* 3. Solution — the command centre, then everything it holds. Tight
+			    against the pain band on purpose: the answer follows the problem
+			    without a pause. */}
+			<section className="mt-28" aria-labelledby="solucao">
+				<SectionSurface data-reveal className="max-w-3xl">
+					<h2 id="solucao" className={SECTION_HEADING}>
+						Um painel pensado para acompanhar vocês até o altar.
 					</h2>
-					<p className="mt-3 text-pretty text-muted-foreground">
-						O Nosso Casamento é o cockpit do casal: três coisas que ele faz por
-						vocês todos os dias, até o altar.
+					<GoldRule />
+					<p className="mt-5 max-w-2xl text-pretty text-muted-foreground">
+						Visualizem orçamento, tarefas, fornecedores, convidados e próximas
+						etapas em segundos.
 					</p>
-				</div>
+				</SectionSurface>
 
-				<div data-reveal-stagger className="mt-10 grid gap-4 md:grid-cols-3">
-					{/* (a) Trustworthy finance */}
-					<Card className="landing-card flex flex-col gap-5 p-7">
-						<span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-							<Wallet className="size-5" aria-hidden />
-						</span>
-						<div>
-							<h3 className="font-display text-xl font-semibold text-foreground">
-								Números que vocês confiam de olhos fechados
-							</h3>
-							<p className="mt-2 text-sm text-pretty text-muted-foreground">
-								Meta, fechado, pago e saldo calculados centavo a centavo, com
-								entradas e parcelas datadas. O que vence primeiro aparece
-								primeiro — nenhum boleto pega vocês de surpresa.
-							</p>
-						</div>
-						<dl className="mt-auto grid grid-cols-3 gap-2">
-							{[
-								{ k: "Meta", v: "R$ 80.000" },
-								{ k: "Pago", v: "R$ 49.600" },
-								{ k: "Saldo", v: "R$ 30.400" },
-							].map((stat) => (
-								<div
-									key={stat.k}
-									className="rounded-xl bg-muted/50 px-3 py-2.5 ring-1 ring-border"
-								>
-									<dt className="text-xs text-muted-foreground">{stat.k}</dt>
-									<dd className="mt-0.5 font-display text-sm font-semibold tabular-nums text-foreground sm:text-base">
-										{stat.v}
-									</dd>
-								</div>
-							))}
-						</dl>
-					</Card>
-
-					{/* (b) Month-by-month checklist */}
-					<Card className="landing-card flex flex-col gap-5 p-7">
-						<span className="flex size-11 items-center justify-center rounded-xl bg-accent/70 text-accent-foreground">
-							<ListChecks className="size-5" aria-hidden />
-						</span>
-						<div>
-							<h3 className="font-display text-xl font-semibold text-foreground">
-								Um checklist que diz o que fazer agora
-							</h3>
-							<p className="mt-2 text-sm text-pretty text-muted-foreground">
-								O roteiro mês a mês nasce pronto com a data do casamento. Em vez
-								de adivinhar por onde começar, vocês só abrem o mês e riscam.
-							</p>
-						</div>
-						<ul className="mt-auto flex flex-col gap-2">
-							{[
-								{ label: "Fechar buffet", done: true },
-								{ label: "Provar o vestido", done: true },
-								{ label: "Enviar convites", done: false },
-							].map((task) => (
-								<li
-									key={task.label}
-									className="flex items-center gap-2.5 rounded-xl bg-muted/50 px-3 py-2 text-sm ring-1 ring-border"
+				<ul
+					data-reveal-stagger
+					className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+				>
+					{FEATURES.map((feature) => {
+						const featured = "featured" in feature && feature.featured;
+						return (
+							<li key={feature.title} className={featured ? "lg:-mt-8" : ""}>
+								<Card
+									className={
+										featured
+											? "landing-card h-full gap-4 p-7 ring-gold/35"
+											: "landing-card h-full gap-4 p-7"
+									}
 								>
 									<span
-										aria-hidden
 										className={
-											task.done
-												? "flex size-5 items-center justify-center rounded-full bg-success text-white"
-												: "size-5 rounded-full ring-1 ring-border"
+											featured
+												? "flex size-11 items-center justify-center rounded-xl bg-gold/15 text-gold ring-1 ring-gold/30"
+												: "flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"
 										}
 									>
-										{task.done ? <Check className="size-3.5" /> : null}
+										<feature.icon className="size-5" aria-hidden />
 									</span>
-									<span
-										className={
-											task.done
-												? "text-muted-foreground line-through"
-												: "font-medium text-foreground"
-										}
-									>
-										{task.label}
-									</span>
-									<span className="sr-only">
-										{task.done ? "(feito)" : "(pendente)"}
-									</span>
-								</li>
-							))}
-						</ul>
-					</Card>
-
-					{/* (c) Everything in one place, in the couple's colors */}
-					<Card className="landing-card flex flex-col gap-5 p-7">
-						<span className="flex size-11 items-center justify-center rounded-xl bg-gold/15 text-gold">
-							<Palette className="size-5" aria-hidden />
-						</span>
-						<div>
-							<h3 className="font-display text-xl font-semibold text-foreground">
-								Tudo do casal num lugar só — com a cara de vocês
-							</h3>
-							<p className="mt-2 text-sm text-pretty text-muted-foreground">
-								Fornecedores, convidados e RSVP, inspirações e a contagem
-								regressiva na mesma conta. E o app inteiro se veste da paleta do
-								casamento de vocês.
-							</p>
-						</div>
-						<p className="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-							Experimente as cores logo abaixo
-							<ArrowDown className="size-4" aria-hidden />
-						</p>
-					</Card>
-				</div>
-
-				{/* Live proof of (c): the visitor recolours the app right here. */}
-				<ThemeShowcase />
+									<div>
+										<h3
+											className={
+												featured
+													? "font-display text-xl font-semibold text-balance text-foreground"
+													: "font-display text-lg font-semibold text-balance text-foreground"
+											}
+										>
+											{feature.title}
+										</h3>
+										<p className="mt-2 text-sm text-pretty text-muted-foreground">
+											{feature.body}
+										</p>
+									</div>
+								</Card>
+							</li>
+						);
+					})}
+				</ul>
 			</section>
 
-			{/* Como funciona — three steps, low-friction bridge to the trial */}
-			<section className="mt-24" aria-labelledby="como-funciona">
-				<h2
-					data-reveal
-					id="como-funciona"
-					className="font-display text-2xl font-semibold text-foreground sm:text-3xl"
-				>
-					Como funciona
-				</h2>
-				<ol data-reveal-stagger className="mt-8 grid gap-6 sm:grid-cols-3">
-					{[
-						{
-							n: "1",
-							title: "Criem a conta grátis",
-							body: "Informem o casal, a data e a meta de orçamento. O checklist mês a mês já nasce pronto.",
-						},
-						{
-							n: "2",
-							title: "Cadastrem o que importa",
-							body: "Fornecedores, valores fechados, entradas e parcelas com seus vencimentos.",
-						},
-						{
-							n: "3",
-							title: "Acompanhem sem esforço",
-							body: "Vejam o que está pago, o que vence e o que falta fazer — numa olhada, do celular.",
-						},
-					].map((step) => (
-						<li key={step.n} className="relative flex flex-col">
-							<span className="flex size-11 items-center justify-center rounded-full bg-primary/10 font-display text-lg font-semibold text-primary ring-1 ring-primary/15">
-								{step.n}
-							</span>
-							<h3 className="mt-4 text-lg font-semibold text-foreground">
-								{step.title}
-							</h3>
-							<p className="mt-1.5 text-sm text-pretty text-muted-foreground">
-								{step.body}
-							</p>
-						</li>
-					))}
+			{/* 4. Inspirations — references become plans (owns its own heading) */}
+			<InspirationShowcase />
+
+			{/* 5. Como funciona — five steps; the automatic checklist leads.
+			    Warm ground, gold top edge: the page's second change of terrain
+			    and the point where the product starts doing the work. */}
+			<section
+				className="landing-band landing-band-warm mt-28 [--band-bottom:2.5rem] sm:mt-36"
+				aria-labelledby="como-funciona"
+			>
+				{/* Two words and a rule, and it still gets paper: a 3rem display face
+				    at weight 300 is the worst possible ink to lay on a photograph.
+				    `w-fit` keeps it a plaque rather than an empty slab. */}
+				<SectionSurface className="w-fit">
+					<h2 data-reveal id="como-funciona" className={SECTION_HEADING}>
+						Como funciona
+					</h2>
+					<div data-reveal>
+						<GoldRule />
+					</div>
+				</SectionSurface>
+				{/* Single column until lg: a 2-column grid would leave a hole next to
+				    the double-width featured step. */}
+				<ol data-reveal-stagger className="mt-10 grid gap-4 lg:grid-cols-3">
+					{STEPS.map((step) => {
+						const featured = "featured" in step && step.featured;
+						return (
+							<li
+								key={step.n}
+								className={
+									// The featured step keeps its primary tint, but the tint is
+									// now a gradient *over* an opaque card instead of being the
+									// whole surface: at bg-primary/8 the step's paragraph was
+									// 92% field photograph.
+									featured
+										? "landing-tile relative flex flex-col rounded-2xl bg-card/95 bg-linear-to-br from-primary/14 to-gold/10 p-7 ring-1 ring-gold/40 lg:col-span-2"
+										: "landing-tile flex flex-col rounded-2xl bg-card/95 p-7 ring-1 ring-border backdrop-blur-xl"
+								}
+							>
+								<div className="flex items-center gap-3">
+									<span
+										className={
+											featured
+												? "flex size-12 items-center justify-center rounded-full bg-primary font-display text-lg font-semibold text-primary-foreground"
+												: "flex size-11 items-center justify-center rounded-full bg-primary/10 font-display text-lg font-semibold text-primary ring-1 ring-primary/15"
+										}
+									>
+										{step.n}
+									</span>
+									{featured ? (
+										<span className="inline-flex items-center gap-1.5 rounded-full bg-card/70 px-3 py-1 text-xs font-semibold text-primary ring-1 ring-primary/20">
+											<Sparkles className="size-3.5 text-gold" aria-hidden />
+											Automático
+										</span>
+									) : null}
+								</div>
+								<h3
+									className={
+										featured
+											? "mt-4 font-display text-xl font-semibold text-balance text-foreground sm:text-2xl"
+											: "mt-4 text-lg font-semibold text-balance text-foreground"
+									}
+								>
+									{step.title}
+								</h3>
+								<p
+									className={
+										featured
+											? "mt-2 max-w-2xl text-pretty text-muted-foreground"
+											: "mt-1.5 text-sm text-pretty text-muted-foreground"
+									}
+								>
+									{step.body}
+								</p>
+							</li>
+						);
+					})}
 				</ol>
 			</section>
 
-			{/* 4. Social proof — couples like them, no carousel weight */}
+			{/* 6. Social proof — couples like them, no carousel weight */}
 			<TestimonialsSection />
 
-			{/* Feedback-driven — honest authority for a young product */}
-			<section data-reveal className="mt-24" aria-labelledby="feedback">
-				<Card className="landing-card flex flex-col gap-5 p-8 sm:flex-row sm:items-center sm:justify-between sm:p-10">
+			{/* 7. Feedback-driven — honest authority for a young product. It sits
+			    in the gap between the testimonials and the FAQ, so it carries an
+			    ambient field: the hero's atmosphere returns once, halfway down. */}
+			<section
+				data-reveal
+				className="relative isolate mt-20"
+				aria-labelledby="feedback"
+			>
+				<div aria-hidden className="ambient-field">
+					<span data-ambient-blob className="ambient-blob ambient-blob-lead" />
+					<span data-ambient-blob className="ambient-blob ambient-blob-trail" />
+				</div>
+				<Card className="landing-card flex flex-col gap-5 border-t-2 border-gold/70 p-8 sm:flex-row sm:items-center sm:justify-between sm:p-10">
 					<div className="max-w-xl">
 						<span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3.5 py-1.5 text-sm font-medium text-secondary-foreground">
 							Feito com casais de verdade
 						</span>
 						<h2
 							id="feedback"
-							className="mt-4 font-display text-2xl font-semibold text-balance text-foreground sm:text-3xl"
+							className="mt-4 font-display text-[1.75rem] leading-[1.1] font-light tracking-tight text-balance text-foreground sm:text-4xl"
 						>
-							Sua opinião molda o app
+							Construído junto com quem está vivendo essa fase.
 						</h2>
-						<p className="mt-3 text-pretty text-muted-foreground">
-							A gente ouve as dores de quem está planejando e transforma cada
-							sugestão em melhoria. Dentro do app, é um toque para falar com a
-							gente — e o que vocês pedem pode virar a próxima novidade.
+						<p className="mt-4 text-pretty text-muted-foreground">
+							O Nosso Casamento evolui com a ajuda de casais reais. Cada
+							sugestão pode se transformar na próxima melhoria da plataforma.
 						</p>
 					</div>
 					<span
@@ -409,44 +517,79 @@ export default function LandingPage() {
 				</Card>
 			</section>
 
-			{/* 5. FAQ — objection handling */}
+			{/* 8. FAQ — objection handling */}
 			<FaqSection />
 
-			{/* 6. Final CTA — honest urgency: the date doesn't move */}
-			<section data-reveal className="mt-24" aria-labelledby="cta-final">
+			{/* 9. Final CTA — the day is short, the planning is long. The longest
+			    approach on the page, the largest heading on the page, and the only
+			    italic: the climax should not arrive at the same size and in the
+			    same voice as every argument before it. */}
+			<section
+				data-reveal
+				className="relative isolate mt-32 sm:mt-40"
+				aria-labelledby="cta-final"
+			>
+				<div aria-hidden className="ambient-field">
+					<span data-ambient-blob className="ambient-blob ambient-blob-lead" />
+					<span data-ambient-blob className="ambient-blob ambient-blob-trail" />
+				</div>
 				<Card className="hero-wash relative overflow-hidden p-9 text-center text-white sm:p-14">
-					<div className="relative z-10 mx-auto max-w-2xl">
-						<span className="inline-flex items-center gap-2 rounded-full bg-black/30 px-4 py-1.5 text-sm font-medium ring-1 ring-white/25 backdrop-blur-md">
-							<Heart className="size-4 text-gold" aria-hidden />
-							14 dias grátis · sem cartão
-						</span>
+					{/* `.hero-wash` darkens the photo from the left only (42%, gone by
+					    58%), so this centred block runs off that scrim and onto raw
+					    sky — white at weight 300 and 3.75rem has nothing to hold on to
+					    there. This closes the wash from the other side. Literal black
+					    like the `text-white` around it: the surface is a photograph and
+					    does not follow the light/dark axis. */}
+					<span
+						aria-hidden
+						className="absolute inset-0 bg-linear-to-l from-black/45 via-black/30 to-transparent"
+					/>
+					{/* `data-reveal` stays on the section; the stagger is added here so
+					    headline, sub, highlights and button cascade instead of landing
+					    as one block. */}
+					<div data-reveal-stagger className="relative z-10 mx-auto max-w-2xl">
 						<h2
 							id="cta-final"
-							className="mt-5 font-display text-3xl font-semibold text-balance sm:text-4xl"
+							className="font-display text-4xl leading-[1.06] font-light tracking-tight text-balance sm:text-6xl"
 						>
-							A data do casamento não espera
+							O casamento acontece em um dia.
+							{/* `font-synthesis-style: none` is load-bearing: the display face
+							    is currently loaded without an italic (app/layout.tsx), and a
+							    browser-sheared high-contrast serif at this size looks broken.
+							    This asks for the real italic and accepts roman until the font
+							    config ships one — it never accepts a fake. */}
+							<span className="block text-white/80 italic [font-synthesis-style:none]">
+								A organização acontece durante meses.
+							</span>
 						</h2>
-						<p className="mx-auto mt-4 max-w-lg text-pretty text-white/85">
-							Cada mês na planilha é mais um vencimento que pode passar batido —
-							e mais um fim de semana de conferência em vez de tranquilidade. Em
-							poucos minutos, o orçamento inteiro de vocês está num lugar só.
+						<p className="mx-auto mt-6 max-w-lg text-pretty text-white/85">
+							Comecem hoje a organizar tudo em um só lugar e vivam essa fase com
+							mais tranquilidade.
 						</p>
-						<div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+						<ul className="mx-auto mt-7 flex max-w-lg flex-col items-center justify-center gap-x-6 gap-y-2.5 sm:flex-row sm:flex-wrap">
+							{CTA_HIGHLIGHTS.map((highlight) => (
+								<li
+									key={highlight}
+									className="flex items-center gap-2 text-sm font-medium text-white/90"
+								>
+									<span
+										aria-hidden
+										className="flex size-5 shrink-0 items-center justify-center rounded-full bg-gold/35 ring-1 ring-gold/60"
+									>
+										<Check className="size-3.5" />
+									</span>
+									{highlight}
+								</li>
+							))}
+						</ul>
+						<div className="mt-8 flex justify-center">
 							<ButtonLink
 								size="lg"
 								className="cta-button h-12 px-7 text-base"
 								href="/cadastro"
 							>
-								Começar 14 dias grátis
+								Começar agora
 								<ArrowRight className="size-4" />
-							</ButtonLink>
-							<ButtonLink
-								variant="ghost"
-								size="lg"
-								className="cta-button h-12 px-6 text-base text-white hover:bg-white/15 hover:text-white"
-								href="/login"
-							>
-								Já tenho conta
 							</ButtonLink>
 						</div>
 					</div>

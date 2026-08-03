@@ -60,6 +60,22 @@ async function seedWeddingA({ t, weddingA }: Setup) {
 			status: "pendente",
 			isGenerated: false,
 		});
+		const overdueTaskId = await ctx.db.insert("tasks", {
+			weddingId: weddingA,
+			title: "Tarefa atrasada",
+			dueDate: "2026-04-10", // earlier month, still pending
+			priority: "alta",
+			status: "pendente",
+			isGenerated: false,
+		});
+		await ctx.db.insert("tasks", {
+			weddingId: weddingA,
+			title: "Tarefa antiga concluída",
+			dueDate: "2026-03-05",
+			priority: "media",
+			status: "concluida",
+			isGenerated: false,
+		});
 		await ctx.db.insert("tasks", {
 			weddingId: weddingA,
 			title: "Tarefa futura",
@@ -69,7 +85,7 @@ async function seedWeddingA({ t, weddingA }: Setup) {
 			isGenerated: false,
 		});
 
-		return { espacoId, monthTaskId };
+		return { espacoId, monthTaskId, overdueTaskId };
 	});
 }
 
@@ -130,6 +146,7 @@ describe("dashboard.summary", () => {
 		expect(summary.dueSoon[0]?.dueDate).toBe("2026-06-15");
 
 		expect(summary.monthTasks.map((task) => task.title)).toEqual([
+			"Tarefa atrasada",
 			"Tarefa deste mês",
 		]);
 
@@ -162,7 +179,40 @@ describe("dashboard.summary", () => {
 		const summary = await setup.asCoupleA.query(api.dashboard.summary, {
 			today: TODAY,
 		});
-		expect(summary.monthTasks).toHaveLength(0);
+		// Only the leftover from April survives; "Tarefa antiga concluída" and the
+		// task just completed are both gone.
+		expect(summary.monthTasks.map((task) => task.title)).toEqual([
+			"Tarefa atrasada",
+		]);
+	});
+
+	it("keeps unfinished tasks from earlier months and lists them first", async () => {
+		const setup = await setupWeddingScopedTest();
+		await seedWeddingA(setup);
+
+		const summary = await setup.asCoupleA.query(api.dashboard.summary, {
+			today: TODAY,
+		});
+
+		expect(summary.monthTasks.map((task) => task.dueDate)).toEqual([
+			"2026-04-10",
+			"2026-06-20",
+		]);
+	});
+
+	it("drops an earlier-month task once it is completed", async () => {
+		const setup = await setupWeddingScopedTest();
+		const { overdueTaskId } = await seedWeddingA(setup);
+		await setup.t.run(async (ctx) => {
+			await ctx.db.patch(overdueTaskId, { status: "concluida" });
+		});
+
+		const summary = await setup.asCoupleA.query(api.dashboard.summary, {
+			today: TODAY,
+		});
+		expect(summary.monthTasks.map((task) => task.title)).toEqual([
+			"Tarefa deste mês",
+		]);
 	});
 
 	it("rejects anonymous callers", async () => {
@@ -190,6 +240,7 @@ describe("dashboard.summary", () => {
 				"Espaço Jardim",
 			]);
 			expect(summaryA.monthTasks.map((task) => task.title)).toEqual([
+				"Tarefa atrasada",
 				"Tarefa deste mês",
 			]);
 			expect(summaryA.categories.some((c) => c.category === "buffet")).toBe(

@@ -18,6 +18,65 @@ const BLOB_DRIFTS = [
 	{ xPercent: 6, yPercent: 9, scale: 1.05, rotation: 6, duration: 17 },
 ] as const;
 
+type RevealGesture = { from: gsap.TweenVars; to: gsap.TweenVars };
+
+/**
+ * Arrival gestures for the scroll reveals, selected by the *value* of
+ * `data-reveal` / `data-reveal-stagger`. A bare attribute keeps the original
+ * lift, so every existing call site is untouched; the named variants give
+ * section headings (`mask`) and card grids (`scale`) a gesture of their own
+ * instead of repeating one fade-up down the whole page.
+ *
+ * `clearProps` is not cosmetic: GSAP leaves the resolved transform inline when
+ * a tween ends, and an inline transform outranks the `:hover` transform that
+ * `.landing-card` / `.landing-tile` declare in the stylesheet. Clearing it
+ * hands the hover lift back to CSS once the element has arrived.
+ */
+const REVEAL_GESTURES: Record<"default" | "mask" | "scale", RevealGesture> = {
+	default: {
+		from: { y: 32, autoAlpha: 0 },
+		to: {
+			y: 0,
+			autoAlpha: 1,
+			duration: 0.8,
+			ease: "power3.out",
+			clearProps: "transform",
+		},
+	},
+	// Headings wipe up from their own baseline — no drift, just reveal.
+	mask: {
+		from: { y: 14, autoAlpha: 0, clipPath: "inset(0% 0% 100% 0%)" },
+		to: {
+			y: 0,
+			autoAlpha: 1,
+			clipPath: "inset(0% 0% 0% 0%)",
+			duration: 0.95,
+			ease: "power4.out",
+			clearProps: "transform,clipPath",
+		},
+	},
+	// Card grids settle in from slightly under-scaled, so a row of panels
+	// reads as objects landing rather than text fading.
+	scale: {
+		from: { y: 22, scale: 0.955, autoAlpha: 0 },
+		to: {
+			y: 0,
+			scale: 1,
+			autoAlpha: 1,
+			duration: 0.78,
+			ease: "power3.out",
+			clearProps: "transform",
+		},
+	},
+};
+
+/** `data-reveal` with no value renders as `"true"` — that is the default. */
+function gestureFor(value: string | undefined): RevealGesture {
+	if (value === "mask") return REVEAL_GESTURES.mask;
+	if (value === "scale") return REVEAL_GESTURES.scale;
+	return REVEAL_GESTURES.default;
+}
+
 /**
  * The landing page's motion layer. Renders nothing — it animates the
  * server-rendered markup via data attributes so the page stays crawlable
@@ -28,8 +87,12 @@ const BLOB_DRIFTS = [
  * - `data-hero-ambient` / `data-hero-blob` — the hero's slow-drifting
  *   gradient blobs (styled in globals.css; only `transform` is animated,
  *   the blur is a static `filter` on the element).
- * - `data-reveal` fades a block in when it scrolls into view (once).
- * - `data-reveal-stagger` does the same for a container's children, staggered.
+ * - `data-hero-meter="bar" | "column"` — the cockpit preview's progress fills
+ *   and forecast columns, grown by the entrance timeline itself (see below).
+ * - `data-reveal` fades a block in when it scrolls into view (once). Its value
+ *   picks the gesture: none/`"true"` = lift, `"mask"` = wipe, `"scale"` = land.
+ * - `data-reveal-stagger` does the same for a container's children, staggered,
+ *   and reads the same variant vocabulary.
  * - `data-parallax="<n>"` drifts an element ±n% vertically while it crosses
  *   the viewport (scrub-linked, transform-only).
  * - `data-floating-cta` slides in after the hero scrolls away (mobile CTA).
@@ -76,15 +139,40 @@ export function LandingMotion() {
 					"[data-hero-visual]",
 					{ y: 44, autoAlpha: 0, scale: 0.96, duration: 0.9, ease: "expo.out" },
 					"-=0.55",
+				)
+				// The cockpit's own meters are the last beat of the entrance, so
+				// the budget fills and the forecast columns grow *after* the card
+				// lands instead of racing it on a CSS clock of their own.
+				.from(
+					"[data-hero-meter='bar']",
+					{
+						scaleX: 0,
+						transformOrigin: "left center",
+						duration: 0.8,
+						stagger: 0.12,
+						ease: "power2.out",
+					},
+					"-=0.4",
+				)
+				.from(
+					"[data-hero-meter='column']",
+					{
+						scaleY: 0,
+						transformOrigin: "bottom center",
+						duration: 0.55,
+						stagger: 0.07,
+						ease: "back.out(1.5)",
+					},
+					"-=0.55",
 				);
 
-			// Scroll-driven reveals (fire once; no scrub, so cheap).
+			// Scroll-driven reveals (fire once; no scrub, so cheap). The gesture
+			// is chosen per call site, so a section heading and a row of cards
+			// no longer arrive with the identical fade-up.
 			for (const el of gsap.utils.toArray<HTMLElement>("[data-reveal]")) {
-				gsap.from(el, {
-					y: 32,
-					autoAlpha: 0,
-					duration: 0.8,
-					ease: "power3.out",
+				const gesture = gestureFor(el.dataset.reveal);
+				gsap.fromTo(el, gesture.from, {
+					...gesture.to,
 					scrollTrigger: { trigger: el, start: "top 86%", once: true },
 				});
 			}
@@ -92,11 +180,10 @@ export function LandingMotion() {
 			for (const group of gsap.utils.toArray<HTMLElement>(
 				"[data-reveal-stagger]",
 			)) {
-				gsap.from(group.children, {
-					y: 26,
-					autoAlpha: 0,
+				const gesture = gestureFor(group.dataset.revealStagger);
+				gsap.fromTo(group.children, gesture.from, {
+					...gesture.to,
 					duration: 0.7,
-					ease: "power3.out",
 					stagger: 0.1,
 					scrollTrigger: { trigger: group, start: "top 84%", once: true },
 				});

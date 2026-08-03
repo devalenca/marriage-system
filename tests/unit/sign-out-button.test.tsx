@@ -23,7 +23,7 @@ describe("SignOutButton", () => {
 		});
 	});
 
-	it("signs out and redirects to the login page", async () => {
+	it("signs out and lands on the landing page, not on /login", async () => {
 		signOutMock.mockResolvedValue(undefined);
 		render(<SignOutButton />);
 
@@ -32,6 +32,37 @@ describe("SignOutButton", () => {
 			.click(screen.getByRole("button", { name: /sair/i }));
 
 		await waitFor(() => expect(signOutMock).toHaveBeenCalledOnce());
-		await waitFor(() => expect(assignMock).toHaveBeenCalledWith("/login"));
+		await waitFor(() => expect(assignMock).toHaveBeenCalledWith("/"));
+		expect(assignMock).not.toHaveBeenCalledWith("/login");
+	});
+
+	it("hands the couple's accent back before leaving", async () => {
+		// The landing wears the product's own palette; the accent of whoever was
+		// signed in must not survive the trip out of the session.
+		signOutMock.mockResolvedValue(undefined);
+		document.documentElement.setAttribute("data-wedding-theme", "rose");
+		render(<SignOutButton />);
+
+		await userEvent
+			.setup()
+			.click(screen.getByRole("button", { name: /sair/i }));
+
+		await waitFor(() =>
+			expect(
+				document.documentElement.getAttribute("data-wedding-theme"),
+			).toBeNull(),
+		);
+	});
+
+	it("stays put when signing out fails", async () => {
+		signOutMock.mockRejectedValue(new Error("offline"));
+		render(<SignOutButton />);
+
+		const button = screen.getByRole("button", { name: /sair/i });
+		await userEvent.setup().click(button);
+
+		await waitFor(() => expect(signOutMock).toHaveBeenCalledOnce());
+		expect(assignMock).not.toHaveBeenCalled();
+		await waitFor(() => expect(button).not.toBeDisabled());
 	});
 });
