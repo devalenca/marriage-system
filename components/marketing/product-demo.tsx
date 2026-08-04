@@ -398,7 +398,10 @@ export function ProductDemo({ className }: { className?: string }) {
 					<span className="w-[3.75rem]" />
 				</div>
 
-				{/* Fixed aspect ratio reserves the stage's space up front (no CLS). */}
+				{/* Fixed aspect ratio reserves the stage's space up front (no CLS).
+				    4/5 looked hollow on phones only because the forecast strip was
+				    hidden there; with the strip back, the same box measures ~12px
+				    of slack instead of ~90px of green void. */}
 				<div className="relative aspect-[4/5] sm:aspect-[16/10]">
 					{showVideo ? (
 						<video
@@ -486,9 +489,12 @@ export function ProductDemo({ className }: { className?: string }) {
 										</span>
 									</div>
 
-									{/* Payment forecast: a detail strip, dropped on narrow
-									    screens. */}
-									<div className="mt-4 hidden items-end gap-2 sm:flex">
+									{/* Payment forecast. It was dropped on narrow screens, but
+									    hiding it is what hollowed the card out: flex-1 kept the
+									    green surface at full height with nothing inside. The
+									    strip is compact enough for 390px — five columns of
+									    small type — so it stays. */}
+									<div className="mt-4 flex items-end gap-2">
 										{FORECAST.map((column, index) => (
 											<div
 												key={column.month}
