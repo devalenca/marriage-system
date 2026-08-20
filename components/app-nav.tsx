@@ -340,7 +340,7 @@ export function AppNav({
 	return (
 		<TooltipProvider delay={0}>
 			{/* Mobile: slim top bar with the couple's names and a drawer trigger. */}
-			<header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-sidebar-border bg-sidebar/85 px-3 backdrop-blur-2xl md:hidden">
+			<header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-sidebar-border bg-sidebar px-3 backdrop-blur-2xl md:hidden">
 				<Link
 					href="/dashboard"
 					className="flex min-w-0 items-center gap-2.5 rounded-2xl px-1 py-1"
@@ -375,7 +375,7 @@ export function AppNav({
 						</SheetTrigger>
 						<SheetContent
 							side="left"
-							className="w-[17rem] gap-0 border-sidebar-border bg-sidebar/95 p-4 backdrop-blur-2xl"
+							className="w-[17rem] gap-0 border-sidebar-border bg-sidebar p-4 backdrop-blur-2xl"
 						>
 							<SheetTitle className="sr-only">Menu de navegação</SheetTitle>
 							<SheetDescription className="sr-only">
@@ -398,7 +398,7 @@ export function AppNav({
 			{/* Desktop: collapsible sidebar. */}
 			<aside
 				className={cn(
-					"fixed inset-y-0 left-0 z-50 hidden flex-col overflow-hidden border-r border-sidebar-border bg-sidebar/85 shadow-[18px_0_60px_oklch(0.32_0.07_var(--theme-hue)_/_0.12)] backdrop-blur-2xl transition-[width] duration-200 ease-out md:flex",
+					"fixed inset-y-0 left-0 z-50 hidden flex-col overflow-hidden border-r border-sidebar-border bg-sidebar shadow-[18px_0_60px_oklch(0.32_0.07_var(--theme-hue)_/_0.12)] backdrop-blur-2xl transition-[width] duration-200 ease-out md:flex",
 					collapsed ? "w-[4.5rem] items-center px-1.5 py-3" : "w-64 p-3",
 				)}
 			>

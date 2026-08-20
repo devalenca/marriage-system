@@ -9,7 +9,7 @@ import {
 	ListChecks,
 	Plus,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { TaskDialog } from "@/components/checklist/task-dialog";
 import { PageHeader } from "@/components/page-header";
@@ -123,6 +123,34 @@ export function ChecklistContent() {
 	);
 }
 
+/* The labels that separate one group of tasks from the next sit directly on the
+   page, which on this app means directly on the field photograph. The six month
+   labels of the list view measured anywhere between 1.92:1 and 15.28:1 — same
+   colour, same size, different patch of grass or sky underneath. Darkening the
+   ink cannot fix that, because the next scroll puts the same label somewhere
+   else on the image; only a surface can. So this is the smallest surface that
+   still reads as paper: a chip exactly as wide as its own text, opaque enough
+   (0.95) to stop the photo, with the photograph still showing all around it.
+   Keep it a chip — these are markers inside a long list, not headings. */
+function SectionLabel({
+	children,
+	className,
+}: {
+	children: ReactNode;
+	className?: string;
+}) {
+	return (
+		<h2
+			className={cn(
+				"mb-2 flex w-fit items-center gap-2 rounded-full border border-border/60 bg-card/95 px-3 py-1 text-sm font-semibold text-muted-foreground shadow-sm backdrop-blur-sm",
+				className,
+			)}
+		>
+			{children}
+		</h2>
+	);
+}
+
 function groupTasksByMonth(tasks: Task[]): Map<string, Task[]> {
 	const groups = new Map<string, Task[]>();
 	for (const task of tasks) {
@@ -165,9 +193,13 @@ function TaskListView({
 		<div className="flex flex-col gap-5">
 			{[...groups.entries()].map(([month, monthTasks]) => (
 				<section key={month}>
-					<h2 className="mb-2 text-sm font-semibold text-muted-foreground first-letter:uppercase">
-						{month === "sem-prazo" ? "Sem prazo" : monthLabelPT(month)}
-					</h2>
+					<SectionLabel>
+						{/* ::first-letter only applies to block containers, and the chip
+						    is a flex row — so the capitalisation lives on the text span. */}
+						<span className="first-letter:uppercase">
+							{month === "sem-prazo" ? "Sem prazo" : monthLabelPT(month)}
+						</span>
+					</SectionLabel>
 					<Card>
 						<CardContent className="flex flex-col divide-y py-2">
 							{monthTasks.map((task) => (
@@ -221,12 +253,12 @@ function KanbanView({
 					const columnTasks = visible.filter((t) => t.status === status);
 					return (
 						<section key={status} className="flex flex-col">
-							<h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+							<SectionLabel>
 								<span className="first-letter:uppercase">
 									{TASK_STATUS_LABELS[status]}
 								</span>
 								<span className="tabular-nums">{columnTasks.length}</span>
-							</h2>
+							</SectionLabel>
 							<Card className="flex-1">
 								<CardContent className="flex min-h-24 flex-col divide-y py-2">
 									{columnTasks.length === 0 ? (
@@ -454,13 +486,15 @@ function CalendarView({
 			</Card>
 
 			<section aria-label={`Itens de ${formatDateBR(selected)}`}>
-				<h2 className="mb-2 text-sm font-semibold text-muted-foreground">
-					{formatDateBR(selected)}
-				</h2>
+				<SectionLabel>
+					<span className="tabular-nums">{formatDateBR(selected)}</span>
+				</SectionLabel>
 				{selectedTasks.length === 0 && selectedPayments.length === 0 ? (
-					<p className="text-sm text-muted-foreground">
-						Nada agendado para este dia.
-					</p>
+					<Card>
+						<CardContent className="py-6 text-center text-sm text-muted-foreground">
+							Nada agendado para este dia.
+						</CardContent>
+					</Card>
 				) : (
 					<Card>
 						<CardContent className="flex flex-col divide-y py-2">

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const useQueryMock = vi.fn();
 const mutationMock = vi.fn();
@@ -69,6 +69,15 @@ function makeSummary(overrides: Record<string, unknown> = {}) {
 		dueSoon: [],
 		monthTasks: [
 			{
+				_id: "t0",
+				_creationTime: 0,
+				title: "Tarefa atrasada",
+				dueDate: "2026-04-10",
+				priority: "alta",
+				status: "pendente",
+				isGenerated: false,
+			},
+			{
 				_id: "t1",
 				_creationTime: 0,
 				title: "Tarefa deste mês",
@@ -89,6 +98,13 @@ describe("DashboardContent", () => {
 	beforeEach(() => {
 		useQueryMock.mockReset();
 		mutationMock.mockReset();
+		// The card tells overdue tasks apart by comparing due dates with today.
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime(new Date("2026-06-09T12:00:00Z"));
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
 	});
 
 	it("shows a loading skeleton while the query resolves", () => {
@@ -127,5 +143,35 @@ describe("DashboardContent", () => {
 
 		// month tasks
 		expect(screen.getByText("Tarefa deste mês")).toBeInTheDocument();
+	});
+
+	it("separates tasks left over from earlier months", () => {
+		useQueryMock.mockReturnValueOnce(makeSummary()).mockReturnValueOnce([]);
+		render(<DashboardContent />);
+
+		expect(screen.getByText("Tarefas pendentes")).toBeInTheDocument();
+		expect(screen.getByText("Atrasadas")).toBeInTheDocument();
+		expect(screen.getByText("Deste mês")).toBeInTheDocument();
+
+		const overdueDate = screen.getByText("venceu em 10/04/2026");
+		expect(overdueDate).toBeInTheDocument();
+		expect(overdueDate.className).toContain("text-destructive");
+
+		const monthDate = screen.getByText("até 20/06/2026");
+		expect(monthDate.className).not.toContain("text-destructive");
+	});
+
+	it("keeps the plain month heading when nothing is overdue", () => {
+		const summary = makeSummary();
+		useQueryMock
+			.mockReturnValueOnce({
+				...summary,
+				monthTasks: summary.monthTasks.slice(1),
+			})
+			.mockReturnValueOnce([]);
+		render(<DashboardContent />);
+
+		expect(screen.getByText("Tarefas do mês")).toBeInTheDocument();
+		expect(screen.queryByText("Atrasadas")).not.toBeInTheDocument();
 	});
 });

@@ -83,7 +83,9 @@
 		0.32 calc(var(--theme-chroma) * 0.6) var(--theme-hue)
 	);
 	--muted: oklch(0.93 0.028 105);
-	--muted-foreground: oklch(0.49 0.03 96);
+	/* Secondary text carries a real warm cast. At chroma 0.03 it read as plain
+	   grey, and it is the ink of almost every supporting line on the page. */
+	--muted-foreground: oklch(0.49 0.045 96);
 	--accent: oklch(0.92 calc(var(--theme-chroma) * 0.5) var(--theme-hue));
 	--accent-foreground: oklch(
 		0.36 calc(var(--theme-chroma) * 0.62) var(--theme-hue)
@@ -109,7 +111,10 @@
 	--chart-4: oklch(0.74 0.075 170);
 	--chart-5: oklch(0.66 0.075 225);
 	--radius: 1rem;
-	--sidebar: oklch(0.975 0.016 var(--theme-hue) / 0.78);
+	/* The rail is fixed over the photograph and carries every nav label, so it
+	   needs a backing of its own — same reasoning as --field above. At 0.78 the
+	   labels sat on whatever the picture happened to put behind them. */
+	--sidebar: oklch(0.975 0.016 var(--theme-hue) / 0.96);
 	--sidebar-foreground: oklch(0.25 0.018 75);
 	--sidebar-primary: var(--primary);
 	--sidebar-primary-foreground: oklch(0.985 0.018 105);
@@ -175,7 +180,9 @@
 	--secondary: oklch(0.31 calc(var(--theme-chroma) * 0.25) var(--theme-hue));
 	--secondary-foreground: oklch(0.94 0.008 85);
 	--muted: oklch(0.29 0.016 var(--theme-hue));
-	--muted-foreground: oklch(0.72 0.018 var(--theme-hue));
+	/* Same reasoning as light, but the dark page has even less colour to lose:
+	   at chroma 0.018 every secondary line was greyscale. */
+	--muted-foreground: oklch(0.73 0.034 var(--theme-hue));
 	--accent: oklch(0.33 calc(var(--theme-chroma) * 0.35) var(--theme-hue));
 	--accent-foreground: oklch(0.9 0.03 85);
 	--destructive: oklch(0.62 0.14 35);
@@ -191,7 +198,7 @@
 	--chart-3: oklch(0.62 0.14 35);
 	--chart-4: oklch(0.55 0.05 var(--theme-hue));
 	--chart-5: oklch(0.85 0.02 90);
-	--sidebar: oklch(0.235 0.016 var(--theme-hue) / 0.92);
+	--sidebar: oklch(0.235 0.016 var(--theme-hue) / 0.96);
 	--sidebar-foreground: oklch(0.94 0.008 85);
 	--sidebar-primary: var(--primary);
 	--sidebar-primary-foreground: oklch(0.22 0.008 70);
@@ -299,7 +306,22 @@
 		z-index: -1;
 		pointer-events: none;
 		content: "";
+		/* Order matters: the first layer paints on top. The grain and the light
+		   streak used to sit at the bottom of this stack, under three scrims at
+		   0.94 — paid for and never seen. They lead now, and the scrims sit
+		   under them where they belong. */
 		background:
+			repeating-radial-gradient(
+				circle at 20% 15%,
+				oklch(1 0 0 / 0.1) 0 1px,
+				transparent 1px 7px
+			),
+			linear-gradient(
+				112deg,
+				transparent 0 18%,
+				oklch(1 0 0 / 0.17) 18.4% 18.9%,
+				transparent 19.5% 100%
+			),
 			linear-gradient(
 				90deg,
 				oklch(0.17 0.03 var(--theme-hue) / 0.34),
@@ -310,17 +332,6 @@
 				180deg,
 				oklch(0.96 0.02 95 / 0.2),
 				oklch(0.2 0.045 120 / 0.14)
-			),
-			linear-gradient(
-				112deg,
-				transparent 0 18%,
-				oklch(1 0 0 / 0.13) 18.4% 18.8%,
-				transparent 19.4% 100%
-			),
-			repeating-radial-gradient(
-				circle at 20% 15%,
-				oklch(1 0 0 / 0.12) 0 1px,
-				transparent 1px 7px
 			);
 		opacity: 0.94;
 	}
@@ -337,32 +348,60 @@
 	   ground becomes a deep, theme-tinted gradient; the hero's blobs carry the
 	   ambience, and the photo still appears where it is meant to be looked at
 	   (the closing band and the in-app preview). */
+	/* The base colour is only the floor. Everything that gives the dark page
+	   depth is painted on the two fixed pseudo-elements above it, so it costs
+	   one viewport-sized raster no matter how long the page is. */
 	.dark body {
-		background: oklch(0.165 0.014 var(--theme-hue));
+		background-color: oklch(0.155 0.016 var(--theme-hue));
 	}
 
 	.dark body::before {
 		background-image:
+/* A low warm horizon: the one warm thing in the dark page, and the
+			   dark counterpart of the field photo's late-afternoon light. */
 			radial-gradient(
-				85% 55% at 10% -8%,
-				oklch(0.3 0.035 var(--theme-hue) / 0.34),
-				transparent 64%
+				78% 40% at 50% 106%,
+				color-mix(in oklch, var(--gold) 15%, transparent),
+				transparent 70%
+			),
+			radial-gradient(
+				92% 58% at 8% -10%,
+				oklch(0.36 0.05 var(--theme-hue) / 0.4),
+				transparent 66%
 			),
 			radial-gradient(
 				70% 50% at 108% 10%,
-				oklch(0.27 0.03 var(--theme-hue) / 0.2),
-				transparent 68%
+				oklch(0.31 0.04 var(--theme-hue) / 0.26),
+				transparent 70%
+			),
+			/* Grain, so the ground is a surface and not a void. */
+			repeating-radial-gradient(
+				circle at 22% 18%,
+				oklch(1 0 0 / 0.05) 0 1px,
+				transparent 1px 9px
+			),
+			linear-gradient(
+				168deg,
+				oklch(0.27 0.03 var(--theme-hue) / 0.45) 0%,
+				transparent 46%,
+				oklch(0.12 0.02 var(--theme-hue) / 0.55) 100%
 			);
 		filter: none;
 		transform: none;
 	}
 
 	.dark body::after {
-		background: linear-gradient(
-			180deg,
-			oklch(0.16 0.02 var(--theme-hue) / 0.2),
-			oklch(0.11 0.015 var(--theme-hue) / 0.55)
-		);
+		background-image:
+			radial-gradient(
+				125% 88% at 50% 44%,
+				transparent 40%,
+				oklch(0.08 0.012 var(--theme-hue) / 0.55) 100%
+			),
+			linear-gradient(
+				180deg,
+				oklch(0.16 0.02 var(--theme-hue) / 0.16),
+				oklch(0.11 0.015 var(--theme-hue) / 0.42)
+			);
 		opacity: 1;
 	}
 
@@ -371,10 +410,15 @@
 	   resolve late and clobber the background-size/position that .hero-wash
 	   sets on the same element — the photo would tile at natural size. A
 	   photo-backed card doesn't want the glass gradient anyway. */
+	/* The first stop used to be 78% opaque, which over the field photo made
+	   every card a window instead of a page: the grass came through, and the
+	   secondary text on top of it lost its contrast. The frosted character
+	   lives in the blur, the inner highlight and the shadow below — not in
+	   letting the photograph through. Cards carry text, so they are paper. */
 	[data-slot="card"]:not(.hero-wash) {
 		background: linear-gradient(
 			135deg,
-			color-mix(in oklch, var(--card) 78%, transparent),
+			color-mix(in oklch, var(--card) 97%, transparent),
 			color-mix(in oklch, var(--accent) 18%, var(--card))
 		);
 	}
@@ -632,60 +676,187 @@
 		box-shadow: 0 20px 60px oklch(0.2 0.05 var(--theme-hue) / 0.16);
 	}
 
-	/* Hero ambient backdrop: three radial-gradient blobs in the brand tones
-	   (olive / champagne gold / accent) glowing softly behind the hero glass.
-	   The blur is a STATIC filter on each blob — painted once and cached —
-	   and GSAP animates transform only (desktop, motion allowed), so the
-	   whole effect lives on the compositor. Colours derive from tokens via
-	   color-mix, so the blobs re-tint themselves correctly in dark mode. */
-	.hero-ambient {
+	/* ---------- Landing terrain ----------
+	   The page ground is a single fixed photograph, so without bands every
+	   section below the hero stands on identical pixels for the whole scroll.
+	   A band paints its own ground behind one section and bleeds out of the
+	   6xl column towards the viewport edge, so the page changes both colour
+	   and width as you descend.
+
+	   The bleed is the real gutter minus a 1rem safety, floored at the column's
+	   own horizontal padding: `100vw` includes the scrollbar lane that
+	   `scrollbar-gutter: stable` keeps permanently reserved, so a naive
+	   `50% - 50vw` full-bleed would add a horizontal scrollbar on every desktop
+	   width. 72rem is `max-w-6xl`, the column the landing lives in. */
+	.landing-band {
+		--band-bleed: max(1.25rem, calc((100vw - 72rem) / 2 - 1rem));
+		--band-top: 4rem;
+		--band-bottom: 4rem;
+		position: relative;
+		isolation: isolate;
+	}
+
+	.landing-band::before {
 		position: absolute;
-		inset: 0;
+		top: calc(-1 * var(--band-top));
+		right: calc(-1 * var(--band-bleed));
+		bottom: calc(-1 * var(--band-bottom));
+		left: calc(-1 * var(--band-bleed));
+		z-index: -1;
+		pointer-events: none;
+		content: "";
+		background-repeat: no-repeat;
+		border-radius: 2.5rem;
+	}
+
+	/* Warm ground: champagne light entering top-left, the couple's green
+	   answering from the bottom-right, and a gold rule for a top edge — the
+	   one place where the brand's accent is a structural line rather than an
+	   icon tint. */
+	.landing-band-warm::before {
+		background-image:
+			linear-gradient(
+				90deg,
+				transparent,
+				color-mix(in oklch, var(--gold) 78%, transparent) 16%,
+				color-mix(in oklch, var(--gold) 30%, transparent) 62%,
+				transparent
+			),
+			radial-gradient(
+				110% 85% at 14% 0%,
+				color-mix(in oklch, var(--gold) 22%, transparent),
+				transparent 62%
+			),
+			radial-gradient(
+				85% 75% at 94% 100%,
+				color-mix(in oklch, var(--primary) 14%, transparent),
+				transparent 64%
+			),
+			linear-gradient(
+				176deg,
+				color-mix(in oklch, var(--card) 72%, transparent),
+				color-mix(in oklch, var(--muted) 58%, transparent)
+			);
+		background-position:
+			top left,
+			0 0,
+			0 0,
+			0 0;
+		background-size:
+			100% 2px,
+			auto,
+			auto,
+			auto;
+		box-shadow: 0 34px 90px oklch(0.2 0.05 var(--theme-hue) / 0.1);
+	}
+
+	/* Deep ground: the cool, recessed sibling. In light mode "deep" means
+	   cooler and denser paper, never darker — the ink on top is the page's
+	   normal foreground and has to keep its contrast. */
+	.landing-band-deep::before {
+		background-image:
+			radial-gradient(
+				100% 80% at 50% 0%,
+				color-mix(in oklch, var(--secondary) 58%, transparent),
+				transparent 68%
+			),
+			radial-gradient(
+				70% 60% at 6% 100%,
+				color-mix(in oklch, var(--primary) 12%, transparent),
+				transparent 62%
+			),
+			linear-gradient(
+				180deg,
+				color-mix(in oklch, var(--muted) 62%, transparent),
+				color-mix(in oklch, var(--secondary) 34%, transparent)
+			);
+		box-shadow:
+			inset 0 1px 0 oklch(1 0 0 / 0.4),
+			inset 0 0 0 1px oklch(0.84 0.03 var(--theme-hue) / 0.32);
+	}
+
+	/* Hero ground: the photograph itself, held inside the band's rounded
+	   full-bleed frame — the same move as the closing `.hero-wash` card, at
+	   the top of the page. Two scrims make the white ink legible everywhere
+	   on it: a radial pool behind the centred headline block, and a linear
+	   foot that both anchors the darkest text-free stretch and seats the
+	   product frame overlapping up from below. Same declared exception as
+	   `.hero-wash`: the surface is a photograph, so it is identical in light
+	   and dark and the scrims are literal black. */
+	.landing-band-hero {
+		--band-top: 0rem;
+		--band-bottom: 0rem;
+	}
+
+	/* The trial kicker sits on the brightest part of the photograph (the sky),
+	   where brand gold at L 0.63 simply vanished. Champagne lifted to L 0.88
+	   plus a soft dark halo keeps it legible over sky and grass alike — the
+	   same reasoning as the scrim, scaled down to one line of small caps. */
+	.hero-kicker {
+		color: oklch(0.88 0.07 85);
+		text-shadow:
+			0 1px 2px oklch(0 0 0 / 0.55),
+			0 0 18px oklch(0 0 0 / 0.35);
+	}
+
+	.landing-band-hero::before {
+		background-image:
+			radial-gradient(
+				90% 75% at 50% 40%,
+				oklch(0 0 0 / 0.5),
+				oklch(0 0 0 / 0.28) 68%,
+				oklch(0 0 0 / 0.12)
+			),
+			linear-gradient(0deg, oklch(0 0 0 / 0.55), transparent 42%),
+			var(--app-background, url("/wedding-field-hero.png"));
+		background-position: center;
+		background-size: cover;
+	}
+
+	/* Token-derived atmosphere for the lower sections: `.ambient-field` is a
+	   positionable backdrop any section can drop in (feedback, final CTA).
+	   Its blobs are painted once — the blur is a static filter, nothing is
+	   tweened — and their colours derive from tokens via color-mix, so they
+	   re-tint themselves correctly in dark mode. */
+	.ambient-field {
+		/* Same gutter-aware bleed as .landing-band, and for the same reason: a
+		   percentage spread overflows the column on narrow desktops and buys a
+		   horizontal scrollbar. */
+		--field-bleed: max(1.25rem, calc((100vw - 72rem) / 2 - 1rem));
+		position: absolute;
+		inset: -3.5rem calc(-1 * var(--field-bleed));
 		z-index: -1;
 		overflow: hidden;
 		pointer-events: none;
-		border-radius: 3rem;
+		border-radius: 4rem;
 	}
 
-	.hero-blob {
+	.ambient-blob {
 		position: absolute;
 		border-radius: 50%;
-		filter: blur(64px);
-		will-change: transform;
+		filter: blur(56px);
 	}
 
-	.hero-blob-olive {
-		top: -14%;
-		left: -8%;
-		width: 34rem;
-		height: 34rem;
+	.ambient-blob-lead {
+		top: -34%;
+		left: -12%;
+		width: 26rem;
+		height: 26rem;
 		background: radial-gradient(
-			circle at 35% 35%,
-			color-mix(in oklch, var(--primary) 26%, transparent),
+			circle at 45% 45%,
+			color-mix(in oklch, var(--primary) 22%, transparent),
 			transparent 68%
 		);
 	}
 
-	.hero-blob-gold {
-		top: 20%;
-		right: -10%;
+	.ambient-blob-trail {
+		right: -14%;
+		bottom: -38%;
 		width: 30rem;
 		height: 30rem;
 		background: radial-gradient(
-			circle at 60% 40%,
-			color-mix(in oklch, var(--gold) 24%, transparent),
-			transparent 70%
-		);
-	}
-
-	.hero-blob-champagne {
-		bottom: -18%;
-		left: 24%;
-		width: 26rem;
-		height: 26rem;
-		background: radial-gradient(
 			circle at 50% 50%,
-			color-mix(in oklch, var(--accent) 42%, transparent),
+			color-mix(in oklch, var(--gold) 22%, transparent),
 			transparent 70%
 		);
 	}
@@ -796,8 +967,57 @@
 
 	/* In dark the tokens flip to lighter accents, so the blobs read as glow;
 	   ease their intensity down so they stay ambient, never spotlight. */
-	.dark .hero-blob {
+	.dark .ambient-blob {
 		opacity: 0.6;
+	}
+
+	/* Dark terrain. The bands invert their job: warm still means gold light,
+	   deep now genuinely sinks below the page ground. */
+	.dark .landing-band-warm::before {
+		background-image:
+			linear-gradient(
+				90deg,
+				transparent,
+				color-mix(in oklch, var(--gold) 62%, transparent) 16%,
+				color-mix(in oklch, var(--gold) 20%, transparent) 62%,
+				transparent
+			),
+			radial-gradient(
+				110% 85% at 14% 0%,
+				color-mix(in oklch, var(--gold) 13%, transparent),
+				transparent 62%
+			),
+			radial-gradient(
+				85% 75% at 94% 100%,
+				color-mix(in oklch, var(--primary) 12%, transparent),
+				transparent 66%
+			),
+			linear-gradient(
+				176deg,
+				oklch(0.27 0.024 var(--theme-hue) / 0.72),
+				oklch(0.2 0.018 var(--theme-hue) / 0.5)
+			);
+		box-shadow: 0 34px 90px oklch(0 0 0 / 0.4);
+	}
+
+	.dark .landing-band-deep::before {
+		background-image:
+			radial-gradient(
+				100% 80% at 50% 0%,
+				oklch(0.3 0.03 var(--theme-hue) / 0.45),
+				transparent 70%
+			),
+			radial-gradient(
+				70% 60% at 6% 100%,
+				color-mix(in oklch, var(--primary) 10%, transparent),
+				transparent 64%
+			),
+			linear-gradient(
+				180deg,
+				oklch(0.13 0.015 var(--theme-hue) / 0.62),
+				oklch(0.1 0.012 var(--theme-hue) / 0.75)
+			);
+		box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05);
 	}
 
 	.dark .landing-tile:hover {

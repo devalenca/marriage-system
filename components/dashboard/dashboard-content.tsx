@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { ArrowRight, Check, PartyPopper } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, PartyPopper } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { ButtonLink } from "@/components/button-link";
@@ -19,6 +19,7 @@ import { CATEGORY_LABELS } from "@/lib/domain/categories";
 import { formatDateBR, todayInSaoPaulo } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import { notifyError } from "@/lib/notify";
+import { cn } from "@/lib/utils";
 
 type Summary = FunctionReturnType<typeof api.dashboard.summary>;
 
@@ -64,7 +65,7 @@ export function DashboardContent() {
 					)}
 				</div>
 			)}
-			<MonthTasksCard tasks={summary.monthTasks} />
+			<MonthTasksCard tasks={summary.monthTasks} today={today} />
 			<GuestsSummaryCard />
 			<CategorySummaryCard categories={summary.categories} />
 		</div>
@@ -109,8 +110,24 @@ function CountdownCard({ summary }: { summary: Summary }) {
 	);
 }
 
-function MonthTasksCard({ tasks }: { tasks: Summary["monthTasks"] }) {
+function MonthTasksCard({
+	tasks,
+	today,
+}: {
+	tasks: Summary["monthTasks"];
+	today: string;
+}) {
 	const updateTask = useMutation(api.tasks.update);
+
+	// Anything due before the 1st of this month is a leftover from an earlier
+	// month — the dashboard keeps it around, flagged.
+	const monthStart = `${today.slice(0, 7)}-01`;
+	const overdue = tasks.filter(
+		(task) => task.dueDate !== undefined && task.dueDate < monthStart,
+	);
+	const thisMonth = tasks.filter(
+		(task) => task.dueDate === undefined || task.dueDate >= monthStart,
+	);
 
 	async function handleComplete(id: Id<"tasks">) {
 		try {
@@ -124,7 +141,9 @@ function MonthTasksCard({ tasks }: { tasks: Summary["monthTasks"] }) {
 	return (
 		<Card>
 			<CardHeader className="flex-row items-center justify-between">
-				<CardTitle className="font-display text-lg">Tarefas do mês</CardTitle>
+				<CardTitle className="font-display text-lg">
+					{overdue.length > 0 ? "Tarefas pendentes" : "Tarefas do mês"}
+				</CardTitle>
 				<ButtonLink variant="ghost" size="sm" href="/checklist">
 					Ver tudo
 					<ArrowRight data-icon="inline-end" aria-hidden />
@@ -136,36 +155,80 @@ function MonthTasksCard({ tasks }: { tasks: Summary["monthTasks"] }) {
 						Nenhuma tarefa pendente neste mês. Respira, está tudo em dia.
 					</p>
 				) : (
-					<ul className="flex flex-col divide-y">
-						{tasks.map((task) => (
-							<li
-								key={task._id}
-								className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
-							>
-								<button
-									type="button"
-									onClick={() => handleComplete(task._id)}
-									aria-label={`Concluir tarefa: ${task.title}`}
-									className="group/check -my-1.5 flex size-11 shrink-0 items-center justify-center rounded-full text-transparent transition-colors hover:text-success focus-visible:text-success"
-								>
-									<span className="flex size-6 items-center justify-center rounded-full border border-border transition-colors group-hover/check:border-success group-focus-visible/check:border-success">
-										<Check className="size-3.5" aria-hidden />
-									</span>
-								</button>
-								<div className="min-w-0 flex-1">
-									<p className="truncate text-sm font-medium">{task.title}</p>
-									{task.dueDate ? (
-										<p className="text-xs text-muted-foreground">
-											até {formatDateBR(task.dueDate)}
-										</p>
-									) : null}
-								</div>
-							</li>
-						))}
-					</ul>
+					<div className="flex max-h-[20rem] flex-col gap-4 overflow-y-auto pr-1">
+						{overdue.length > 0 ? (
+							<section>
+								<p className="flex items-center gap-1.5 pb-1.5 text-xs font-medium text-destructive">
+									<AlertTriangle className="size-3.5" aria-hidden />
+									Atrasadas
+								</p>
+								<TaskList
+									tasks={overdue}
+									isOverdue
+									onComplete={handleComplete}
+								/>
+							</section>
+						) : null}
+						{thisMonth.length > 0 ? (
+							<section>
+								{overdue.length > 0 ? (
+									<p className="pb-1.5 text-xs font-medium text-muted-foreground">
+										Deste mês
+									</p>
+								) : null}
+								<TaskList tasks={thisMonth} onComplete={handleComplete} />
+							</section>
+						) : null}
+					</div>
 				)}
 			</CardContent>
 		</Card>
+	);
+}
+
+function TaskList({
+	tasks,
+	isOverdue = false,
+	onComplete,
+}: {
+	tasks: Summary["monthTasks"];
+	isOverdue?: boolean;
+	onComplete: (id: Id<"tasks">) => void;
+}) {
+	return (
+		<ul className="flex flex-col divide-y">
+			{tasks.map((task) => (
+				<li
+					key={task._id}
+					className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+				>
+					<button
+						type="button"
+						onClick={() => onComplete(task._id)}
+						aria-label={`Concluir tarefa: ${task.title}`}
+						className="group/check -my-1.5 flex size-11 shrink-0 items-center justify-center rounded-full text-transparent transition-colors hover:text-success focus-visible:text-success"
+					>
+						<span className="flex size-6 items-center justify-center rounded-full border border-border transition-colors group-hover/check:border-success group-focus-visible/check:border-success">
+							<Check className="size-3.5" aria-hidden />
+						</span>
+					</button>
+					<div className="min-w-0 flex-1">
+						<p className="truncate text-sm font-medium">{task.title}</p>
+						{task.dueDate ? (
+							<p
+								className={cn(
+									"text-xs text-muted-foreground",
+									isOverdue && "font-medium text-destructive",
+								)}
+							>
+								{isOverdue ? "venceu em " : "até "}
+								{formatDateBR(task.dueDate)}
+							</p>
+						) : null}
+					</div>
+				</li>
+			))}
+		</ul>
 	);
 }
 

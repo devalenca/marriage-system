@@ -56,11 +56,17 @@ export const summary = query({
 		overdue.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 		dueSoon.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
+		// Tasks due this month plus anything still open from earlier months —
+		// a leftover from June must not vanish from the dashboard in July.
+		// The client tells the two apart by comparing dueDate with monthStart.
 		const currentMonth = today.slice(0, 7);
+		const monthStart = `${currentMonth}-01`;
 		const monthTasks = tasks
 			.filter(
 				(task) =>
-					task.status !== "concluida" && task.dueDate?.startsWith(currentMonth),
+					task.status !== "concluida" &&
+					task.dueDate !== undefined &&
+					(task.dueDate < monthStart || task.dueDate.startsWith(currentMonth)),
 			)
 			.sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
 

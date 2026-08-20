@@ -79,8 +79,7 @@ export function SettingsContent() {
 					<CardHeader>
 						<CardTitle className="font-display text-lg">Sessão</CardTitle>
 						<CardDescription>
-							Encerra o acesso neste dispositivo. Para voltar, basta entrar com
-							e-mail e senha.
+							Encerra o acesso neste dispositivo.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>

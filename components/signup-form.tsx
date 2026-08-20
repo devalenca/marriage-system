@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { CurrencyInput } from "@/components/currency-input";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/convex/_generated/api";
@@ -165,14 +166,11 @@ export function SignupForm() {
 
 			<div className="flex flex-col gap-2">
 				<Label htmlFor={dateId}>Data do casamento</Label>
-				<Input
+				<DatePicker
 					id={dateId}
-					name="weddingDate"
-					type="date"
-					required
-					className="h-11"
 					value={weddingDate}
-					onChange={(e) => setWeddingDate(e.target.value)}
+					onChange={setWeddingDate}
+					placeholder="Escolha a data"
 				/>
 			</div>
 
@@ -231,9 +229,13 @@ export function SignupForm() {
 					htmlFor={termsId}
 					className="text-sm leading-snug font-normal text-muted-foreground"
 				>
+					{/* New tab on purpose: an in-place navigation would unmount the
+					    form and throw away everything already typed. */}
 					Li e aceito os{" "}
 					<Link
 						href="/termos"
+						target="_blank"
+						rel="noopener noreferrer"
 						className="font-medium text-primary underline underline-offset-2"
 					>
 						Termos de Uso
@@ -241,6 +243,8 @@ export function SignupForm() {
 					e a{" "}
 					<Link
 						href="/privacidade"
+						target="_blank"
+						rel="noopener noreferrer"
 						className="font-medium text-primary underline underline-offset-2"
 					>
 						Política de Privacidade

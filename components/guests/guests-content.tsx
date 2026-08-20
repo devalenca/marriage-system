@@ -337,14 +337,19 @@ function SummaryTile({
 	tone?: string;
 }) {
 	return (
-		<div className="rounded-2xl bg-card/45 p-3 text-center ring-1 ring-border/60 transition-colors">
+		// These tiles sit directly on the page, so the field photograph is what
+		// lies behind them — at bg-card/45 the picture came through and the 12px
+		// label was left reading against grass or sky (1,92:1 in the worst spot).
+		// A total is text, so its tile has to be paper: Card is the app's opaque
+		// surface, gradient and dark-mode shadows included.
+		<Card className="gap-0 rounded-2xl p-3 text-center">
 			<p
 				className={cn("font-display text-2xl font-semibold tabular-nums", tone)}
 			>
 				{value}
 			</p>
 			<p className="text-xs text-muted-foreground">{label}</p>
-		</div>
+		</Card>
 	);
 }
 

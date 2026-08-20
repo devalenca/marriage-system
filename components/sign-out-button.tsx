@@ -15,9 +15,12 @@ export function SignOutButton() {
 		try {
 			await signOut();
 			forgetWeddingTheme();
-			// Full-page navigation: crossing the auth boundary must drop all
-			// client state (soft router navigation races the auth teardown).
-			window.location.assign("/login");
+			// Back to the landing, not to /login: leaving the cockpit should feel
+			// like stepping out the front door, not like being asked to sign in
+			// again. Full-page navigation because crossing the auth boundary must
+			// drop all client state (a soft transition races the auth teardown,
+			// leaving the now-invalid wedding queries running).
+			window.location.assign("/");
 		} catch {
 			setSigningOut(false);
 		}

@@ -17,10 +17,15 @@ const geistMono = Geist_Mono({
 	subsets: ["latin"],
 });
 
+// Loaded as the variable font it is, not as two static cuts: the landing
+// leans on light weights and one italic heading, and pinning 500/600 meant
+// the browser quietly substituted the nearest weight and faked the slant.
+// `opsz` is what gives Fraunces its display personality at large sizes.
 const fraunces = Fraunces({
 	variable: "--font-display",
 	subsets: ["latin"],
-	weight: ["500", "600"],
+	style: ["normal", "italic"],
+	axes: ["opsz", "SOFT", "WONK"],
 });
 
 export const metadata: Metadata = {

@@ -26,7 +26,7 @@ export function LegalPage({
 		<main className="mx-auto flex w-full max-w-2xl flex-col px-4 py-10 sm:py-16">
 			<Link
 				href="/"
-				className="group mb-6 inline-flex w-fit items-center gap-2 rounded-full px-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+				className="group mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-border bg-card/95 px-3.5 py-1.5 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:text-foreground"
 			>
 				<span
 					aria-hidden
@@ -37,7 +37,7 @@ export function LegalPage({
 				Voltar ao início
 			</Link>
 
-			<article className="animate-card-enter rounded-[2rem] border border-border bg-card/85 p-6 shadow-[0_24px_60px_oklch(0.32_0.07_132_/_0.2)] backdrop-blur-2xl sm:p-10">
+			<article className="animate-card-enter rounded-[2rem] border border-border bg-card/95 p-6 shadow-[0_24px_60px_oklch(0.32_0.07_132_/_0.2)] backdrop-blur-2xl sm:p-10">
 				<header className="mb-8">
 					<p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">
 						Nosso Casamento
