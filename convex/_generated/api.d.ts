@@ -12,6 +12,7 @@ import type * as access from "../access.js";
 import type * as account from "../account.js";
 import type * as attachments from "../attachments.js";
 import type * as auth from "../auth.js";
+import type * as checklistTemplate from "../checklistTemplate.js";
 import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as emails from "../emails.js";
@@ -49,6 +50,7 @@ declare const fullApi: ApiFromModules<{
   account: typeof account;
   attachments: typeof attachments;
   auth: typeof auth;
+  checklistTemplate: typeof checklistTemplate;
   crons: typeof crons;
   dashboard: typeof dashboard;
   emails: typeof emails;
