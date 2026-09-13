@@ -210,4 +210,17 @@ export default defineSchema({
 		category: v.optional(vendorCategoryValidator),
 		isGenerated: v.boolean(),
 	}).index("by_wedding", ["weddingId"]),
+
+	// The platform-wide default checklist the superadmin curates in /admin.
+	// Global (not wedding-scoped): tasks.generateFromTemplate reads these rows
+	// to instantiate a couple's checklist, falling back to the shipped
+	// CHECKLIST_TEMPLATE constant when the table is empty. `order` only sorts
+	// the admin list; couples' tasks sort by due date.
+	checklistTemplate: defineTable({
+		title: v.string(),
+		monthsBefore: v.number(),
+		priority: taskPriorityValidator,
+		category: v.optional(vendorCategoryValidator),
+		order: v.number(),
+	}),
 });

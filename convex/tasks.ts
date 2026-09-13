@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { generateChecklist } from "../lib/domain/checklist";
-import { isValidISODate } from "../lib/domain/dates";
+import { isValidISODate, todayInSaoPaulo } from "../lib/domain/dates";
+import { rowToTemplateTask, sortTemplateRows } from "./checklistTemplate";
 import { weddingMutation as mutation, weddingQuery as query } from "./lib/auth";
 import { getOwned } from "./lib/db";
 import {
@@ -114,7 +115,18 @@ export const generateFromTemplate = mutation({
 			}
 		}
 
-		const checklist = generateChecklist(wedding.weddingDate);
+		// The superadmin's curated template wins when present; otherwise the
+		// shipped default. `today` pulls any past-dated task up to now, so a
+		// wedding only a few months out is not born half-overdue.
+		const templateRows = await ctx.db.query("checklistTemplate").collect();
+		const template =
+			templateRows.length > 0
+				? sortTemplateRows(templateRows).map(rowToTemplateTask)
+				: undefined;
+		const checklist = generateChecklist(wedding.weddingDate, {
+			today: todayInSaoPaulo(),
+			template,
+		});
 		for (const task of checklist) {
 			await ctx.db.insert("tasks", {
 				title: task.title,

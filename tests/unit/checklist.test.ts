@@ -115,3 +115,36 @@ describe("isTaskOverdue", () => {
 		expect(isTaskOverdue({ status: "em_andamento" }, TODAY)).toBe(false);
 	});
 });
+
+describe("generateChecklist — short timeline (clamp)", () => {
+	it("never produces a task due before today when today is given", () => {
+		const NEAR = "2027-01-16"; // ~4 months from the TODAY below
+		const CLAMP_TODAY = "2026-09-13";
+		const tasks = generateChecklist(NEAR, { today: CLAMP_TODAY });
+		for (const task of tasks) {
+			expect(task.dueDate >= CLAMP_TODAY).toBe(true);
+		}
+	});
+
+	it("pulls a 12-months-before task up to today", () => {
+		const tasks = generateChecklist("2027-01-16", { today: "2026-09-13" });
+		const orcamento = tasks.find((t) => t.title === "Definir orçamento total");
+		expect(orcamento?.dueDate).toBe("2026-09-13");
+	});
+
+	it("leaves future due dates untouched", () => {
+		const tasks = generateChecklist("2027-06-12", { today: "2026-07-07" });
+		// "Enviar convites" is 3 months before → 2027-03-12, comfortably ahead
+		// of the clamp date, so it must be left exactly where it lands.
+		const convites = tasks.find((t) => t.title === "Enviar convites");
+		expect(convites?.dueDate).toBe("2027-03-12");
+	});
+
+	it("accepts an explicit template override", () => {
+		const tasks = generateChecklist("2027-06-12", {
+			template: [{ title: "Só isso", monthsBefore: 2, priority: "alta" }],
+		});
+		expect(tasks).toHaveLength(1);
+		expect(tasks[0]?.title).toBe("Só isso");
+	});
+});

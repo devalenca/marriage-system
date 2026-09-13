@@ -4,6 +4,8 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import {
 	Infinity as InfinityIcon,
 	KeyRound,
+	ListChecks,
+	Plus,
 	Trash2,
 	UserPlus,
 } from "lucide-react";
@@ -34,6 +36,13 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import {
+	CATEGORY_LABELS,
+	PRIORITY_LABELS,
+	TASK_PRIORITIES,
+	VENDOR_CATEGORIES,
+} from "@/lib/domain/categories";
+import { monthsBeforeLabel } from "@/lib/domain/checklist";
 import { formatDateBR, isValidISODate } from "@/lib/domain/dates";
 import { notifyError } from "@/lib/notify";
 
@@ -129,6 +138,7 @@ export function AdminPanel() {
 						)}
 					</CardContent>
 				</Card>
+				<ChecklistTemplateCard />
 				<FeedbackInbox />
 			</div>
 		</div>
@@ -298,8 +308,11 @@ function WeddingRow({ wedding }: { wedding: Wedding }) {
 	const setSubscription = useMutation(api.weddings.setSubscription);
 	const resetPassword = useAction(api.users.resetPassword);
 	const removeWedding = useMutation(api.weddings.remove);
+	const regenerateChecklist = useMutation(api.tasks.generateFromTemplate);
 
 	const [until, setUntil] = useState(wedding.subscription.activeUntil ?? "");
+	const [regenOpen, setRegenOpen] = useState(false);
+	const [regenerating, setRegenerating] = useState(false);
 	const [savingSub, setSavingSub] = useState(false);
 	const [resetOpen, setResetOpen] = useState(false);
 	const [newPassword, setNewPassword] = useState("");
@@ -349,6 +362,24 @@ function WeddingRow({ wedding }: { wedding: Wedding }) {
 			notifyError(error, "Não foi possível redefinir a senha");
 		} finally {
 			setResetting(false);
+		}
+	}
+
+	async function handleRegenerate() {
+		setRegenerating(true);
+		try {
+			const result = await regenerateChecklist({
+				weddingId: wedding._id,
+				regenerate: true,
+			});
+			setRegenOpen(false);
+			toast.success(
+				`Checklist recriado para ${wedding.coupleNames} (${result.created} tarefas)`,
+			);
+		} catch (error) {
+			notifyError(error, "Não foi possível recriar o checklist");
+		} finally {
+			setRegenerating(false);
 		}
 	}
 
@@ -427,6 +458,15 @@ function WeddingRow({ wedding }: { wedding: Wedding }) {
 					Redefinir senha
 				</Button>
 				<Button
+					variant="ghost"
+					size="sm"
+					onClick={() => setRegenOpen(true)}
+					aria-label={`Recriar o checklist de ${wedding.coupleNames}`}
+				>
+					<ListChecks data-icon="inline-start" aria-hidden />
+					Regerar checklist
+				</Button>
+				<Button
 					variant="destructive"
 					size="sm"
 					onClick={() => setDeleteOpen(true)}
@@ -478,6 +518,34 @@ function WeddingRow({ wedding }: { wedding: Wedding }) {
 				</DialogContent>
 			</Dialog>
 
+			<Dialog open={regenOpen} onOpenChange={setRegenOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle className="font-display">
+							Recriar o checklist de {wedding.coupleNames}?
+						</DialogTitle>
+						<DialogDescription>
+							Recria as tarefas do checklist padrão a partir da data do
+							casamento. Tarefas já concluídas e as criadas pelo casal são
+							preservadas; as pendentes geradas automaticamente são
+							substituídas.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setRegenOpen(false)}
+						>
+							Cancelar
+						</Button>
+						<Button onClick={handleRegenerate} disabled={regenerating}>
+							{regenerating ? "Recriando..." : "Recriar checklist"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
 			<Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
 				<DialogContent>
 					<DialogHeader>
@@ -509,5 +577,225 @@ function WeddingRow({ wedding }: { wedding: Wedding }) {
 				</DialogContent>
 			</Dialog>
 		</div>
+	);
+}
+
+const MONTH_OPTIONS = [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0] as const;
+const TEMPLATE_FIELD_CLASS =
+	"h-10 rounded-lg border border-input bg-field px-3 text-sm text-foreground";
+
+/**
+ * Superadmin editor for the platform-wide default checklist. Empty until
+ * seeded from the shipped template; every couple provisioned afterwards — and
+ * any wedding regenerated from a row above — is built from these items.
+ */
+function ChecklistTemplateCard() {
+	const items = useQuery(api.checklistTemplate.list, {});
+	const addItem = useMutation(api.checklistTemplate.add);
+	const removeItem = useMutation(api.checklistTemplate.remove);
+	const seedDefault = useMutation(api.checklistTemplate.seedDefault);
+
+	const [title, setTitle] = useState("");
+	const [monthsBefore, setMonthsBefore] = useState(6);
+	const [priority, setPriority] =
+		useState<(typeof TASK_PRIORITIES)[number]>("media");
+	const [category, setCategory] = useState("");
+	const [saving, setSaving] = useState(false);
+	const [seeding, setSeeding] = useState(false);
+
+	async function handleAdd(event: FormEvent) {
+		event.preventDefault();
+		if (title.trim().length === 0) {
+			toast.error("Informe o título da tarefa");
+			return;
+		}
+		setSaving(true);
+		try {
+			await addItem({
+				title: title.trim(),
+				monthsBefore,
+				priority,
+				category:
+					category === ""
+						? undefined
+						: (category as (typeof VENDOR_CATEGORIES)[number]),
+			});
+			setTitle("");
+			toast.success("Item adicionado ao checklist padrão");
+		} catch (error) {
+			notifyError(error, "Não foi possível adicionar o item");
+		} finally {
+			setSaving(false);
+		}
+	}
+
+	async function handleSeed() {
+		setSeeding(true);
+		try {
+			const result = await seedDefault({});
+			toast.success(`Checklist padrão carregado (${result.created} itens)`);
+		} catch (error) {
+			notifyError(error, "Não foi possível carregar o checklist padrão");
+		} finally {
+			setSeeding(false);
+		}
+	}
+
+	async function handleRemove(id: Id<"checklistTemplate">, itemTitle: string) {
+		try {
+			await removeItem({ id });
+			toast.success(`"${itemTitle}" removido do checklist padrão`);
+		} catch (error) {
+			notifyError(error, "Não foi possível remover o item");
+		}
+	}
+
+	// Group the (already sorted) items by their months-before bucket so the
+	// editor reads like the couple's own checklist.
+	const groups: { label: string; items: NonNullable<typeof items> }[] = [];
+	if (items) {
+		for (const item of items) {
+			const label = monthsBeforeLabel(item.monthsBefore);
+			const last = groups.at(-1);
+			if (last && last.label === label) last.items.push(item);
+			else groups.push({ label, items: [item] });
+		}
+	}
+
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle className="font-display text-lg">Checklist padrão</CardTitle>
+				<CardDescription>
+					As tarefas que todo casal recebe ao ser cadastrado. Edite aqui e cada
+					novo casamento — ou qualquer um recriado acima — nasce com esta lista.
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="flex flex-col gap-4">
+				{items === undefined ? (
+					<Skeleton className="h-40 rounded-2xl" />
+				) : items.length === 0 ? (
+					<div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-border p-4">
+						<p className="text-sm text-muted-foreground">
+							Ainda usando o checklist embutido no sistema. Carregue-o para
+							começar a editar; nada muda para os casais até você ajustar algum
+							item.
+						</p>
+						<Button onClick={handleSeed} disabled={seeding}>
+							<ListChecks data-icon="inline-start" aria-hidden />
+							{seeding ? "Carregando..." : "Carregar checklist padrão"}
+						</Button>
+					</div>
+				) : (
+					<div className="flex flex-col gap-4">
+						{groups.map((group) => (
+							<div key={group.label} className="flex flex-col gap-1.5">
+								<p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+									{group.label}
+								</p>
+								{group.items.map((item) => (
+									<div
+										key={item._id}
+										className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card/55 px-3 py-2"
+									>
+										<div className="min-w-0">
+											<p className="truncate text-sm font-medium">
+												{item.title}
+											</p>
+											<p className="text-xs text-muted-foreground">
+												{PRIORITY_LABELS[item.priority]}
+												{item.category
+													? ` · ${CATEGORY_LABELS[item.category]}`
+													: ""}
+											</p>
+										</div>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => handleRemove(item._id, item.title)}
+											aria-label={`Remover "${item.title}" do checklist padrão`}
+										>
+											<Trash2 aria-hidden />
+										</Button>
+									</div>
+								))}
+							</div>
+						))}
+					</div>
+				)}
+
+				<form
+					onSubmit={handleAdd}
+					className="flex flex-col gap-3 border-t border-border/60 pt-4"
+				>
+					<p className="text-sm font-medium">Adicionar item</p>
+					<div className="flex flex-col gap-1.5">
+						<Label htmlFor="tmpl-title">Título</Label>
+						<Input
+							id="tmpl-title"
+							value={title}
+							onChange={(e) => setTitle(e.target.value)}
+							placeholder="Ex.: Contratar cerimonialista"
+						/>
+					</div>
+					<div className="grid gap-3 sm:grid-cols-3">
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="tmpl-months">Antecedência</Label>
+							<select
+								id="tmpl-months"
+								className={TEMPLATE_FIELD_CLASS}
+								value={monthsBefore}
+								onChange={(e) => setMonthsBefore(Number(e.target.value))}
+							>
+								{MONTH_OPTIONS.map((n) => (
+									<option key={n} value={n}>
+										{monthsBeforeLabel(n)}
+									</option>
+								))}
+							</select>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="tmpl-priority">Prioridade</Label>
+							<select
+								id="tmpl-priority"
+								className={TEMPLATE_FIELD_CLASS}
+								value={priority}
+								onChange={(e) =>
+									setPriority(
+										e.target.value as (typeof TASK_PRIORITIES)[number],
+									)
+								}
+							>
+								{TASK_PRIORITIES.map((p) => (
+									<option key={p} value={p}>
+										{PRIORITY_LABELS[p]}
+									</option>
+								))}
+							</select>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="tmpl-category">Categoria (opcional)</Label>
+							<select
+								id="tmpl-category"
+								className={TEMPLATE_FIELD_CLASS}
+								value={category}
+								onChange={(e) => setCategory(e.target.value)}
+							>
+								<option value="">— nenhuma —</option>
+								{VENDOR_CATEGORIES.map((c) => (
+									<option key={c} value={c}>
+										{CATEGORY_LABELS[c]}
+									</option>
+								))}
+							</select>
+						</div>
+					</div>
+					<Button type="submit" disabled={saving} className="self-start">
+						<Plus data-icon="inline-start" aria-hidden />
+						{saving ? "Adicionando..." : "Adicionar item"}
+					</Button>
+				</form>
+			</CardContent>
+		</Card>
 	);
 }

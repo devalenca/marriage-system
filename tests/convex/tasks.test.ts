@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { api } from "../../convex/_generated/api";
 import { CHECKLIST_TEMPLATE } from "../../lib/domain/checklist";
+import { todayInSaoPaulo } from "../../lib/domain/dates";
 import { setupWeddingScopedTest } from "./helpers";
 
 describe("tasks CRUD", () => {
@@ -80,10 +81,19 @@ describe("tasks.generateFromTemplate", () => {
 
 		const tasks = await asCoupleA.query(api.tasks.list, {});
 		expect(tasks).toHaveLength(CHECKLIST_TEMPLATE.length);
-		const espaco = tasks.find((task) => task.title === "Fechar espaço");
-		// Wedding A's date is 2027-06-12 → "Fechar espaço" lands 12 months before.
-		expect(espaco?.dueDate).toBe("2026-06-12");
-		expect(espaco?.isGenerated).toBe(true);
+		// The wedding-month task (monthsBefore 0) lands exactly on the wedding
+		// date and is never clamped, so it pins the derivation regardless of
+		// when the suite runs.
+		const bigDay = tasks.find(
+			(task) => task.title === "Aproveitar o grande dia",
+		);
+		expect(bigDay?.dueDate).toBe("2027-06-12");
+		expect(bigDay?.isGenerated).toBe(true);
+		// And the clamp guarantees no generated task is born overdue.
+		const today = todayInSaoPaulo();
+		for (const task of tasks) {
+			expect(task.dueDate && task.dueDate >= today).toBe(true);
+		}
 	});
 
 	it("does not duplicate generated tasks on a second run", async () => {
@@ -207,14 +217,15 @@ describe("tasks wedding isolation", () => {
 		expect(resultA.created).toBe(CHECKLIST_TEMPLATE.length);
 
 		// Each wedding's tasks follow its own date (A: 2027-06-12, B: 2027-09-25).
-		const espacoA = (await asCoupleA.query(api.tasks.list, {})).find(
-			(task) => task.title === "Fechar espaço",
+		// The wedding-month task is due exactly on the date and never clamped.
+		const bigDayA = (await asCoupleA.query(api.tasks.list, {})).find(
+			(task) => task.title === "Aproveitar o grande dia",
 		);
-		const espacoB = (await asCoupleB.query(api.tasks.list, {})).find(
-			(task) => task.title === "Fechar espaço",
+		const bigDayB = (await asCoupleB.query(api.tasks.list, {})).find(
+			(task) => task.title === "Aproveitar o grande dia",
 		);
-		expect(espacoA?.dueDate).toBe("2026-06-12");
-		expect(espacoB?.dueDate).toBe("2026-09-25");
+		expect(bigDayA?.dueDate).toBe("2027-06-12");
+		expect(bigDayB?.dueDate).toBe("2027-09-25");
 	});
 
 	it("regenerate only touches the caller wedding's generated tasks", async () => {
